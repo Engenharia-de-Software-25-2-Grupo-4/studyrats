@@ -1,5 +1,6 @@
 {
   "expo": {
+    "orientation": "portrait",
     "name": "studyrats",
     "slug": "studyrats",
     "version": "1.0.0"
