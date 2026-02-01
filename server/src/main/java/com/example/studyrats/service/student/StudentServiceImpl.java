@@ -8,6 +8,8 @@ import com.example.studyrats.dto.student.StudentResponseDTO;
 import com.example.studyrats.model.Student;
 import com.example.studyrats.repository.StudentRepository;
 
+import java.util.UUID;
+
 import org.modelmapper.ModelMapper;
 
 @Service
@@ -23,5 +25,11 @@ public class StudentServiceImpl implements StudentService {
         Student student = modelMapper.map(studentPostPutRequestDTO, Student.class);
         studentRepository.save(student);
         return modelMapper.map(student, StudentResponseDTO.class);
+    }
+
+    @Override
+    public UUID getAuthenticatedStudentId() {
+        // falta implementar autenticação
+        throw new UnsupportedOperationException("Unimplemented method 'getAuthenticatedStudentId'");
     }
 }
