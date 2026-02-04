@@ -23,9 +23,9 @@ public interface StudySessionService {
 
     List<StudySessionResponseDTO> listarSessaoDeEstudosPorUsuarioEmGrupo(UUID userId, UUID groupId); //listar todas de um usuário de um grupo 
 
-    List<StudySessionResponseDTO> listarSessaoDeEstudosPorDisciplina(String subject, UUID groupId, UUID userId); //listar todas as sessoes de um grupo que tenham essa disciplina
+    List<StudySessionResponseDTO> listarSessaoDeEstudosPorDisciplinaEmGrupo(String subject, UUID groupId, UUID userId); //listar todas as sessoes de um grupo que tenham essa disciplina
 
-    List<StudySessionResponseDTO> listarSessaoDeEstudosPorTopico(String topic, UUID groupId, UUID userId); //listar todas de um grupo que tenham esse tópico 
+    List<StudySessionResponseDTO> listarSessaoDeEstudosPorTopicoEmGrupo(String topic, UUID groupId, UUID userId); //listar todas de um grupo que tenham esse tópico
     
     List<StudySessionResponseDTO> listarSessaoDeEstudosPorGrupo(UUID groupId, UUID userId); //listar todas de um grupo
 }

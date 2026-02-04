@@ -1,6 +1,6 @@
 package com.example.studyrats.dto.studySession;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -20,7 +20,7 @@ public class StudySessionResponseDTO {
     private UUID sessionId;
 
     @JsonProperty("creator_id")
-    private Long creatorId; 
+    private UUID creatorId; 
 
     @JsonProperty("creator_name")
     private String creatorName;
@@ -32,7 +32,7 @@ public class StudySessionResponseDTO {
     private String description;
 
     @JsonProperty("start_time")
-    private LocalDate startTime;
+    private LocalDateTime startTime;
 
     @JsonProperty("duration_minutes")
     private Integer durationMinutes;

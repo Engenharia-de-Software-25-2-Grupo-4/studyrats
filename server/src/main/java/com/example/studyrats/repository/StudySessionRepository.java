@@ -9,11 +9,11 @@ import com.example.studyrats.model.StudySession;
 
 public interface StudySessionRepository extends JpaRepository<StudySession, UUID> {
 
-    List<StudySession> findByCreatorId(UUID userId); //todas as sessões de um usuário
+    List<StudySession> findByCreator_Id(UUID userId); //todas as sessões de um usuário
 
     List<StudySession> findByGroupId(UUID groupId); //todas as sessões de um grupo 
 
-    List<StudySession> findByGroupIdAndCreatorId(UUID groupId, UUID userId); //todas as sessões de um usuário em um grupo
+    List<StudySession> findByGroupIdAndCreator_Id(UUID groupId, UUID userId); //todas as sessões de um usuário em um grupo
 
     List<StudySession> findByGroupIdAndSubject(UUID groupId, String subject); //todas as sessões de um grupo com uma disciplina
 

@@ -3,7 +3,6 @@ package com.example.studyrats.controller;
 import java.util.List;
 import java.util.UUID;
 
-import javax.print.attribute.standard.Media;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -40,70 +39,73 @@ public class StudySessionController {
     @Autowired
     StudentService studentService; 
 
-    @PostMapping 
+    @PostMapping("/group/{groupId}/user/{userId}")
     @ResponseStatus(HttpStatus.CREATED)
     public StudySessionResponseDTO createStudySession(
         @PathVariable UUID groupId,
+        @PathVariable UUID userId,
         @RequestBody @Valid StudySessionPostPutRequestDTO studySessionPostPutRequestDTO) {
         
-        UUID userId = studentService.getAuthenticatedStudentId(); 
-
         return studySessionService.criarSessaoDeEstudos(groupId, userId, studySessionPostPutRequestDTO);
     }
+ 
+    @GetMapping("/{sessionId}/user/{userId}")
+    public StudySessionResponseDTO getStudySession(
+        @PathVariable UUID sessionId,
+        @PathVariable UUID userId) { 
 
-    @GetMapping("/{sessionId}")
-    public StudySessionResponseDTO getStudySession(@PathVariable UUID sessionId) { 
-
-        UUID userId = studentService.getAuthenticatedStudentId();
         return studySessionService.visualizarSessaoDeEstudosPorId(sessionId, userId);
     }
 
-    @PutMapping("/{sessionId}")
+    @PutMapping("/{sessionId}/user/{userId}") 
     public StudySessionResponseDTO updateStudySession(
         @PathVariable UUID sessionId,
+        @PathVariable UUID userId,
         @RequestBody @Valid StudySessionPostPutRequestDTO studySessionPostPutRequestDTO) {  
 
-        UUID userId = studentService.getAuthenticatedStudentId();
         return studySessionService.atualizarSessaoDeEstudosPorId(sessionId, userId, studySessionPostPutRequestDTO);
     }
 
-    @DeleteMapping("/{sessionId}")
+    @DeleteMapping("/{sessionId}/user/{userId}")
     @ResponseStatus(HttpStatus.NO_CONTENT) 
-    public void deleteStudySession(@PathVariable UUID sessionId) {
+    public void deleteStudySession(
+        @PathVariable UUID sessionId,
+        @PathVariable UUID userId) {
 
-        UUID userId = studentService.getAuthenticatedStudentId();
         studySessionService.removerSessaoDeEstudosPorId(sessionId, userId);
     }
 
-    @GetMapping 
+    @GetMapping  
     public List<StudySessionResponseDTO> listStudySessions() { 
 
         UUID userId = studentService.getAuthenticatedStudentId();
         return studySessionService.listarSessaoDeEstudosPorUsuario(userId);
     }
 
-    @GetMapping("/byGroup/{groupId}")
-    public List<StudySessionResponseDTO> listStudySessionsByGroup(@PathVariable UUID groupId) {
+    @GetMapping("/byGroup/{groupId}/user/{userId}")
+    public List<StudySessionResponseDTO> listStudySessionsByGroup(
+        @PathVariable UUID groupId,
+        @PathVariable UUID userId) {
 
-        UUID userId = studentService.getAuthenticatedStudentId();
         return studySessionService.listarSessaoDeEstudosPorGrupo(groupId, userId);
     }
 
-    @GetMapping("/bySubject/{subject}/group/{groupId}")
+    @GetMapping("/bySubject/{subject}/group/{groupId}/user/{userId}")
     public List<StudySessionResponseDTO> listStudySessionsBySubject(
         @PathVariable String subject,
-        @PathVariable UUID groupId) {    
+        @PathVariable UUID groupId,
+        @PathVariable UUID userId) {    
 
-        UUID userId = studentService.getAuthenticatedStudentId();
-        return studySessionService.listarSessaoDeEstudosPorDisciplina(subject, groupId, userId);
+        return studySessionService.listarSessaoDeEstudosPorDisciplinaEmGrupo(subject, groupId, userId);
     }
 
-    @GetMapping("/byTopic/{topic}/group/{groupId}")
+    @GetMapping("/byTopic/{topic}/group/{groupId}/user/{userId}")
     public List<StudySessionResponseDTO> listStudySessionsByTopic(
         @PathVariable String topic,
-        @PathVariable UUID groupId) { 
+        @PathVariable UUID groupId,
+        @PathVariable UUID userId) { 
 
-        UUID userId = studentService.getAuthenticatedStudentId();
-        return studySessionService.listarSessaoDeEstudosPorTopico(topic, groupId, userId); 
+        return studySessionService.listarSessaoDeEstudosPorTopicoEmGrupo(topic, groupId, userId); 
     }
 }
+
