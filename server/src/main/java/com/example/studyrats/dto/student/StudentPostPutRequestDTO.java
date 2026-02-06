@@ -15,10 +15,18 @@ import lombok.NoArgsConstructor;
 public class StudentPostPutRequestDTO {
 
     @JsonProperty("name")
-    @NotBlank(message = "Nome obrigatorio")
+    @NotBlank(message = "Nome obrigatório")
     private String name;
 
     @JsonProperty("email")
-    @NotBlank(message = "Email obrigatorio")
+    @NotBlank(message = "Email obrigatório")
     private String email;
+
+    @JsonProperty("password")
+    @NotBlank(message = "Senha obrigatória")
+    private String password; // Adicionado para RF-01 e RNF/SEG-04
+
+    @NotBlank(message = "Confirmação de senha obrigatória")
+    private String confirmPassword;
+
 }
