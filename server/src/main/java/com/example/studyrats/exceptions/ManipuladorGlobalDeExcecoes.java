@@ -1,19 +1,33 @@
 package com.example.studyrats.exceptions;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 
 @RestControllerAdvice
 public class ManipuladorGlobalDeExcecoes {
 
     @ExceptionHandler(ExcecaoExemplo.class)
     public ResponseEntity<?> manipularExcecaoExemplo(ExcecaoExemplo ex) {
-
         HttpStatus httpStatus = HttpStatus.NOT_FOUND;
-        RespostaDeErro body = new RespostaDeErro(httpStatus.value(), httpStatus.getReasonPhrase(), ex.getMessage());
+        return baseReturn(httpStatus, ex);
+    }
 
+    @ExceptionHandler(FirebaseJsonNaoEncontrado.class)
+    public ResponseEntity<?> manipularFirebaseJsonNaoEncontrado(FirebaseJsonNaoEncontrado ex) {
+        HttpStatus httpStatus = HttpStatus.SERVICE_UNAVAILABLE;
+        return baseReturn(httpStatus, ex);
+    }
+
+    @ExceptionHandler(FirebaseIO.class)
+    public ResponseEntity<?> manipularFirebaseIO(FirebaseIO ex) {
+        HttpStatus httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
+        return baseReturn(httpStatus, ex);
+    }
+
+    private ResponseEntity<?> baseReturn(HttpStatus httpStatus, Exception ex) {
+        RespostaDeErro body = new RespostaDeErro(httpStatus.value(), httpStatus.getReasonPhrase(), ex.getMessage());
         return ResponseEntity
                 .status(httpStatus)
                 .body(body);
