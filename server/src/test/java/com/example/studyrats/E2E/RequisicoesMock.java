@@ -3,6 +3,7 @@ package com.example.studyrats.E2E;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MockMvc;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -52,6 +53,14 @@ public class RequisicoesMock {
     }
 
     public <T> T performGetOK(Class<T> expectedTypeResponse) throws Exception {
+        String response = driver.perform(get(getUrl).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        return objectMapper.readValue(response, expectedTypeResponse);
+    }
+
+    public <T> T performGetOK(TypeReference<T> expectedTypeResponse) throws Exception {
         String response = driver.perform(get(getUrl).contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();

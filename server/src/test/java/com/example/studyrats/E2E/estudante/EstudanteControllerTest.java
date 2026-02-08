@@ -7,6 +7,7 @@ import com.example.studyrats.dto.student.StudentResponseDTO;
 import com.example.studyrats.model.Student;
 import com.example.studyrats.repository.StudentRepository;
 import com.example.studyrats.service.student.StudentService;
+import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -105,7 +106,7 @@ public class EstudanteControllerTest {
     class TestesDeGetAll {
 
         @Test
-        @DisplayName("Falha prevista ao tentar obter todos sem autenticação")
+        @DisplayName("Falha prevista ao tentar sem autenticação")
         void falhaGetAllSemAuth() throws Exception {
             try {
                 requisitor.performGetUnauthorized();
@@ -131,7 +132,7 @@ public class EstudanteControllerTest {
             StudentResponseDTO estudanteCriado = serviceDoEstudante.criar(body);
 
             List<StudentResponseDTO> listaDeEstudantes = List.of();
-            listaDeEstudantes = requisitor.performGetOK(listaDeEstudantes.getClass());
+            listaDeEstudantes = requisitor.performGetOK(new TypeReference<List<StudentResponseDTO>>() {});
             StudentResponseDTO estudanteDaLista = listaDeEstudantes.get(0);
 
             assertEquals(1, listaDeEstudantes.size(), "Get all sem estudantes não retornou apenas um estudante");
@@ -169,7 +170,7 @@ public class EstudanteControllerTest {
             }
 
             List<StudentResponseDTO> listaDeEstudantesDoGetall = List.of();
-            listaDeEstudantesDoGetall = requisitor.performGetOK(listaDeEstudantesDoGetall.getClass());
+            listaDeEstudantesDoGetall = requisitor.performGetOK(new TypeReference<List<StudentResponseDTO>>() {});
 
             assertEquals(estudantes.size(), listaDeEstudantesDoGetall.size(), "Nem todos os estudantes foram adicionados");
 
