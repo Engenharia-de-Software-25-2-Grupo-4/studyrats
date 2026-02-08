@@ -146,4 +146,30 @@ public interface SessaoDeEstudoControllerInterface {
         @PathVariable UUID idGrupo,
         HttpServletRequest request
     );
+
+    @Operation(summary = "Listar sessoes por disciplina de um usuario")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Lista retornada"),
+        @ApiResponse(responseCode = "401", description = "Nao autenticado"),
+        @ApiResponse(responseCode = "403", description = "Acesso negado")
+    })
+    @GetMapping("/bySubject/{disciplina}")
+    List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosByUserAndSubject(
+        @Parameter(description = "Disciplina", required = true)
+        @PathVariable String disciplina,
+        HttpServletRequest request
+    );
+
+    @Operation(summary = "Listar sessoes por topico de um usuario")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Lista retornada"),
+        @ApiResponse(responseCode = "401", description = "Nao autenticado"),
+        @ApiResponse(responseCode = "403", description = "Acesso negado")
+    })
+    @GetMapping("/byTopic/{topico}")
+    List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosByUserAndTopic(
+        @Parameter(description = "Topico", required = true)
+        @PathVariable String topico,
+        HttpServletRequest request
+    );
 }

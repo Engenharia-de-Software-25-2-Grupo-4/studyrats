@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.studyrats.dto.SessaoDeEstudo.*;
 import com.example.studyrats.exceptions.AccessDeniedException;
+import com.example.studyrats.model.SessaoDeEstudo;
 import com.example.studyrats.service.SessaoDeEstudo.SessaoDeEstudoService;
 import com.google.firebase.auth.FirebaseToken;
 
@@ -75,6 +76,20 @@ public class SessaoDeEstudoController implements SessaoDeEstudoControllerInterfa
         String idUsuario = getAuthenticatedUserId(request);
         return sessaoDeEstudoService.listarSessaoDeEstudosPorTopicoEmGrupo(topico, idGrupo, idUsuario); 
     }
+
+    @Override
+    public List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosByUserAndSubject(String disciplina, HttpServletRequest request) { 
+
+        String idUsuario = getAuthenticatedUserId(request);
+        return sessaoDeEstudoService.listarSessaoDeEstudosDeUsuarioPorDisciplina(idUsuario, disciplina);
+    }
+
+    @Override
+    public List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosByUserAndTopic(String topico, HttpServletRequest request) {
+
+        String idUsuario = getAuthenticatedUserId(request);
+        return sessaoDeEstudoService.listarSessaoDeEstudosDeUsuarioPorTopico(idUsuario, topico);
+    } 
 
     private String getAuthenticatedUserId(HttpServletRequest request) {
         Object firebaseUser = request.getAttribute("firebaseUser");

@@ -132,6 +132,24 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
     //     .title(session.getTitle())
     //     .build();
     // }
+
+    @Override
+    public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosDeUsuarioPorDisciplina(String idUsuario, String disciplina) { 
+        List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByCriador_IdAndDisciplina(idUsuario, disciplina)
+            .stream()
+            .map(session -> modelMapper.map(session, SessaoDeEstudoResponseDTO.class))
+            .toList();
+        return sessions;
+    }
+
+    @Override
+    public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosDeUsuarioPorTopico(String idUsuario, String topico) { 
+        List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByCriador_IdAndTopico(idUsuario, topico)
+            .stream()
+            .map(session -> modelMapper.map(session, SessaoDeEstudoResponseDTO.class))
+            .toList();
+        return sessions;
+    }
     
     private void validarCriador(SessaoDeEstudo sessaoDeEstudo, String idUsuario) {
         if (sessaoDeEstudo.getCriador() == null || !sessaoDeEstudo.getCriador().getId().equals(idUsuario)) {
