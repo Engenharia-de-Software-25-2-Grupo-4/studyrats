@@ -8,16 +8,15 @@ import com.example.studyrats.model.Student;
 import com.example.studyrats.repository.StudentRepository;
 import com.example.studyrats.service.student.StudentService;
 import jakarta.transaction.Transactional;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Random;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Fail.fail;
@@ -26,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 @AutoConfigureMockMvc
 @DisplayName("Test de controller de estudante")
+@Tag("prod")
 public class EstudanteControllerTest {
 
     @Autowired
@@ -51,7 +51,7 @@ public class EstudanteControllerTest {
     class TestesDeCriacao {
 
         @Test
-        @DisplayName("Falha esperada ao criar sem autenticação")
+        @DisplayName("Falha prevista ao criar sem autenticação")
         void falhaCriarSemAutenticacao() throws Exception {
             StudentPostPutRequestDTO body = new StudentPostPutRequestDTO("Test", "test@test", "123", "123");
             try {
@@ -99,4 +99,96 @@ public class EstudanteControllerTest {
             }
         }
     }
+
+    @Nested
+    @DisplayName("Testes de getAll")
+    class TestesDeGetAll {
+
+        @Test
+        @DisplayName("Falha prevista ao tentar obter todos sem autenticação")
+        void falhaGetAllSemAuth() throws Exception {
+            try {
+                requisitor.performGetUnauthorized();
+            } catch (AssertionError e) {
+                fail("O endpoint nõa lançou 401 unauthorized - "+e.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("Get all com lista vazia")
+        @WithMockUser(username="firebaseUserId")
+        void testeSemEstudantes() throws Exception {
+            List<StudentResponseDTO> listaDeEstudantes = List.of();
+            listaDeEstudantes = requisitor.performGetOK(listaDeEstudantes.getClass());
+            assertEquals(0, listaDeEstudantes.size(), "Get all sem estudantes não retornou uma lista vazia");
+        }
+
+        @Test
+        @DisplayName("Get all com 1 estudante")
+        @WithMockUser(username="firebaseUserId")
+        void testeUmEstudante() throws Exception {
+            StudentPostPutRequestDTO body = new StudentPostPutRequestDTO("Test", "test@test", "123", "123");
+            StudentResponseDTO estudanteCriado = serviceDoEstudante.criar(body);
+
+            List<StudentResponseDTO> listaDeEstudantes = List.of();
+            listaDeEstudantes = requisitor.performGetOK(listaDeEstudantes.getClass());
+            StudentResponseDTO estudanteDaLista = listaDeEstudantes.get(0);
+
+            assertEquals(1, listaDeEstudantes.size(), "Get all sem estudantes não retornou apenas um estudante");
+            assertEquals(estudanteCriado.getName(), estudanteDaLista.getName(), "O nome não veio igual ao esperado");
+            assertEquals(estudanteCriado.getEmail(), estudanteDaLista.getEmail(), "O email não veio igual ao esperado");
+        }
+
+        private String randomChars() {
+            Random random = new Random();
+            int size = 20;
+            String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            StringBuilder result = new StringBuilder(size);
+            for (int i = 0; i < size; i++) {
+                result.append(CHARS.charAt(random.nextInt(CHARS.length())));
+            }
+
+            return result.toString();
+        }
+
+        /*
+        * Por falta de tempo irei deixar esse teste mas irei pensar numa estratégia melhro no futuro
+        */
+        @Test
+        @DisplayName("Get all com X estudantes (existe uma probab baixissima desse teste falhar mesmo sem erros por causa da utilização de random)")
+        @WithMockUser(username="firebaseUserId")
+        void testeXEstudantes() throws Exception {
+            List<StudentPostPutRequestDTO> estudantes = new ArrayList<>();
+            for (int i = 0; i < 100; i++) {
+                String pass = randomChars();
+                StudentPostPutRequestDTO body = new StudentPostPutRequestDTO(randomChars(), randomChars(), pass, pass);
+                try {
+                    requisitor.performPostCreated(body);
+                    estudantes.add(body);
+                } catch (Exception ignored) {}
+            }
+
+            List<StudentResponseDTO> listaDeEstudantesDoGetall = List.of();
+            listaDeEstudantesDoGetall = requisitor.performGetOK(listaDeEstudantesDoGetall.getClass());
+
+            assertEquals(estudantes.size(), listaDeEstudantesDoGetall.size(), "Nem todos os estudantes foram adicionados");
+
+            for (StudentResponseDTO estudanteDoGetall : listaDeEstudantesDoGetall) {
+                Boolean encontrado = false;
+                for (StudentPostPutRequestDTO estudanteDTO : estudantes) {
+                    Boolean nomeIgual = estudanteDoGetall.getName().equals(estudanteDTO.getName());
+                    Boolean emailIgual = estudanteDoGetall.getEmail().equals(estudanteDTO.getEmail());
+                    if (nomeIgual && emailIgual) {
+                        encontrado = true;
+                        break;
+                    }
+                }
+                if (!encontrado) {
+                    fail("As listas não estão identicas");
+                }
+            }
+        }
+
+    }
+
 }

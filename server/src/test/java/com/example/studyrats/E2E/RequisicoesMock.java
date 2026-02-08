@@ -59,11 +59,15 @@ public class RequisicoesMock {
         return objectMapper.readValue(response, expectedTypeResponse);
     }
 
+    public void performGetUnauthorized() throws Exception {
+        driver.perform(get(getUrl).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
+    }
+
     public void performPostUnauthorized(Object body) throws Exception {
         String jsonBody = objectMapper.writeValueAsString(body);
-        String response = driver.perform(post(getUrl).contentType(MediaType.APPLICATION_JSON).content(jsonBody))
-                .andExpect(status().isUnauthorized())
-                .andReturn().getResponse().getContentAsString();
+        driver.perform(post(getUrl).contentType(MediaType.APPLICATION_JSON).content(jsonBody))
+                .andExpect(status().isUnauthorized());
     }
 
     public <T> T performPostCreated(Class<T> expectedTypeResponse, Object body) throws Exception {
@@ -75,11 +79,16 @@ public class RequisicoesMock {
         return objectMapper.readValue(response, expectedTypeResponse);
     }
 
+    public void performPostCreated(Object body) throws Exception {
+        String jsonBody = objectMapper.writeValueAsString(body);
+        driver.perform(post(getUrl).contentType(MediaType.APPLICATION_JSON).content(jsonBody))
+                .andExpect(status().isCreated());
+    }
+
     public void performPostConflict(Object body) throws Exception {
         String jsonBody = objectMapper.writeValueAsString(body);
-        String response = driver.perform(post(getUrl).contentType(MediaType.APPLICATION_JSON).content(jsonBody))
-                .andExpect(status().isConflict())
-                .andReturn().getResponse().getContentAsString();
+        driver.perform(post(getUrl).contentType(MediaType.APPLICATION_JSON).content(jsonBody))
+                .andExpect(status().isConflict());
     }
 
 }
