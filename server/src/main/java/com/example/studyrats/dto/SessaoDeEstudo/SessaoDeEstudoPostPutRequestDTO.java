@@ -45,7 +45,7 @@ public class SessaoDeEstudoPostPutRequestDTO {
     @Size(max = 100, message = "A disciplina deve ter no máximo 100 caracteres")
     private String disciplina;
 
-    @JsonProperty("topic") 
+    @JsonProperty("topico") 
     @NotBlank(message = "Tópico obrigatório")
     @Size(max = 100, message = "O tópico deve ter no máximo 100 caracteres")
     private String topico;
