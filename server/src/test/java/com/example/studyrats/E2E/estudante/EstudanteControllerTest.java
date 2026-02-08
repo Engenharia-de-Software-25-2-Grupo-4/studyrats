@@ -1,5 +1,6 @@
 package com.example.studyrats.E2E.estudante;
 
+import ch.qos.logback.classic.Logger;
 import com.example.studyrats.E2E.RequisicoesMock;
 import com.example.studyrats.controller.StudentController;
 import com.example.studyrats.dto.student.StudentPostPutRequestDTO;
@@ -16,6 +17,8 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.Random;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +48,29 @@ public class EstudanteControllerTest {
         String baseURL = "/students";
         requisitor = new RequisicoesMock(driver, baseURL);
         repoDoEstudante.deleteAll();
+    }
+
+    private String randomChars() {
+        Random random = new Random();
+        int size = 20;
+        String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder result = new StringBuilder(size);
+        for (int i = 0; i < size; i++) {
+            result.append(CHARS.charAt(random.nextInt(CHARS.length())));
+        }
+
+        return result.toString();
+    }
+
+    private void generateRandoms(int size) {
+
+        for (int i = 0; i < size; i++) {
+            String pass = randomChars();
+            StudentPostPutRequestDTO body = new StudentPostPutRequestDTO(randomChars(), randomChars(), pass, pass);
+            try {
+                requisitor.performPostCreated(body);
+            } catch (Exception ignored) {}
+        }
     }
 
     @Nested
@@ -140,18 +166,6 @@ public class EstudanteControllerTest {
             assertEquals(estudanteCriado.getEmail(), estudanteDaLista.getEmail(), "O email não veio igual ao esperado");
         }
 
-        private String randomChars() {
-            Random random = new Random();
-            int size = 20;
-            String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-            StringBuilder result = new StringBuilder(size);
-            for (int i = 0; i < size; i++) {
-                result.append(CHARS.charAt(random.nextInt(CHARS.length())));
-            }
-
-            return result.toString();
-        }
-
         /*
         * Por falta de tempo irei deixar esse teste mas irei pensar numa estratégia melhro no futuro
         */
@@ -177,6 +191,7 @@ public class EstudanteControllerTest {
             for (StudentResponseDTO estudanteDoGetall : listaDeEstudantesDoGetall) {
                 Boolean encontrado = false;
                 for (StudentPostPutRequestDTO estudanteDTO : estudantes) {
+                    System.out.println(estudanteDoGetall.getId());
                     Boolean nomeIgual = estudanteDoGetall.getName().equals(estudanteDTO.getName());
                     Boolean emailIgual = estudanteDoGetall.getEmail().equals(estudanteDTO.getEmail());
                     if (nomeIgual && emailIgual) {
@@ -188,6 +203,67 @@ public class EstudanteControllerTest {
                     fail("As listas não estão identicas");
                 }
             }
+        }
+    }
+
+    @Nested
+    @DisplayName("Tests de get by id")
+    class TestesgetById {
+
+        @Test
+        @DisplayName("Falha prevista ao tentar sem autenticação e banco vazio")
+        void falhaSemAuth() throws Exception {
+            try {
+                requisitor.performGetUnauthorized("idQualquer");
+            } catch (AssertionError e) {
+                fail("O endpoint não lançou 401 unauthorized - "+e.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("Falha prevista ao tentar sem autenticação e banco povoado")
+        void falhaSemAuthPovoado() throws Exception {
+            generateRandoms(100);
+            try {
+                requisitor.performGetUnauthorized("idQualquer");
+            } catch (AssertionError e) {
+                fail("O endpoint não lançou 401 unauthorized - "+e.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("Get sem estudante cadastrado")
+        @WithMockUser(username="firebaseUserId")
+        void testeSemEstudante() throws Exception {
+            try {
+                requisitor.performGetNotFound("idQualquer");
+            } catch (AssertionError e) {
+                fail("O endpoint não lançou 404 not found - "+e.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("Get de id inexistente com banco povoado")
+        @WithMockUser(username="firebaseUserId")
+        void testeSemIdExistente() throws Exception {
+            generateRandoms(100);
+            try {
+                requisitor.performGetNotFound("idQualquer");
+            } catch (AssertionError e) {
+                fail("O endpoint não lançou 404 not found - "+e.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("get de id que existe")
+        @WithMockUser(username="firebaseUserId")
+        void testeComIdExistente() throws Exception {
+            generateRandoms(100);
+            List<StudentResponseDTO> todos = serviceDoEstudante.listarTodos();
+            StudentResponseDTO estudanteAlvo = todos.get(0);
+
+            StudentResponseDTO estudanteDaReq = requisitor.performGetOK(StudentResponseDTO.class, estudanteAlvo.getId().toString());
+            assertEquals(estudanteAlvo, estudanteDaReq, "O estudante recuperado é diferente do esperado");
         }
 
     }

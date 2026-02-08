@@ -68,6 +68,24 @@ public class RequisicoesMock {
         return objectMapper.readValue(response, expectedTypeResponse);
     }
 
+    public <T> T performGetOK(Class<T> expectedTypeResponse, String complementoDoPath) throws Exception {
+        String response = driver.perform(get(getUrl+"/"+complementoDoPath).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        return objectMapper.readValue(response, expectedTypeResponse);
+    }
+
+    public void performGetNotFound(String complementoDoPath) throws Exception {
+        driver.perform(get(getUrl+"/"+complementoDoPath).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+    }
+
+    public void performGetUnauthorized(String complementoDoPath) throws Exception {
+        driver.perform(get(getUrl+"/"+complementoDoPath).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
+    }
+
     public void performGetUnauthorized() throws Exception {
         driver.perform(get(getUrl).contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized());
