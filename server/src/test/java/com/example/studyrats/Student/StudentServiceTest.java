@@ -26,7 +26,7 @@ import jakarta.transaction.Transactional;
 
 @SpringBootTest
 @Transactional
-class StudentControllerIntegrationTest {
+class StudentServiceTest {
 
     private MockMvc mockMvc;
 
