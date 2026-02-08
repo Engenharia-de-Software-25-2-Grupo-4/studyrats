@@ -5,6 +5,6 @@ import com.example.studyrats.dto.student.StudentResponseDTO;
 
 public interface StudentService {
 
-    StudentResponseDTO criar(StudentPostPutRequestDTO studentPostPutRequestDTO);
+    StudentResponseDTO criar(String firebaseUid, StudentPostPutRequestDTO studentPostPutRequestDTO);
     
 }

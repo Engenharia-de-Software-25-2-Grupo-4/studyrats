@@ -1,5 +1,10 @@
 package com.example.studyrats.exceptions;
 
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.http.ResponseEntity;
@@ -26,8 +31,51 @@ public class ManipuladorGlobalDeExcecoes {
         return baseReturn(httpStatus, ex);
     }
 
+    @ExceptionHandler(SessaoDeEstudoNotFoundException.class)
+    public ResponseEntity<?> manipularSessaoDeEstudoNotFound(SessaoDeEstudoNotFoundException ex) {
+        HttpStatus httpStatus = HttpStatus.NOT_FOUND;
+        return baseReturn(httpStatus, ex);
+    }
+
+    @ExceptionHandler(StudentNotFoundException.class)
+    public ResponseEntity<?> manipularStudentNotFound(StudentNotFoundException ex) {
+        HttpStatus httpStatus = HttpStatus.NOT_FOUND;
+        return baseReturn(httpStatus, ex);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<?> manipularAccessDenied(AccessDeniedException ex) {
+        HttpStatus httpStatus = HttpStatus.FORBIDDEN;
+        return baseReturn(httpStatus, ex);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<?> manipularIllegalArgument(IllegalArgumentException ex) {
+        HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
+        return baseReturn(httpStatus, ex);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<?> manipularValidacao(MethodArgumentNotValidException ex) {
+        HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
+        Map<String, String> campos = new HashMap<>();
+        ex.getBindingResult().getFieldErrors()
+            .forEach(error -> campos.put(error.getField(), error.getDefaultMessage()));
+
+        RespostaDeErro body = new RespostaDeErro(httpStatus.value(), httpStatus.getReasonPhrase(), "Campos invalidos", campos);
+        return ResponseEntity
+                .status(httpStatus)
+                .body(body);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<?> manipularExceptionGenerica(Exception ex) {
+        HttpStatus httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
+        return baseReturn(httpStatus, ex);
+    }
+
     private ResponseEntity<?> baseReturn(HttpStatus httpStatus, Exception ex) {
-        RespostaDeErro body = new RespostaDeErro(httpStatus.value(), httpStatus.getReasonPhrase(), ex.getMessage());
+        RespostaDeErro body = new RespostaDeErro(httpStatus.value(), httpStatus.getReasonPhrase(), ex.getMessage(), null);
         return ResponseEntity
                 .status(httpStatus)
                 .body(body);
@@ -46,11 +94,34 @@ class RespostaDeErro {
     private int status;
     private String erro;
     private String mensagem;
+    private Instant timestamp;
+    private Map<String, String> campos;
 
-    public RespostaDeErro(int httpStatus, String nomeDoErro, String mensagemDeErro) {
-        status = httpStatus;
-        nomeDoErro = erro;
-        mensagem = mensagemDeErro;
+    public RespostaDeErro(int httpStatus, String nomeDoErro, String mensagemDeErro, Map<String, String> camposInvalidos) {
+        this.status = httpStatus;
+        this.erro = nomeDoErro;
+        this.mensagem = mensagemDeErro;
+        this.campos = camposInvalidos;
+        this.timestamp = Instant.now();
     }
 
+    public int getStatus() {
+        return status;
+    }
+
+    public String getErro() {
+        return erro;
+    }
+
+    public String getMensagem() {
+        return mensagem;
+    }
+
+    public Instant getTimestamp() {
+        return timestamp;
+    }
+
+    public Map<String, String> getCampos() {
+        return campos;
+    }
 }

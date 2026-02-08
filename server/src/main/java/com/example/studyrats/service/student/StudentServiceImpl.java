@@ -19,8 +19,9 @@ public class StudentServiceImpl implements StudentService {
     ModelMapper modelMapper;
 
     @Override
-    public StudentResponseDTO criar(StudentPostPutRequestDTO studentPostPutRequestDTO) {
+    public StudentResponseDTO criar(String firebaseUid, StudentPostPutRequestDTO studentPostPutRequestDTO) {
         Student student = modelMapper.map(studentPostPutRequestDTO, Student.class);
+        student.setId(firebaseUid);
         studentRepository.save(student);
         return modelMapper.map(student, StudentResponseDTO.class);
     }
