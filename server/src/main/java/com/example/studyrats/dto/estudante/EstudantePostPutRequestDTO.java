@@ -1,4 +1,4 @@
-package com.example.studyrats.dto.student;
+package com.example.studyrats.dto.estudante;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class StudentPostPutRequestDTO {
+public class EstudantePostPutRequestDTO {
 
     @JsonProperty("name")
     @NotBlank(message = "Nome obrigatório")
@@ -21,12 +21,5 @@ public class StudentPostPutRequestDTO {
     @JsonProperty("email")
     @NotBlank(message = "Email obrigatório")
     private String email;
-
-    @JsonProperty("password")
-    @NotBlank(message = "Senha obrigatória")
-    private String password; // Adicionado para RF-01 e RNF/SEG-04
-
-    @NotBlank(message = "Confirmação de senha obrigatória")
-    private String confirmPassword;
 
 }

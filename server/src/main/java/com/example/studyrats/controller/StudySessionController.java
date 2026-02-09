@@ -18,7 +18,7 @@ import org.springframework.http.HttpStatus;
 
 import com.example.studyrats.dto.studySession.StudySessionPostPutRequestDTO;
 import com.example.studyrats.dto.studySession.StudySessionResponseDTO;
-import com.example.studyrats.service.student.StudentService;
+import com.example.studyrats.service.estudante.EstudanteService;
 import com.example.studyrats.service.studySession.StudySessionService;
 
 import jakarta.validation.Valid;
@@ -37,7 +37,7 @@ public class StudySessionController {
     private StudySessionService studySessionService; 
 
     @Autowired
-    StudentService studentService; 
+    EstudanteService studentService; 
 
     @PostMapping("/group/{groupId}/user/{userId}")
     @ResponseStatus(HttpStatus.CREATED)

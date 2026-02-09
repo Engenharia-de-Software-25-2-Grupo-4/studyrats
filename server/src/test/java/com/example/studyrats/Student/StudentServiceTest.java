@@ -17,9 +17,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import com.example.studyrats.dto.student.StudentPostPutRequestDTO;
-import com.example.studyrats.model.Student;
-import com.example.studyrats.repository.StudentRepository;
+import com.example.studyrats.dto.estudante.EstudantePostPutRequestDTO;
+import com.example.studyrats.model.Estudante;
+import com.example.studyrats.repository.EstudanteRepository;
 import tools.jackson.databind.ObjectMapper;
 
 import jakarta.transaction.Transactional;
@@ -34,7 +34,7 @@ class StudentServiceTest {
     private WebApplicationContext webApplicationContext;
 
     @Autowired
-    private StudentRepository studentRepository;
+    private EstudanteRepository studentRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -48,7 +48,7 @@ class StudentServiceTest {
     @Test
     @DisplayName("POST /students cria um novo estudante com sucesso")
     void createStudentSuccess() throws Exception {
-        StudentPostPutRequestDTO body = validStudentPayload("João Silva", "joao@email.com", "senha123", "senha123");
+        EstudantePostPutRequestDTO body = validStudentPayload("João Silva", "joao@email.com", "senha123", "senha123");
 
         mockMvc.perform(post("/students")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -62,7 +62,7 @@ class StudentServiceTest {
     @Test
     @DisplayName("POST /students retorna 400 se as senhas não coincidirem")
     void createStudentPasswordMismatch() throws Exception {
-        StudentPostPutRequestDTO body = validStudentPayload("Erro", "erro@email.com", "senha123", "outrasenha");
+        EstudantePostPutRequestDTO body = validStudentPayload("Erro", "erro@email.com", "senha123", "outrasenha");
 
         mockMvc.perform(post("/students")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -73,7 +73,7 @@ class StudentServiceTest {
     @Test
     @DisplayName("GET /students/{id} retorna os dados do estudante)")
     void getStudentByIdSuccess() throws Exception {
-        Student student = createStudent("Maria Souza", "maria@email.com");
+        Estudante student = createStudent("Maria Souza", "maria@email.com");
 
         mockMvc.perform(get("/students/{id}", student.getId()))
             .andExpect(status().isOk())
@@ -84,8 +84,8 @@ class StudentServiceTest {
     @Test
     @DisplayName("PUT /students/{id} atualiza o perfil do estudante")
     void updateStudentSuccess() throws Exception {
-        Student student = createStudent("Jorge", "jorge@email.com");
-        StudentPostPutRequestDTO body = validStudentPayload("Jorge Editado", "jorge@email.com", "1um2dois3tres", "1um2dois3tres");
+        Estudante student = createStudent("Jorge", "jorge@email.com");
+        EstudantePostPutRequestDTO body = validStudentPayload("Jorge Editado", "jorge@email.com", "1um2dois3tres", "1um2dois3tres");
 
         mockMvc.perform(put("/students/{id}", student.getId())
                 .contentType(MediaType.APPLICATION_JSON)
@@ -97,7 +97,7 @@ class StudentServiceTest {
     @Test
     @DisplayName("DELETE /students/{id} remove a conta do usuário")
     void deleteStudentSuccess() throws Exception {
-        Student student = createStudent("Para Deletar", "delete@email.com");
+        Estudante student = createStudent("Para Deletar", "delete@email.com");
 
         mockMvc.perform(delete("/students/{id}", student.getId()))
             .andExpect(status().isNoContent());
@@ -106,16 +106,16 @@ class StudentServiceTest {
         org.junit.jupiter.api.Assertions.assertFalse(exists);
     }
 
-    private Student createStudent(String name, String email) {
-        Student student = new Student();
+    private Estudante createStudent(String name, String email) {
+        Estudante student = new Estudante();
         student.setName(name);
         student.setEmail(email);
         student.setPassword("teste123");
         return studentRepository.save(student);
     }
 
-    private StudentPostPutRequestDTO validStudentPayload(String name, String email, String password, String confirm) {
-        return StudentPostPutRequestDTO.builder()
+    private EstudantePostPutRequestDTO validStudentPayload(String name, String email, String password, String confirm) {
+        return EstudantePostPutRequestDTO.builder()
             .name(name)
             .email(email)
             .password(password)

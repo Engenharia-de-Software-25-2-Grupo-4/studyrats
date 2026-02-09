@@ -36,7 +36,7 @@ public class StudySession {
     @ManyToOne
     @JoinColumn(name = "creator_id", nullable = false)
     @JsonProperty("creator")
-    private Student creator;
+    private Estudante creator;
     
     // adicionei aqui, lembrar de ajustar os outros arquivos
     @JsonProperty("group_id")

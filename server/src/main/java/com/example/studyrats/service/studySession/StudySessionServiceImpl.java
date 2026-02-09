@@ -5,9 +5,9 @@ import org.springframework.stereotype.Service;
 import com.example.studyrats.dto.studySession.StudySessionPostPutRequestDTO;
 import com.example.studyrats.dto.studySession.StudySessionResponseDTO;
 import com.example.studyrats.exceptions.StudySessionNotFoundException;
-import com.example.studyrats.model.Student;
+import com.example.studyrats.model.Estudante;
 import com.example.studyrats.model.StudySession;
-import com.example.studyrats.repository.StudentRepository;
+import com.example.studyrats.repository.EstudanteRepository;
 import com.example.studyrats.repository.StudySessionRepository; 
 import com.example.studyrats.exceptions.AccessDeniedException;
 
@@ -29,7 +29,7 @@ public class StudySessionServiceImpl implements StudySessionService {
     @Autowired
     public StudySessionRepository studySessionRepository; 
     @Autowired
-    public StudentRepository studentRepository; 
+    public EstudanteRepository studentRepository; 
     // @Autowired 
     // public StudyGroupRepository studyGroupRepository;
     @Autowired
@@ -37,7 +37,7 @@ public class StudySessionServiceImpl implements StudySessionService {
 
     @Override
     public StudySessionResponseDTO criarSessaoDeEstudos(UUID groupId, UUID userId, StudySessionPostPutRequestDTO studySessionPostPutRequestDTO) {
-        Student student = studentRepository.findById(userId).orElseThrow(() -> new RuntimeException("Student not found")); 
+        Estudante student = studentRepository.findById(userId).orElseThrow(() -> new RuntimeException("Student not found")); 
         //quando tiver crud de grupo, validar se o grupo existe e se o usuário faz parte dele 
 
         StudySession studySession = modelMapper.map(studySessionPostPutRequestDTO, StudySession.class);

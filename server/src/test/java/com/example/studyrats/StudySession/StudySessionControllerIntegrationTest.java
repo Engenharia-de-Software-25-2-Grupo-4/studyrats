@@ -22,9 +22,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import com.example.studyrats.dto.studySession.StudySessionPostPutRequestDTO;
-import com.example.studyrats.model.Student;
+import com.example.studyrats.model.Estudante;
 import com.example.studyrats.model.StudySession;
-import com.example.studyrats.repository.StudentRepository;
+import com.example.studyrats.repository.EstudanteRepository;
 import com.example.studyrats.repository.StudySessionRepository;
 import tools.jackson.databind.ObjectMapper;
 
@@ -41,7 +41,7 @@ class StudySessionControllerIntegrationTest {
     private WebApplicationContext webApplicationContext;
 
     @Autowired
-    private StudentRepository studentRepository;
+    private EstudanteRepository studentRepository;
 
     @Autowired
     private StudySessionRepository studySessionRepository;
@@ -49,8 +49,8 @@ class StudySessionControllerIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    private Student creator;
-    private Student otherStudent;
+    private Estudante creator;
+    private Estudante otherStudent;
     private UUID groupId;
 
     @BeforeEach
@@ -60,12 +60,12 @@ class StudySessionControllerIntegrationTest {
         studySessionRepository.deleteAll();
         studentRepository.deleteAll();
 
-        creator = new Student();
+        creator = new Estudante();
         creator.setName("Maria");
         creator.setEmail("maria@ccc.com");
         creator = studentRepository.save(creator);
 
-        otherStudent = new Student();
+        otherStudent = new Estudante();
         otherStudent.setName("Luiza");
         otherStudent.setEmail("luiza@ccc.com");
         otherStudent = studentRepository.save(otherStudent);
@@ -159,7 +159,7 @@ class StudySessionControllerIntegrationTest {
             .andExpect(jsonPath("$", hasSize(2)));
     }
 
-    private StudySession createSession(String subject, String topic, Student student, UUID targetGroupId) {
+    private StudySession createSession(String subject, String topic, Estudante student, UUID targetGroupId) {
         StudySession session = StudySession.builder()
             .creator(student)
             .groupId(targetGroupId)
