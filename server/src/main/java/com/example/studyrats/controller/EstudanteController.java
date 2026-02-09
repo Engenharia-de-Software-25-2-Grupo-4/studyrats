@@ -23,7 +23,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-@RestController
 @Tag(name = "Estudante", description = "Operações de gerenciamento de perfil e conta do estudante")
 @RequestMapping("/estudantes")
 public interface EstudanteController {

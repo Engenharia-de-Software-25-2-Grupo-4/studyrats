@@ -66,7 +66,7 @@ public class EstudanteControllerTest {
 
         for (int i = 0; i < size; i++) {
             String pass = randomChars();
-            EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO(randomChars(), randomChars(), pass, pass);
+            EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO(randomChars(), randomChars());
             try {
                 requisitor.performPostCreated(body);
             } catch (Exception ignored) {}
@@ -80,7 +80,7 @@ public class EstudanteControllerTest {
         @Test
         @DisplayName("Falha prevista ao criar sem autenticação")
         void falhaCriarSemAutenticacao() throws Exception {
-            EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO("Test", "test@test", "123", "123");
+            EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO("Test", "test@test");
             try {
                 requisitor.performPostUnauthorized(body);
             } catch (AssertionError e) {
@@ -96,7 +96,7 @@ public class EstudanteControllerTest {
         @DisplayName("Sucesso ao criar com autenticação")
         @WithMockUser(username="firebaseUserId")
         void sucessoCriarComAutenticacao() throws Exception {
-            EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO("Test", "test@test", "123", "123");
+            EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO("Test", "test@test");
             EstudanteResponseDTO novoEstudante = null;
             Estudante estudante = null;
             try {
@@ -107,7 +107,7 @@ public class EstudanteControllerTest {
             } catch (AssertionError e) {
                 fail("Falha na rota (ou test) de criação de novo usuário");
             }
-            assertEquals(estudante.getName(), novoEstudante.getName());
+            assertEquals(estudante.getNome(), novoEstudante.getNome());
             assertEquals(estudante.getEmail(), novoEstudante.getEmail());
             assertEquals(0, estudante.getStudySessions().size(), "A lista de sessões de estudo não está vazia");
         }
@@ -116,7 +116,7 @@ public class EstudanteControllerTest {
         @DisplayName("Falha prevista ao tentar criar estudante já cadastrado")
         @WithMockUser(username="firebaseUserId")
         void falhaCriarComConflito() throws Exception {
-            EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO("Test", "test@test", "123", "123");
+            EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO("Test", "test@test");
             EstudanteResponseDTO estudanteCriado = serviceDoEstudante.criar(body);
 
             try {
@@ -154,7 +154,7 @@ public class EstudanteControllerTest {
         @DisplayName("Get all com 1 estudante")
         @WithMockUser(username="firebaseUserId")
         void testeUmEstudante() throws Exception {
-            EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO("Test", "test@test", "123", "123");
+            EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO("Test", "test@test");
             EstudanteResponseDTO estudanteCriado = serviceDoEstudante.criar(body);
 
             List<EstudanteResponseDTO> listaDeEstudantes = List.of();
@@ -162,7 +162,7 @@ public class EstudanteControllerTest {
             EstudanteResponseDTO estudanteDaLista = listaDeEstudantes.get(0);
 
             assertEquals(1, listaDeEstudantes.size(), "Get all sem estudantes não retornou apenas um estudante");
-            assertEquals(estudanteCriado.getName(), estudanteDaLista.getName(), "O nome não veio igual ao esperado");
+            assertEquals(estudanteCriado.getNome(), estudanteDaLista.getNome(), "O nome não veio igual ao esperado");
             assertEquals(estudanteCriado.getEmail(), estudanteDaLista.getEmail(), "O email não veio igual ao esperado");
         }
 
@@ -176,7 +176,7 @@ public class EstudanteControllerTest {
             List<EstudantePostPutRequestDTO> estudantes = new ArrayList<>();
             for (int i = 0; i < 100; i++) {
                 String pass = randomChars();
-                EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO(randomChars(), randomChars(), pass, pass);
+                EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO(randomChars(), randomChars());
                 try {
                     requisitor.performPostCreated(body);
                     estudantes.add(body);
@@ -191,8 +191,8 @@ public class EstudanteControllerTest {
             for (EstudanteResponseDTO estudanteDoGetall : listaDeEstudantesDoGetall) {
                 Boolean encontrado = false;
                 for (EstudantePostPutRequestDTO estudanteDTO : estudantes) {
-                    System.out.println(estudanteDoGetall.getId());
-                    Boolean nomeIgual = estudanteDoGetall.getName().equals(estudanteDTO.getName());
+                    System.out.println(estudanteDoGetall.getFirebaseUid());
+                    Boolean nomeIgual = estudanteDoGetall.getNome().equals(estudanteDTO.getNome());
                     Boolean emailIgual = estudanteDoGetall.getEmail().equals(estudanteDTO.getEmail());
                     if (nomeIgual && emailIgual) {
                         encontrado = true;
@@ -262,7 +262,7 @@ public class EstudanteControllerTest {
             List<EstudanteResponseDTO> todos = serviceDoEstudante.listarTodos();
             EstudanteResponseDTO estudanteAlvo = todos.get(0);
 
-            EstudanteResponseDTO estudanteDaReq = requisitor.performGetOK(EstudanteResponseDTO.class, estudanteAlvo.getId().toString());
+            EstudanteResponseDTO estudanteDaReq = requisitor.performGetOK(EstudanteResponseDTO.class, estudanteAlvo.getFirebaseUid().toString());
             assertEquals(estudanteAlvo, estudanteDaReq, "O estudante recuperado é diferente do esperado");
         }
 
