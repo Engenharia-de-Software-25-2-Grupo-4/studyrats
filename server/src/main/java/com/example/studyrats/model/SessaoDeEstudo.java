@@ -34,9 +34,9 @@ public class SessaoDeEstudo {
     // private StudyGroup studyGroup; ainda nao tem grupo de estudo feito 
     
     @ManyToOne
-    @JoinColumn(name = "id_criador", nullable = false)
+    @JoinColumn(name = "firebaseUid", nullable = false)
     @JsonProperty("criador")
-    private Student criador;
+    private Estudante criador;
     
     // adicionei aqui, lembrar de ajustar os outros arquivos
     @JsonProperty("id_grupo")

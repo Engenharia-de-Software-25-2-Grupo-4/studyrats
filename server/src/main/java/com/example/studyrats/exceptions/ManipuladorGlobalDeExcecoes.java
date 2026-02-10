@@ -5,14 +5,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @RestControllerAdvice
 public class ManipuladorGlobalDeExcecoes {
@@ -23,6 +19,7 @@ public class ManipuladorGlobalDeExcecoes {
         HttpStatus httpStatus = HttpStatus.NOT_FOUND;
         return baseReturn(httpStatus, ex);
     }
+    */
 
     @ExceptionHandler(FirebaseJsonNaoEncontrado.class)
     public ResponseEntity<?> manipularFirebaseJsonNaoEncontrado(FirebaseJsonNaoEncontrado ex) {
@@ -35,21 +32,20 @@ public class ManipuladorGlobalDeExcecoes {
         HttpStatus httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
         return baseReturn(httpStatus, ex);
     }
-*/
-    @ExceptionHandler(EstudanteNaoEncontrado.class)
-    public ResponseEntity<?> manipularEstudanteNaoEncontrado(EstudanteNaoEncontrado ex) {
+    @ExceptionHandler({
+            EstudanteNaoEncontrado.class,
+            SessaoDeEstudoNaoEncontrado.class
+    })
+    public ResponseEntity<?> manipularEstudanteNaoEncontrado(RuntimeException ex) {
         HttpStatus httpStatus = HttpStatus.NOT_FOUND;
         return baseReturn(httpStatus, ex);
     }
 
-    @ExceptionHandler(SessaoDeEstudoNotFoundException.class)
-    public ResponseEntity<?> manipularSessaoDeEstudoNotFound(SessaoDeEstudoNotFoundException ex) {
-        HttpStatus httpStatus = HttpStatus.NOT_FOUND;
-        return baseReturn(httpStatus, ex);
-    }
-
-    @ExceptionHandler(EmailJaCadastrado.class)
-    public ResponseEntity<?> manipularEmailJaCadastrado(EmailJaCadastrado ex) {
+    @ExceptionHandler({
+            EmailJaCadastrado.class,
+            UIDJaCadastrado.class
+    })
+    public ResponseEntity<?> manipularEmailJaCadastrado(RuntimeException ex) {
         HttpStatus httpStatus = HttpStatus.CONFLICT;
         return baseReturn(httpStatus, ex);
     }

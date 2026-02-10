@@ -28,7 +28,7 @@ public class EstudanteResponseDTO {
     private String email;
 
     public EstudanteResponseDTO(Estudante estudante) {
-        this.firebaseUid = estudante.getId();
+        this.firebaseUid = estudante.getFirebaseUid();
         this.nome = estudante.getNome();
         this.email = estudante.getEmail();
     }

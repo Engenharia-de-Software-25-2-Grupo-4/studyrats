@@ -20,10 +20,12 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
         try {
             String authHeader = request.getHeader("Authorization");
 
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            } else {
                 String token = authHeader.substring(7);
                 FirebaseToken decodedToken = firebaseService.verifyToken(token);
-
                 request.setAttribute("firebaseUser", decodedToken);
             }
 
@@ -31,6 +33,7 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
 
         } catch (Exception e) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
         }
     }
 }

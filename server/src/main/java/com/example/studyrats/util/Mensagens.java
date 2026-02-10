@@ -12,8 +12,9 @@ public class Mensagens {
     public static final String FIREBASE_IO = "Falha do IO do firebase";
 
     // Mensagens de exceções de Estudante
-    public static final String ESTUDANTE_NAO_ENCONTRADO = "O estudante solicitado não foi encontrado no sistema.";
-    public static final String EMAIL_JA_CADASTRADO = "Este e-mail já está vinculado a uma conta ativa.";
     public static final String ESTUDANTE_NAO_AUTENTICADO = "Não foi possível identificar um usuário autenticado para esta operação.";
+    public static final String ESTUDANTE_NAO_ENCONTRADO = "O estudante solicitado não foi encontrado no sistema.";
+    public static final String UID_JA_CADASTRADO = "O id de usuário já está vinculado a uma conta ativa";
+    public static final String EMAIL_JA_CADASTRADO = "Este e-mail já está vinculado a uma conta ativa.";
 
 }

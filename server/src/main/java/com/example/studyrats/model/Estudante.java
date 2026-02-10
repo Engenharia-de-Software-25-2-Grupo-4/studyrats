@@ -9,8 +9,12 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
+@Setter
+@Getter
 public class Estudante {
     
     @Id
@@ -23,37 +27,7 @@ public class Estudante {
     private String email;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "creator")
-    private List<StudySession> studySessions = new ArrayList<>();
-
-    public String getId() {
-        return firebaseUid;
-    }
-
-    public void setId(String novaFirebaseUid) {
-        this.firebaseUid = novaFirebaseUid;
-    }
-    public String getNome() {
-        return nome;
-    }
-    
-    public void setName(String nome) {
-        this.nome = nome;
-    }
-    
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public List<StudySession> getStudySessions() {
-        return studySessions;
-    }
-    public void setStudySessions(List<StudySession> studySessions) {
-        this.studySessions = studySessions;
-    }
+    @OneToMany(mappedBy = "criador")
+    private List<SessaoDeEstudo> studySessions = new ArrayList<>();
 
 }

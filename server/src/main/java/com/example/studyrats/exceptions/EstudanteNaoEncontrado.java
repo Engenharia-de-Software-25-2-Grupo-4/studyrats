@@ -7,7 +7,7 @@ import com.example.studyrats.util.Mensagens;
 
 @ResponseStatus(HttpStatus.NOT_FOUND)
 public class EstudanteNaoEncontrado extends RuntimeException {
-    public EstudanteNaoEncontrado(String id) {
+    public EstudanteNaoEncontrado() {
         super(Mensagens.ESTUDANTE_NAO_ENCONTRADO);
     }
 }

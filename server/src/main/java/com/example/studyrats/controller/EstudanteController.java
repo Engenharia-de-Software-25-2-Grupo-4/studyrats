@@ -31,7 +31,7 @@ public interface EstudanteController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "201", description = "Estudante criado com sucesso"),
         @ApiResponse(responseCode = "400", description = "Dados da requisição inválidos"),
-        @ApiResponse(responseCode = "409", description = "Este e-mail já está vinculado a uma conta ativa.")
+        @ApiResponse(responseCode = "409", description = "Este e-mail/Firebase_UID já está vinculado a uma conta ativa.")
     })
     @PostMapping
     ResponseEntity<EstudanteResponseDTO> criar(@RequestBody EstudantePostPutRequestDTO dto, HttpServletRequest request);
@@ -46,7 +46,7 @@ public interface EstudanteController {
         @ApiResponse(responseCode = "200", description = "Estudante encontrado"),
         @ApiResponse(responseCode = "404", description = "O estudante solicitado não foi encontrado no sistema.")
     })
-    @GetMapping("/{id}")
+    @GetMapping("/{firebaseUid}")
     ResponseEntity<EstudanteResponseDTO> buscarPorId(@PathVariable String firebaseUid);
 
     @Operation(summary = "Atualizar dados do estudante", description = "Atualiza as informações de perfil do estudante.")
@@ -54,15 +54,15 @@ public interface EstudanteController {
         @ApiResponse(responseCode = "200", description = "Estudante atualizado com sucesso"),
         @ApiResponse(responseCode = "404", description = "O estudante solicitado não foi encontrado no sistema.")
     })
-    @PutMapping("/{id}")
-    ResponseEntity<EstudanteResponseDTO> atualizar(@PathVariable String firebaseUid, @RequestBody EstudantePostPutRequestDTO dto);
+    @PutMapping
+    ResponseEntity<EstudanteResponseDTO> atualizar(@RequestBody EstudantePostPutRequestDTO dto, HttpServletRequest request);
 
     @Operation(summary = "Deletar conta do estudante", description = "Remove permanentemente os dados do estudante (Respeitando a LGPD).")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "204", description = "Estudante removido com sucesso"),
         @ApiResponse(responseCode = "404", description = "O estudante solicitado não foi encontrado no sistema.")
     })
-    @DeleteMapping("/{id}")
-    ResponseEntity<Void> deletar(@PathVariable String firebaseUid);
+    @DeleteMapping
+    ResponseEntity<Void> deletar(HttpServletRequest request);
 
 }

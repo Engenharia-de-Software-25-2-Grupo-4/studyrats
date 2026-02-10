@@ -7,7 +7,7 @@ import com.example.studyrats.dto.estudante.EstudanteResponseDTO;
 
 public interface EstudanteService {
 
-    EstudanteResponseDTO criar(EstudantePostPutRequestDTO studentPostPutRequestDTO);
+    EstudanteResponseDTO criar(EstudantePostPutRequestDTO studentPostPutRequestDTO, String uid);
 
     List<EstudanteResponseDTO> listarTodos();
     
@@ -16,7 +16,5 @@ public interface EstudanteService {
     EstudanteResponseDTO atualizar(String firebaseUid, EstudantePostPutRequestDTO dto);
     
     void excluir(String firebaseUid);
-    
-    String getAuthenticatedStudentId();
-    
+
 }

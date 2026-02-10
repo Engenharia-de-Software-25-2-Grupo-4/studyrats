@@ -117,8 +117,9 @@ public class EstudanteControllerTest {
         @WithMockUser(username="firebaseUserId")
         void falhaCriarComConflito() throws Exception {
             EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO("Test", "test@test");
-            EstudanteResponseDTO estudanteCriado = serviceDoEstudante.criar(body);
+            EstudanteResponseDTO estudanteCriado = requisitor.performPostCreated(EstudanteResponseDTO.class, body);
 
+            System.out.println(estudanteCriado.getFirebaseUid());
             try {
                 requisitor.performPostConflict(body);
             } catch (AssertionError e) {
@@ -155,7 +156,7 @@ public class EstudanteControllerTest {
         @WithMockUser(username="firebaseUserId")
         void testeUmEstudante() throws Exception {
             EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO("Test", "test@test");
-            EstudanteResponseDTO estudanteCriado = serviceDoEstudante.criar(body);
+            EstudanteResponseDTO estudanteCriado = requisitor.performPostCreated(EstudanteResponseDTO.class, body);
 
             List<EstudanteResponseDTO> listaDeEstudantes = List.of();
             listaDeEstudantes = requisitor.performGetOK(new TypeReference<List<EstudanteResponseDTO>>() {});

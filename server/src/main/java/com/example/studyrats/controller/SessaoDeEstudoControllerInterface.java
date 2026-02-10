@@ -36,9 +36,9 @@ public interface SessaoDeEstudoControllerInterface {
         @ApiResponse(responseCode = "201", description = "Sessao criada"),
         @ApiResponse(responseCode = "400", description = "Dados invalidos"),
         @ApiResponse(responseCode = "401", description = "Nao autenticado"),
-        @ApiResponse(responseCode = "403", description = "Acesso negado")
+        @ApiResponse(responseCode = "404", description = "Grupo não encontrado")
     })
-    @PostMapping("/grupo/{idGrupo}")
+    @PostMapping("/{idGrupo}")
     @ResponseStatus(HttpStatus.CREATED)
     SessaoDeEstudoResponseDTO createSessaoDeEstudo(
         @Parameter(description = "ID do grupo", required = true)
@@ -51,8 +51,7 @@ public interface SessaoDeEstudoControllerInterface {
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Sessao encontrada"),
         @ApiResponse(responseCode = "401", description = "Nao autenticado"),
-        @ApiResponse(responseCode = "403", description = "Acesso negado"),
-        @ApiResponse(responseCode = "404", description = "Sessao nao encontrada")
+        @ApiResponse(responseCode = "404", description = "Sessao nao encontrada ou ele não é o criador daquela sessao")
     })
     @GetMapping("/{idSessao}")
     SessaoDeEstudoResponseDTO getSessaoDeEstudo(
@@ -66,8 +65,7 @@ public interface SessaoDeEstudoControllerInterface {
         @ApiResponse(responseCode = "200", description = "Sessao atualizada"),
         @ApiResponse(responseCode = "400", description = "Dados invalidos"),
         @ApiResponse(responseCode = "401", description = "Nao autenticado"),
-        @ApiResponse(responseCode = "403", description = "Acesso negado"),
-        @ApiResponse(responseCode = "404", description = "Sessao nao encontrada")
+        @ApiResponse(responseCode = "404", description = "Sessao nao encontrada ou ele não é o criador daquela sessao")
     })
     @PutMapping("/{idSessao}")
     SessaoDeEstudoResponseDTO updateSessaoDeEstudo(
@@ -81,8 +79,7 @@ public interface SessaoDeEstudoControllerInterface {
     @ApiResponses({
         @ApiResponse(responseCode = "204", description = "Sessao removida"),
         @ApiResponse(responseCode = "401", description = "Nao autenticado"),
-        @ApiResponse(responseCode = "403", description = "Acesso negado"),
-        @ApiResponse(responseCode = "404", description = "Sessao nao encontrada")
+        @ApiResponse(responseCode = "404", description = "Sessao nao encontrada ou ele não é o criador daquela sessao")
     })
     @DeleteMapping("/{idSessao}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -95,63 +92,58 @@ public interface SessaoDeEstudoControllerInterface {
     @Operation(summary = "Listar sessoes do usuario autenticado")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Lista retornada"),
-        @ApiResponse(responseCode = "401", description = "Nao autenticado"),
-        @ApiResponse(responseCode = "403", description = "Acesso negado")
+        @ApiResponse(responseCode = "401", description = "Nao autenticado")
     })
     @GetMapping
     List<SessaoDeEstudoResponseDTO> listSessaoDeEstudos(HttpServletRequest request);
 
-    @Operation(summary = "Listar sessoes por grupo")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Lista retornada"),
-        @ApiResponse(responseCode = "401", description = "Nao autenticado"),
-        @ApiResponse(responseCode = "403", description = "Acesso negado"),
-        @ApiResponse(responseCode = "404", description = "Grupo nao encontrado")
-    })
-    @GetMapping("/byGrupo/{idGrupo}")
-    List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosByGrupo(
-        @Parameter(description = "ID do grupo", required = true)
-        @PathVariable UUID idGrupo,
-        HttpServletRequest request
-    );
+//    @Operation(summary = "Listar sessoes por grupo")
+//    @ApiResponses({
+//        @ApiResponse(responseCode = "200", description = "Lista retornada"),
+//        @ApiResponse(responseCode = "401", description = "Nao autenticado"),
+//        @ApiResponse(responseCode = "404", description = "Grupo nao encontrado")
+//    })
+//    @GetMapping("/byGrupo/{idGrupo}")
+//    List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosByGrupo(
+//        @Parameter(description = "ID do grupo", required = true)
+//        @PathVariable UUID idGrupo,
+//        HttpServletRequest request
+//    );
 
-    @Operation(summary = "Listar sessoes por disciplina em um grupo")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Lista retornada"),
-        @ApiResponse(responseCode = "401", description = "Nao autenticado"),
-        @ApiResponse(responseCode = "403", description = "Acesso negado"),
-        @ApiResponse(responseCode = "404", description = "Grupo nao encontrado")
-    })
-    @GetMapping("/bySubject/{disciplina}/grupo/{idGrupo}")
-    List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosBySubject(
-        @Parameter(description = "Disciplina", required = true)
-        @PathVariable String disciplina,
-        @Parameter(description = "ID do grupo", required = true)
-        @PathVariable UUID idGrupo,
-        HttpServletRequest request
-    );
+//    @Operation(summary = "Listar sessoes por disciplina em um grupo")
+//    @ApiResponses({
+//        @ApiResponse(responseCode = "200", description = "Lista retornada"),
+//        @ApiResponse(responseCode = "401", description = "Nao autenticado"),
+//        @ApiResponse(responseCode = "404", description = "Grupo nao encontrado")
+//    })
+//    @GetMapping("/bySubject/{disciplina}/grupo/{idGrupo}")
+//    List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosBySubject(
+//        @Parameter(description = "Disciplina", required = true)
+//        @PathVariable String disciplina,
+//        @Parameter(description = "ID do grupo", required = true)
+//        @PathVariable UUID idGrupo,
+//        HttpServletRequest request
+//    );
 
-    @Operation(summary = "Listar sessoes por topico em um grupo")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Lista retornada"),
-        @ApiResponse(responseCode = "401", description = "Nao autenticado"),
-        @ApiResponse(responseCode = "403", description = "Acesso negado"),
-        @ApiResponse(responseCode = "404", description = "Grupo nao encontrado")
-    })
-    @GetMapping("/byTopic/{topico}/grupo/{idGrupo}")
-    List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosByTopic(
-        @Parameter(description = "Topico", required = true)
-        @PathVariable String topico,
-        @Parameter(description = "ID do grupo", required = true)
-        @PathVariable UUID idGrupo,
-        HttpServletRequest request
-    );
+//    @Operation(summary = "Listar sessoes por topico em um grupo")
+//    @ApiResponses({
+//        @ApiResponse(responseCode = "200", description = "Lista retornada"),
+//        @ApiResponse(responseCode = "401", description = "Nao autenticado"),
+//        @ApiResponse(responseCode = "404", description = "Grupo nao encontrado")
+//    })
+//    @GetMapping("/byTopic/{topico}/grupo/{idGrupo}")
+//    List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosByTopic(
+//        @Parameter(description = "Topico", required = true)
+//        @PathVariable String topico,
+//        @Parameter(description = "ID do grupo", required = true)
+//        @PathVariable UUID idGrupo,
+//        HttpServletRequest request
+//    );
 
     @Operation(summary = "Listar sessoes por disciplina de um usuario")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Lista retornada"),
-        @ApiResponse(responseCode = "401", description = "Nao autenticado"),
-        @ApiResponse(responseCode = "403", description = "Acesso negado")
+        @ApiResponse(responseCode = "401", description = "Nao autenticado")
     })
     @GetMapping("/bySubject/{disciplina}")
     List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosByUserAndSubject(
@@ -163,8 +155,7 @@ public interface SessaoDeEstudoControllerInterface {
     @Operation(summary = "Listar sessoes por topico de um usuario")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Lista retornada"),
-        @ApiResponse(responseCode = "401", description = "Nao autenticado"),
-        @ApiResponse(responseCode = "403", description = "Acesso negado")
+        @ApiResponse(responseCode = "401", description = "Nao autenticado")
     })
     @GetMapping("/byTopic/{topico}")
     List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosByUserAndTopic(

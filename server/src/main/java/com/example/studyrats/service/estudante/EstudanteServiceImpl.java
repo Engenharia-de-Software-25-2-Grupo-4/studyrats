@@ -1,5 +1,6 @@
 package com.example.studyrats.service.estudante;
 
+import com.example.studyrats.exceptions.UIDJaCadastrado;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -26,12 +27,15 @@ public class EstudanteServiceImpl implements EstudanteService {
     ModelMapper modelMapper;
 
     @Override
-    public EstudanteResponseDTO criar(EstudantePostPutRequestDTO dto) {
+    public EstudanteResponseDTO criar(EstudantePostPutRequestDTO dto, String uid) {
         if (estudanteRepository.existsByEmail(dto.getEmail())) {
             throw new EmailJaCadastrado();
+        } else if (estudanteRepository.existsById(uid)) {
+            throw new UIDJaCadastrado();
         }
 
         Estudante estudante = modelMapper.map(dto, Estudante.class);
+        estudante.setFirebaseUid(uid);
         
         Estudante salvo = estudanteRepository.save(estudante);
         return modelMapper.map(salvo, EstudanteResponseDTO.class);
@@ -59,6 +63,7 @@ public class EstudanteServiceImpl implements EstudanteService {
         }
 
         Estudante estudante = modelMapper.map(dto, Estudante.class);
+        estudante.setFirebaseUid(firebaseUid);
         
         Estudante atualizado = estudanteRepository.save(estudante);
         return modelMapper.map(atualizado, EstudanteResponseDTO.class);
@@ -70,11 +75,5 @@ public class EstudanteServiceImpl implements EstudanteService {
             throw new EstudanteNaoEncontrado();
         }
         estudanteRepository.deleteById(firebaseUid);
-    }
-
-    @Override
-    public String getAuthenticatedStudentId() {
-        // falta implementar autenticação
-        throw new UnsupportedOperationException("Unimplemented method 'getAuthenticatedStudentId'");
     }
 }

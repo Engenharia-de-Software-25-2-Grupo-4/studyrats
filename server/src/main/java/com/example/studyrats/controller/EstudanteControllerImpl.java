@@ -2,6 +2,7 @@ package com.example.studyrats.controller;
 
 import java.util.List;
 
+import com.google.firebase.auth.FirebaseToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,8 +20,14 @@ public class EstudanteControllerImpl implements EstudanteController {
     @Autowired
     EstudanteService studentService;
 
+    private String getFirebaseUID(HttpServletRequest request) {
+        FirebaseToken firebaseToken = (FirebaseToken) request.getAttribute("firebaseUser");
+        return firebaseToken.getUid();
+    }
+
     public ResponseEntity<EstudanteResponseDTO> criar(@RequestBody EstudantePostPutRequestDTO dto, HttpServletRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(studentService.criar(dto));
+        String uid = getFirebaseUID(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(studentService.criar(dto, uid));
     }
 
     public ResponseEntity<List<EstudanteResponseDTO>> listarTodos() {
@@ -31,11 +38,13 @@ public class EstudanteControllerImpl implements EstudanteController {
         return ResponseEntity.ok(studentService.buscarPorId(firebaseUid));
     }
 
-    public ResponseEntity<EstudanteResponseDTO> atualizar(@PathVariable String firebaseUid, @RequestBody EstudantePostPutRequestDTO dto) {
+    public ResponseEntity<EstudanteResponseDTO> atualizar(@RequestBody EstudantePostPutRequestDTO dto, HttpServletRequest request) {
+        String firebaseUid = getFirebaseUID(request);
         return ResponseEntity.ok(studentService.atualizar(firebaseUid, dto));
     }
 
-    public ResponseEntity<Void> deletar(@PathVariable String firebaseUid) {
+    public ResponseEntity<Void> deletar(HttpServletRequest request) {
+        String firebaseUid = getFirebaseUID(request);
         studentService.excluir(firebaseUid);
         return ResponseEntity.noContent().build();
     }
