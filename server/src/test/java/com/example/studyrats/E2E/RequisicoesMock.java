@@ -12,7 +12,6 @@ import org.springframework.http.MediaType;
 
 public class RequisicoesMock {
 
-    @Autowired
     private MockMvc driver;
     private ObjectMapper objectMapper;
     private String getUrl, putUrl, deleteUrl, postUrl;
@@ -60,29 +59,53 @@ public class RequisicoesMock {
         return objectMapper.readValue(response, expectedTypeResponse);
     }
 
-    public <T> T performGetOK(TypeReference<T> expectedTypeResponse) throws Exception {
-        String response = driver.perform(get(getUrl).contentType(MediaType.APPLICATION_JSON))
+    public <T> T performGetOK(TypeReference<T> expectedTypeResponse, String userToken) throws Exception {
+        String response = driver.perform(get(getUrl)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer "+userToken))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
 
         return objectMapper.readValue(response, expectedTypeResponse);
     }
 
-    public <T> T performGetOK(Class<T> expectedTypeResponse, String complementoDoPath) throws Exception {
-        String response = driver.perform(get(getUrl+"/"+complementoDoPath).contentType(MediaType.APPLICATION_JSON))
+    public <T> T performGetOK(Class<T> expectedTypeResponse, String complementoDoPath, String userToken) throws Exception {
+        String response = driver.perform(get(getUrl+"/"+complementoDoPath)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer "+userToken))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString();
 
         return objectMapper.readValue(response, expectedTypeResponse);
     }
 
-    public void performGetNotFound(String complementoDoPath) throws Exception {
-        driver.perform(get(getUrl+"/"+complementoDoPath).contentType(MediaType.APPLICATION_JSON))
+    public <T> T performGetOK(Class<T> expectedTypeResponse, String userToken) throws Exception {
+        String response = driver.perform(get(getUrl)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer "+userToken))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        return objectMapper.readValue(response, expectedTypeResponse);
+    }
+
+    public void performGetNotFound(String complementoDoPath, String userToken) throws Exception {
+        driver.perform(get(getUrl+"/"+complementoDoPath)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer "+userToken))
                 .andExpect(status().isNotFound());
     }
 
+    public void performGetUnauthorized(String complementoDoPath, String userToken) throws Exception {
+        driver.perform(get(getUrl+"/"+complementoDoPath)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer "+userToken))
+                .andExpect(status().isUnauthorized());
+    }
+
     public void performGetUnauthorized(String complementoDoPath) throws Exception {
-        driver.perform(get(getUrl+"/"+complementoDoPath).contentType(MediaType.APPLICATION_JSON))
+        driver.perform(get(getUrl+"/"+complementoDoPath)
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -97,24 +120,42 @@ public class RequisicoesMock {
                 .andExpect(status().isUnauthorized());
     }
 
-    public <T> T performPostCreated(Class<T> expectedTypeResponse, Object body) throws Exception {
+    public void performPostUnauthorized(Object body, String userToken) throws Exception {
         String jsonBody = objectMapper.writeValueAsString(body);
-        String response = driver.perform(post(getUrl).contentType(MediaType.APPLICATION_JSON).content(jsonBody))
+        driver.perform(post(getUrl)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonBody)
+                        .header("Authorization", "Bearer "+userToken))
+                .andExpect(status().isUnauthorized());
+    }
+
+    public <T> T performPostCreated(Class<T> expectedTypeResponse, Object body, String userToken) throws Exception {
+        String jsonBody = objectMapper.writeValueAsString(body);
+        String response = driver.perform(post(getUrl)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonBody)
+                        .header("Authorization", "Bearer "+userToken))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
 
         return objectMapper.readValue(response, expectedTypeResponse);
     }
 
-    public void performPostCreated(Object body) throws Exception {
+    public void performPostCreated(Object body, String userToken) throws Exception {
         String jsonBody = objectMapper.writeValueAsString(body);
-        driver.perform(post(getUrl).contentType(MediaType.APPLICATION_JSON).content(jsonBody))
+        driver.perform(post(getUrl)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonBody)
+                        .header("Authorization", "Bearer "+userToken))
                 .andExpect(status().isCreated());
     }
 
-    public void performPostConflict(Object body) throws Exception {
+    public void performPostConflict(Object body, String userToken) throws Exception {
         String jsonBody = objectMapper.writeValueAsString(body);
-        driver.perform(post(getUrl).contentType(MediaType.APPLICATION_JSON).content(jsonBody))
+        driver.perform(post(getUrl)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonBody)
+                        .header("Authorization", "Bearer "+userToken))
                 .andExpect(status().isConflict());
     }
 

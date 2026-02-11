@@ -1,11 +1,15 @@
 package com.example.studyrats.security;
 
 import com.example.studyrats.service.firebase.FirebaseService;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import com.google.firebase.auth.FirebaseToken;
 import jakarta.servlet.FilterChain;
+
+import java.util.List;
 
 public class FirebaseAuthFilter extends OncePerRequestFilter {
 
@@ -27,6 +31,13 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
                 String token = authHeader.substring(7);
                 FirebaseToken decodedToken = firebaseService.verifyToken(token);
                 request.setAttribute("firebaseUser", decodedToken);
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                decodedToken.getUid(),
+                                null,
+                                List.of() // sem roles por enquanto
+                        );
+                SecurityContextHolder.getContext().setAuthentication(authentication);
             }
 
             filterChain.doFilter(request, response);

@@ -8,13 +8,19 @@ import com.example.studyrats.dto.estudante.EstudanteResponseDTO;
 import com.example.studyrats.model.Estudante;
 import com.example.studyrats.repository.EstudanteRepository;
 import com.example.studyrats.service.estudante.EstudanteService;
+import com.example.studyrats.service.firebase.FirebaseService;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.FirebaseToken;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.*;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import static org.mockito.ArgumentMatchers.any;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.io.OutputStream;
@@ -25,6 +31,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Fail.fail;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -41,13 +48,22 @@ public class EstudanteControllerTest {
     @Autowired
     private MockMvc driver;
 
+    @MockitoBean
+    private FirebaseService firebaseService;
+
     private RequisicoesMock requisitor;
 
     @BeforeEach
     void setUp() {
-        String baseURL = "/students";
+        String baseURL = "/estudantes";
         requisitor = new RequisicoesMock(driver, baseURL);
         repoDoEstudante.deleteAll();
+    }
+
+    private void setarToken(String token) throws FirebaseAuthException {
+        FirebaseToken firebaseTokenMock = Mockito.mock(FirebaseToken.class);
+        when(firebaseTokenMock.getUid()).thenReturn(token);
+        when(firebaseService.verifyToken(Mockito.eq(token))).thenReturn(firebaseTokenMock);
     }
 
     private String randomChars() {
@@ -62,13 +78,25 @@ public class EstudanteControllerTest {
         return result.toString();
     }
 
-    private void generateRandoms(int size) {
-
+    private String randomChars(int size) {
+        Random random = new Random();
+        String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder result = new StringBuilder(size);
         for (int i = 0; i < size; i++) {
-            String pass = randomChars();
+            result.append(CHARS.charAt(random.nextInt(CHARS.length())));
+        }
+
+        return result.toString();
+    }
+
+    private void generateRandoms(int size) throws FirebaseAuthException {
+        for (int i = 0; i < size; i++) {
+            String token = randomChars();
+            setarToken(token);
+
             EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO(randomChars(), randomChars());
             try {
-                requisitor.performPostCreated(body);
+                requisitor.performPostCreated(body, token);
             } catch (Exception ignored) {}
         }
     }
@@ -92,15 +120,32 @@ public class EstudanteControllerTest {
         }
 
         @Test
+        @DisplayName("Falha prevista ao criar com token inválido")
+        void falhaCriarTokenInvalido() throws Exception {
+            EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO("Test", "test@test");
+            try {
+                requisitor.performPostUnauthorized(body, "invalidToken");
+            } catch (AssertionError e) {
+                fail("A rota não retornou 401 unauthorized - "+e.getMessage());
+            }
+
+            List<Estudante> todosOsEstudantes = repoDoEstudante.findAll();
+            assertEquals(0, todosOsEstudantes.size(), "A rota foi bloqueada mas a lista de estudantes não está vazia");
+        }
+
+        @Test
         @Transactional
         @DisplayName("Sucesso ao criar com autenticação")
-        @WithMockUser(username="firebaseUserId")
         void sucessoCriarComAutenticacao() throws Exception {
+            String randomToken = "randomToken";
+            setarToken(randomToken);
+
             EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO("Test", "test@test");
             EstudanteResponseDTO novoEstudante = null;
             Estudante estudante = null;
             try {
-                novoEstudante = requisitor.performPostCreated(EstudanteResponseDTO.class, body);
+                novoEstudante = requisitor.performPostCreated(EstudanteResponseDTO.class, body, randomToken);
+                System.out.println(novoEstudante.getFirebaseUid());
                 estudante = repoDoEstudante.findByEmail("test@test").orElse(null);
                 assertNotNull(estudante, "O estudante não foi encontrado no repositorio (por email) após criacão");
                 assertNotNull(novoEstudante, "O estudante não foi retornado na requisição");
@@ -116,12 +161,12 @@ public class EstudanteControllerTest {
         @DisplayName("Falha prevista ao tentar criar estudante já cadastrado")
         @WithMockUser(username="firebaseUserId")
         void falhaCriarComConflito() throws Exception {
+            String token = "token";
+            setarToken(token);
             EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO("Test", "test@test");
-            EstudanteResponseDTO estudanteCriado = requisitor.performPostCreated(EstudanteResponseDTO.class, body);
-
-            System.out.println(estudanteCriado.getFirebaseUid());
+            EstudanteResponseDTO estudanteCriado = requisitor.performPostCreated(EstudanteResponseDTO.class, body, token);
             try {
-                requisitor.performPostConflict(body);
+                requisitor.performPostConflict(body, token);
             } catch (AssertionError e) {
                 fail("O endpoint não lançou 409 conflict ao tentar criar o mesmo usuário duas vezes");
             }
@@ -143,49 +188,66 @@ public class EstudanteControllerTest {
         }
 
         @Test
+        @DisplayName("Falha prevista ao tentar autenticação inválida")
+        void falhaGetAllTokenInvalido() throws Exception {
+            try {
+                requisitor.performGetUnauthorized("invalidToken");
+            } catch (AssertionError e) {
+                fail("O endpoint nõa lançou 401 unauthorized - "+e.getMessage());
+            }
+        }
+
+        @Test
         @DisplayName("Get all com lista vazia")
-        @WithMockUser(username="firebaseUserId")
         void testeSemEstudantes() throws Exception {
+            String token = "token";
+            setarToken(token);
             List<EstudanteResponseDTO> listaDeEstudantes = List.of();
-            listaDeEstudantes = requisitor.performGetOK(listaDeEstudantes.getClass());
+            listaDeEstudantes = requisitor.performGetOK(listaDeEstudantes.getClass(), token);
             assertEquals(0, listaDeEstudantes.size(), "Get all sem estudantes não retornou uma lista vazia");
         }
 
         @Test
         @DisplayName("Get all com 1 estudante")
-        @WithMockUser(username="firebaseUserId")
         void testeUmEstudante() throws Exception {
+            String token = "tokenV";
+            setarToken(token);
             EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO("Test", "test@test");
-            EstudanteResponseDTO estudanteCriado = requisitor.performPostCreated(EstudanteResponseDTO.class, body);
+            EstudanteResponseDTO estudanteCriado = requisitor.performPostCreated(EstudanteResponseDTO.class, body, token);
 
             List<EstudanteResponseDTO> listaDeEstudantes = List.of();
-            listaDeEstudantes = requisitor.performGetOK(new TypeReference<List<EstudanteResponseDTO>>() {});
+            listaDeEstudantes = requisitor.performGetOK(new TypeReference<List<EstudanteResponseDTO>>() {}, token);
             EstudanteResponseDTO estudanteDaLista = listaDeEstudantes.get(0);
 
             assertEquals(1, listaDeEstudantes.size(), "Get all sem estudantes não retornou apenas um estudante");
+            assertEquals(estudanteCriado.getFirebaseUid(), estudanteDaLista.getFirebaseUid(), "O token não veio igual ao esperado");
+            assertEquals(token, estudanteCriado.getFirebaseUid(), "O token não veio igual ao esperado");
             assertEquals(estudanteCriado.getNome(), estudanteDaLista.getNome(), "O nome não veio igual ao esperado");
             assertEquals(estudanteCriado.getEmail(), estudanteDaLista.getEmail(), "O email não veio igual ao esperado");
         }
 
         /*
-        * Por falta de tempo irei deixar esse teste mas irei pensar numa estratégia melhro no futuro
+        * Por falta de tempo irei deixar esse teste, mas irei pensar numa estratégia melhor no futuro.
+        * Entretanto, existem 62^20 combinações únicas nessa geração e estaríamos extraíndo apenas 100.
+        * A probabilidade de uma repetição é quase 0
         */
         @Test
         @DisplayName("Get all com X estudantes (existe uma probab baixissima desse teste falhar mesmo sem erros por causa da utilização de random)")
-        @WithMockUser(username="firebaseUserId")
         void testeXEstudantes() throws Exception {
             List<EstudantePostPutRequestDTO> estudantes = new ArrayList<>();
+            String token = null;
             for (int i = 0; i < 100; i++) {
-                String pass = randomChars();
+                token = randomChars();
+                setarToken(token);
                 EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO(randomChars(), randomChars());
                 try {
-                    requisitor.performPostCreated(body);
+                    requisitor.performPostCreated(body, token);
                     estudantes.add(body);
                 } catch (Exception ignored) {}
             }
 
             List<EstudanteResponseDTO> listaDeEstudantesDoGetall = List.of();
-            listaDeEstudantesDoGetall = requisitor.performGetOK(new TypeReference<List<EstudanteResponseDTO>>() {});
+            listaDeEstudantesDoGetall = requisitor.performGetOK(new TypeReference<List<EstudanteResponseDTO>>() {}, token);
 
             assertEquals(estudantes.size(), listaDeEstudantesDoGetall.size(), "Nem todos os estudantes foram adicionados");
 
@@ -233,11 +295,35 @@ public class EstudanteControllerTest {
         }
 
         @Test
+        @DisplayName("Falha prevista ao tentar token invalido e banco vazio")
+        void falhaTokenInvalido() throws Exception {
+            try {
+                String token = "tokenInvalido";
+                requisitor.performGetUnauthorized("idQualquer", token);
+            } catch (AssertionError e) {
+                fail("O endpoint não lançou 401 unauthorized - "+e.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("Falha prevista ao tentar token invalido e banco povoado")
+        void falhaTokenInvalidoPovoado() throws Exception {
+            generateRandoms(100);
+            try {
+                String token = "tokenInvalido";
+                requisitor.performGetUnauthorized("idQualquer", token);
+            } catch (AssertionError e) {
+                fail("O endpoint não lançou 401 unauthorized - "+e.getMessage());
+            }
+        }
+
+        @Test
         @DisplayName("Get sem estudante cadastrado")
-        @WithMockUser(username="firebaseUserId")
         void testeSemEstudante() throws Exception {
             try {
-                requisitor.performGetNotFound("idQualquer");
+                String token = "token";
+                setarToken(token);
+                requisitor.performGetNotFound("idQualquer", token);
             } catch (AssertionError e) {
                 fail("O endpoint não lançou 404 not found - "+e.getMessage());
             }
@@ -245,11 +331,12 @@ public class EstudanteControllerTest {
 
         @Test
         @DisplayName("Get de id inexistente com banco povoado")
-        @WithMockUser(username="firebaseUserId")
         void testeSemIdExistente() throws Exception {
             generateRandoms(100);
             try {
-                requisitor.performGetNotFound("idQualquer");
+                String token = "token";
+                setarToken(token);
+                requisitor.performGetNotFound("idQualquer", token);
             } catch (AssertionError e) {
                 fail("O endpoint não lançou 404 not found - "+e.getMessage());
             }
@@ -257,13 +344,15 @@ public class EstudanteControllerTest {
 
         @Test
         @DisplayName("get de id que existe")
-        @WithMockUser(username="firebaseUserId")
         void testeComIdExistente() throws Exception {
             generateRandoms(100);
             List<EstudanteResponseDTO> todos = serviceDoEstudante.listarTodos();
             EstudanteResponseDTO estudanteAlvo = todos.get(0);
 
-            EstudanteResponseDTO estudanteDaReq = requisitor.performGetOK(EstudanteResponseDTO.class, estudanteAlvo.getFirebaseUid().toString());
+            String token = "token";
+            setarToken(token);
+
+            EstudanteResponseDTO estudanteDaReq = requisitor.performGetOK(EstudanteResponseDTO.class, estudanteAlvo.getFirebaseUid().toString(), token);
             assertEquals(estudanteAlvo, estudanteDaReq, "O estudante recuperado é diferente do esperado");
         }
 
