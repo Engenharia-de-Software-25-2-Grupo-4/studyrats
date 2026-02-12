@@ -1,6 +1,5 @@
 package com.example.studyrats.E2E.estudante;
 
-import ch.qos.logback.classic.Logger;
 import com.example.studyrats.E2E.RequisicoesMock;
 import com.example.studyrats.controller.EstudanteController;
 import com.example.studyrats.dto.estudante.EstudantePostPutRequestDTO;
@@ -23,8 +22,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import static org.mockito.ArgumentMatchers.any;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.util.Random;
 import java.util.ArrayList;
 import java.util.List;
@@ -252,11 +249,11 @@ public class EstudanteControllerTest {
             assertEquals(estudantes.size(), listaDeEstudantesDoGetall.size(), "Nem todos os estudantes foram adicionados");
 
             for (EstudanteResponseDTO estudanteDoGetall : listaDeEstudantesDoGetall) {
-                Boolean encontrado = false;
+                boolean encontrado = false;
                 for (EstudantePostPutRequestDTO estudanteDTO : estudantes) {
                     System.out.println(estudanteDoGetall.getFirebaseUid());
-                    Boolean nomeIgual = estudanteDoGetall.getNome().equals(estudanteDTO.getNome());
-                    Boolean emailIgual = estudanteDoGetall.getEmail().equals(estudanteDTO.getEmail());
+                    boolean nomeIgual = estudanteDoGetall.getNome().equals(estudanteDTO.getNome());
+                    boolean emailIgual = estudanteDoGetall.getEmail().equals(estudanteDTO.getEmail());
                     if (nomeIgual && emailIgual) {
                         encontrado = true;
                         break;
@@ -270,7 +267,7 @@ public class EstudanteControllerTest {
     }
 
     @Nested
-    @DisplayName("Tests de get by id")
+    @DisplayName("Testes de get by id")
     class TestesgetById {
 
         @Test
@@ -358,4 +355,210 @@ public class EstudanteControllerTest {
 
     }
 
+    @Nested
+    @DisplayName("Testes de atualizacao")
+    class TestesAtualizacao {
+
+        @Test
+        @DisplayName("Falha prevista ao tentar sem autenticacao e banco vazio")
+        void falhaSemAuth() throws Exception {
+            try {
+                String token = "invalidToken";
+                requisitor.performPutUnauthorized(token);
+            } catch (AssertionError e) {
+                fail("O endpoint não lançou 401 unauthorized - "+e.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("Falha prevista ao tentar sem autenticacao e banco vazio")
+        void falhaSemAuthBancoPovoado() throws Exception {
+            generateRandoms(10);
+            try {
+                String token = "invalidToken";
+                requisitor.performPutUnauthorized(token);
+            } catch (AssertionError e) {
+                fail("O endpoint não lançou 401 unauthorized - "+e.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("Falha prevista ao tentar token invalido e banco vazio")
+        void falhaTokenInvalido() throws Exception {
+            try {
+                String token = "invalidToken";
+                requisitor.performPutUnauthorized(token, token);
+            } catch (AssertionError e) {
+                fail("O endpoint não lançou 401 unauthorized - "+e.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("Falha prevista ao tentar token invalido e banco povoado")
+        void falhaTokenInvalidoBancoPovoado() throws Exception {
+            generateRandoms(10);
+            try {
+                String token = "invalidToken";
+                requisitor.performPutUnauthorized(token, token);
+            } catch (AssertionError e) {
+                fail("O endpoint não lançou 401 unauthorized - "+e.getMessage());
+            }
+        }
+
+        private String[] testeBaseAtualizar(int totalDeEstudantes, String token) throws Exception {
+            setarToken(token);
+
+            EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO("Test", "test@test");
+            EstudanteResponseDTO estudanteOriginal = requisitor.performPostCreated(EstudanteResponseDTO.class, body, token);
+
+            String novoEmail = "test@melhor";
+            String novoNome = "testMelhor";
+            body.setEmail(novoEmail);
+            body.setNome(novoNome);
+
+            EstudanteResponseDTO estudanteAtualizado = requisitor.performPutOk(EstudanteResponseDTO.class, body, token);
+            List<EstudanteResponseDTO> todosOsEstudantes = requisitor.performGetOK(new TypeReference<List<EstudanteResponseDTO>>() {}, token);
+            assertEquals(totalDeEstudantes, todosOsEstudantes.size(), "A atualização não manteve apenas 1 estudante");
+
+            assertNotEquals(estudanteOriginal.getNome(), estudanteAtualizado.getNome(), "O nome não foi atualizado");
+            assertNotEquals(estudanteOriginal.getEmail(), estudanteAtualizado.getEmail(), "O email não foi atualizado");
+            assertEquals(estudanteOriginal.getFirebaseUid(), estudanteAtualizado.getFirebaseUid(), "O firebaseId mudou indevidamente");
+            assertEquals(novoNome, estudanteAtualizado.getNome());
+            assertEquals(novoEmail, estudanteAtualizado.getEmail());
+            assertEquals(token, estudanteAtualizado.getFirebaseUid());
+            assertNotEquals(estudanteOriginal, estudanteAtualizado); // Executar isso para verificar se o equals funciona também.
+
+            novoEmail = "test@ruim";
+            novoNome = "testRuim";
+            body.setEmail(novoEmail);
+            body.setNome(novoNome);
+
+            estudanteAtualizado = requisitor.performPutOk(EstudanteResponseDTO.class, body, token);
+            todosOsEstudantes = requisitor.performGetOK(new TypeReference<List<EstudanteResponseDTO>>() {}, token);
+            assertEquals(totalDeEstudantes, todosOsEstudantes.size(), "A atualização não manteve apenas 1 estudante");
+
+            assertNotEquals(estudanteOriginal.getNome(), estudanteAtualizado.getNome(), "O nome não foi atualizado");
+            assertNotEquals(estudanteOriginal.getEmail(), estudanteAtualizado.getEmail(), "O email não foi atualizado");
+            assertEquals(estudanteOriginal.getFirebaseUid(), estudanteAtualizado.getFirebaseUid(), "O firebaseId mudou indevidamente");
+            assertEquals(novoNome, estudanteAtualizado.getNome());
+            assertEquals(novoEmail, estudanteAtualizado.getEmail());
+            assertEquals(token, estudanteAtualizado.getFirebaseUid());
+            assertNotEquals(estudanteOriginal, estudanteAtualizado); // Executar isso para verificar se o equals funciona também.
+
+            return new String[] {novoNome, novoEmail};
+        }
+
+        @Test
+        @DisplayName("Sucesso ao atualizar (apenas ele em banco)")
+        void sucessoAoAtualizar() throws Exception {
+            String token = "targetUser";
+            testeBaseAtualizar(1, token);
+        }
+
+        @Test
+        @DisplayName("Sucesso ao atualizar banco povoado")
+        void sucessoAoAtualizarBancoPovoado() throws Exception {
+            String token = "targetUser";
+            generateRandoms(99);
+            String[] novosNomeEmail = testeBaseAtualizar(100, token);
+            String novoNome = novosNomeEmail[0];
+            String novoEmail = novosNomeEmail[1];
+
+            List<EstudanteResponseDTO> todosOsEstudantes = requisitor.performGetOK(new TypeReference<List<EstudanteResponseDTO>>() {}, token);
+            todosOsEstudantes.removeIf(e -> token.equals(e.getFirebaseUid()));
+            assertEquals(99, todosOsEstudantes.size());
+            for (EstudanteResponseDTO e : todosOsEstudantes) {
+                assertNotEquals(novoNome, e.getNome());
+                assertNotEquals(novoEmail, e.getEmail());
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("Testes de deletar")
+    class TestesDeletar {
+
+        @Test
+        @DisplayName("Falha prevista ao tentar sem autenticação banco vazio")
+        void falhaGetAllSemAuth() throws Exception {
+            try {
+                requisitor.performDeleteUnauthorized();
+            } catch (AssertionError e) {
+                fail("O endpoint nõa lançou 401 unauthorized - "+e.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("Falha prevista ao tentar sem autenticação banco povoado")
+        void falhaGetAllSemAuthComBanco() throws Exception {
+            generateRandoms(100);
+            try {
+                requisitor.performDeleteUnauthorized();
+            } catch (AssertionError e) {
+                fail("O endpoint nõa lançou 401 unauthorized - "+e.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("Falha prevista ao tentar token invalido banco vazio")
+        void falhaGetAllTokenInvalido() throws Exception {
+            try {
+                String token = "tokenInvalido";
+                requisitor.performDeleteUnauthorized(token);
+            } catch (AssertionError e) {
+                fail("O endpoint nõa lançou 401 unauthorized - "+e.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("Falha prevista ao tentar token invalido banco povoado")
+        void falhaGetAllTokenInvalidoBancoPovoado() throws Exception {
+            generateRandoms(100);
+            try {
+                String token = "tokenInvalido";
+                requisitor.performDeleteUnauthorized(token);
+            } catch (AssertionError e) {
+                fail("O endpoint nõa lançou 401 unauthorized - "+e.getMessage());
+            }
+        }
+
+        private void testeBaseDeletar(int totalDeEstudantes, String token) throws Exception {
+            setarToken(token);
+
+            EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO("Test", "test@test");
+            EstudanteResponseDTO estudanteOriginal = requisitor.performPostCreated(EstudanteResponseDTO.class, body, token);
+
+            requisitor.performDeleteNoContent(token);
+            List<EstudanteResponseDTO> todosOsEstudantes = requisitor.performGetOK(new TypeReference<List<EstudanteResponseDTO>>() {}, token);
+            assertEquals(totalDeEstudantes-1, todosOsEstudantes.size(), "O estudante foi retornado após remoção");
+            try {
+                requisitor.performGetNotFound(token, token);
+            } catch (AssertionError e) {
+                fail("O get não retornou 404 not found após remoção do estudante");
+            }
+
+            try {
+                requisitor.performDeleteNotFound(token);
+            } catch (AssertionError e) {
+                fail("O delete não retornou 404 not found após remover sem ele no banco");
+            }
+            todosOsEstudantes = requisitor.performGetOK(new TypeReference<List<EstudanteResponseDTO>>() {}, token);
+            assertEquals(totalDeEstudantes-1, todosOsEstudantes.size(), "O estudante foi retornado após remoção");
+        }
+
+        @Test
+        @DisplayName("Sucesso ao deletar (apenas ele e sem ele em banco)")
+        void sucessoAoDeletar() throws Exception {
+            String token = "targetUser";
+            testeBaseDeletar(1, token);
+        }
+
+        @Test
+        @DisplayName("Sucesso ao deletar com e sem ele num  banco povoado")
+        void sucessoAoDeletarBancoPovoado() throws Exception {
+            String token = "OIE";
+            generateRandoms(99);
+            testeBaseDeletar(100, token);
+        }
+    }
 }

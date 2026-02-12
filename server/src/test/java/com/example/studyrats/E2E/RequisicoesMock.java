@@ -116,13 +116,13 @@ public class RequisicoesMock {
 
     public void performPostUnauthorized(Object body) throws Exception {
         String jsonBody = objectMapper.writeValueAsString(body);
-        driver.perform(post(getUrl).contentType(MediaType.APPLICATION_JSON).content(jsonBody))
+        driver.perform(post(postUrl).contentType(MediaType.APPLICATION_JSON).content(jsonBody))
                 .andExpect(status().isUnauthorized());
     }
 
     public void performPostUnauthorized(Object body, String userToken) throws Exception {
         String jsonBody = objectMapper.writeValueAsString(body);
-        driver.perform(post(getUrl)
+        driver.perform(post(postUrl)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonBody)
                         .header("Authorization", "Bearer "+userToken))
@@ -131,7 +131,7 @@ public class RequisicoesMock {
 
     public <T> T performPostCreated(Class<T> expectedTypeResponse, Object body, String userToken) throws Exception {
         String jsonBody = objectMapper.writeValueAsString(body);
-        String response = driver.perform(post(getUrl)
+        String response = driver.perform(post(postUrl)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonBody)
                         .header("Authorization", "Bearer "+userToken))
@@ -143,7 +143,7 @@ public class RequisicoesMock {
 
     public void performPostCreated(Object body, String userToken) throws Exception {
         String jsonBody = objectMapper.writeValueAsString(body);
-        driver.perform(post(getUrl)
+        driver.perform(post(postUrl)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonBody)
                         .header("Authorization", "Bearer "+userToken))
@@ -152,11 +152,62 @@ public class RequisicoesMock {
 
     public void performPostConflict(Object body, String userToken) throws Exception {
         String jsonBody = objectMapper.writeValueAsString(body);
-        driver.perform(post(getUrl)
+        driver.perform(post(postUrl)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonBody)
                         .header("Authorization", "Bearer "+userToken))
                 .andExpect(status().isConflict());
     }
 
+    public void performPutUnauthorized(String complementoDoPath) throws Exception {
+        driver.perform(put(putUrl+"/"+complementoDoPath)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
+    }
+
+    public void performPutUnauthorized(String complementoDoPath, String userToken) throws Exception {
+        driver.perform(put(putUrl+"/"+complementoDoPath)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer "+userToken))
+                .andExpect(status().isUnauthorized());
+    }
+
+    public <T> T performPutOk(Class<T> expectedTypeResponse, Object body, String userToken) throws Exception {
+        String jsonBody = objectMapper.writeValueAsString(body);
+        String response = driver.perform(put(putUrl)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonBody)
+                        .header("Authorization", "Bearer "+userToken))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        return objectMapper.readValue(response, expectedTypeResponse);
+    }
+
+    public void performDeleteUnauthorized() throws Exception {
+        driver.perform(delete(deleteUrl)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
+    }
+
+    public void performDeleteUnauthorized(String userToken) throws Exception {
+        driver.perform(delete(deleteUrl)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer "+userToken))
+                .andExpect(status().isUnauthorized());
+    }
+
+    public void performDeleteNoContent(String userToken) throws Exception {
+        driver.perform(delete(deleteUrl)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer "+userToken))
+                .andExpect(status().isNoContent());
+    }
+
+    public void performDeleteNotFound(String userToken) throws Exception {
+        driver.perform(delete(deleteUrl)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer "+userToken))
+                .andExpect(status().isNotFound());
+    }
 }
