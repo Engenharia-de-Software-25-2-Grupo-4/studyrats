@@ -21,54 +21,54 @@ public class GrupoDeEstudoController implements GrupoDeEstudoControllerInterface
     private GrupoDeEstudoService grupoService;
 
     @Override
-    public GrupoDeEstudoResponseDTO criarGrupo(GrupoDeEstudoPostPutRequestDTO dto, HttpServletRequest request) {
+    public GrupoDeEstudoResponseDTO createGrupoDeEstudo(GrupoDeEstudoPostPutRequestDTO dto, HttpServletRequest request) {
         String uid = getAuthenticatedUserId(request);
         return grupoService.criarGrupo(dto, uid);
     }
 
     @Override
-    public GrupoDeEstudoResponseDTO buscarPorId(UUID id) {
+    public GrupoDeEstudoResponseDTO getGrupoDeEstudo(UUID id) {
         return grupoService.buscarPorId(id);
     }
 
     @Override
-    public GrupoDeEstudoResponseDTO atualizar(UUID id, GrupoDeEstudoPostPutRequestDTO dto, HttpServletRequest request) {
+    public GrupoDeEstudoResponseDTO updateGrupoDeEstudo(UUID id, GrupoDeEstudoPostPutRequestDTO dto, HttpServletRequest request) {
         String uid = getAuthenticatedUserId(request);
         return grupoService.atualizar(id, dto, uid);
     }
 
     @Override
-    public void remover(UUID id, HttpServletRequest request) {
+    public void deleteGrupoDeEstudo(UUID id, HttpServletRequest request) {
         String uid = getAuthenticatedUserId(request);
         grupoService.remover(id, uid);
     }
 
     @Override
-    public List<GrupoDeEstudoResponseDTO> listarPorUsuario(HttpServletRequest request) {
+    public List<GrupoDeEstudoResponseDTO> listGrupoDeEstudosByUser(HttpServletRequest request) {
         String uid = getAuthenticatedUserId(request);
         return grupoService.listarPorUsuario(uid);
     }
 
     @Override
-    public void convidar(UUID id, ConvitePostRequestDTO dto, HttpServletRequest request) {
+    public void inviteUserToGrupo(UUID id, ConvitePostRequestDTO dto, HttpServletRequest request) {
         String uid = getAuthenticatedUserId(request);
         grupoService.convidar(id, dto, uid);
     }
 
     @Override
-    public void aceitarConvite(UUID idConvite, HttpServletRequest request) {
+    public void acceptInvite(UUID idConvite, HttpServletRequest request) {
         String uid = getAuthenticatedUserId(request);
         grupoService.aceitarConvite(idConvite, uid);
     }
 
     @Override
-    public List<?> listarConvites(HttpServletRequest request) {
+    public List<?> listInvites(HttpServletRequest request) {
         String uid = getAuthenticatedUserId(request);
         return grupoService.listarConvites(uid);
     }
 
     @Override
-    public void removerCheckinInvalido(UUID idGrupo, UUID idSessao, HttpServletRequest request) {
+    public void removeInvalidCheckin(UUID idGrupo, UUID idSessao, HttpServletRequest request) {
         String uid = getAuthenticatedUserId(request);
         grupoService.removerCheckinInvalido(idGrupo, idSessao, uid);
     }

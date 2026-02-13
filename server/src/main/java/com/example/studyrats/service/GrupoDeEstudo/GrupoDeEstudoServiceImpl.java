@@ -49,7 +49,9 @@ public class GrupoDeEstudoServiceImpl implements GrupoDeEstudoService {
     @Override
     public GrupoDeEstudoResponseDTO criarGrupo(GrupoDeEstudoPostPutRequestDTO dto, String uid) {
         Estudante estudante = estudanteRepo.findById(uid).orElseThrow(EstudanteNaoEncontrado::new);
+        
         GrupoDeEstudo grupo = modelMapper.map(dto, GrupoDeEstudo.class);
+        grupo.setAdmin(estudante);
         grupo = grupoRepo.save(grupo);
 
         MembroGrupo membro = new MembroGrupo();
@@ -70,22 +72,25 @@ public class GrupoDeEstudoServiceImpl implements GrupoDeEstudoService {
     @Override
     public GrupoDeEstudoResponseDTO atualizar(UUID id, GrupoDeEstudoPostPutRequestDTO dto, String uid) {
         GrupoDeEstudo grupo = grupoRepo.findById(id).orElseThrow(GrupoNaoEncontrado::new);
-        var opt = membroRepo.findByGrupo_IdAndEstudante_FirebaseUid(id, uid);
-        if (opt.isEmpty() || !"ADMIN".equals(opt.get().getRole())) {
+        
+        if (!isAdmin(grupo, uid)) {
             throw new GrupoNaoEncontrado();
         }
+
         modelMapper.map(dto, grupo);
         grupo = grupoRepo.save(grupo);
+        
         return modelMapper.map(grupo, GrupoDeEstudoResponseDTO.class);
     }
 
     @Override
     public void remover(UUID id, String uid) {
         GrupoDeEstudo grupo = grupoRepo.findById(id).orElseThrow(GrupoNaoEncontrado::new);
-        var opt = membroRepo.findByGrupo_IdAndEstudante_FirebaseUid(id, uid);
-        if (opt.isEmpty() || !"ADMIN".equals(opt.get().getRole())) {
+        
+        if (!isAdmin(grupo, uid)) {
             throw new GrupoNaoEncontrado();
         }
+        
         grupoRepo.delete(grupo);
     }
 
@@ -100,10 +105,12 @@ public class GrupoDeEstudoServiceImpl implements GrupoDeEstudoService {
     @Override
     public void convidar(UUID idGrupo, ConvitePostRequestDTO dto, String uid) {
         GrupoDeEstudo grupo = grupoRepo.findById(idGrupo).orElseThrow(GrupoNaoEncontrado::new);
+        
         var opt = membroRepo.findByGrupo_IdAndEstudante_FirebaseUid(idGrupo, uid);
-        if (opt.isEmpty() || !"ADMIN".equals(opt.get().getRole())) {
+        if (opt.isEmpty()) {
             throw new GrupoNaoEncontrado();
         }
+        
         Estudante convidante = estudanteRepo.findById(uid).orElseThrow(EstudanteNaoEncontrado::new);
 
         ConviteGrupo convite = new ConviteGrupo();
@@ -117,13 +124,16 @@ public class GrupoDeEstudoServiceImpl implements GrupoDeEstudoService {
     @Override
     public void aceitarConvite(UUID idConvite, String uid) {
         ConviteGrupo convite = conviteRepo.findById(idConvite).orElseThrow(ConviteNaoEncontrado::new);
+        
         if (!invitedMatches(convite, uid)) {
             throw new ConviteNaoEncontrado();
         }
+        
         convite.setStatus("ACCEPTED");
         conviteRepo.save(convite);
 
         Estudante estudante = estudanteRepo.findById(uid).orElseThrow(EstudanteNaoEncontrado::new);
+        
         MembroGrupo membro = new MembroGrupo();
         membro.setGrupo(convite.getGrupo());
         membro.setEstudante(estudante);
@@ -131,25 +141,35 @@ public class GrupoDeEstudoServiceImpl implements GrupoDeEstudoService {
         membroRepo.save(membro);
     }
 
-    private boolean invitedMatches(ConviteGrupo convite, String uid) {
-        return convite.getUidConvidado() != null && convite.getUidConvidado().equals(uid) && "PENDING".equals(convite.getStatus());
-    }
-
     @Override
-    public java.util.List<?> listarConvites(String uid) {
+    public List<?> listarConvites(String uid) {
         return conviteRepo.findByUidConvidado(uid);
     }
 
     @Override
-    public void removerCheckinInvalido(UUID idGrupo, java.util.UUID idSessao, String uid) {
-        var opt = membroRepo.findByGrupo_IdAndEstudante_FirebaseUid(idGrupo, uid);
-        if (opt.isEmpty() || !"ADMIN".equals(opt.get().getRole())) {
-            throw new GrupoNaoEncontrado();
-        }
+    public void removerCheckinInvalido(UUID idGrupo, UUID idSessao, String uid) {
+        GrupoDeEstudo grupo = grupoRepo.findById(idGrupo).orElseThrow(GrupoNaoEncontrado::new);
         var sessao = sessaoRepo.findById(idSessao).orElseThrow(() -> new RuntimeException("Sessao nao encontrada"));
+        
         if (!idGrupo.equals(sessao.getIdGrupo())) {
             throw new RuntimeException("Sessao nao pertence ao grupo");
         }
+        
+        boolean isAdmin = grupo.getAdmin() != null && grupo.getAdmin().getFirebaseUid().equals(uid);
+        boolean isCriador = sessao.getCriador() != null && sessao.getCriador().getFirebaseUid().equals(uid);
+        
+        if (!isAdmin && !isCriador) {
+            throw new GrupoNaoEncontrado();
+        }
+        
         sessaoRepo.delete(sessao);
+    }
+
+    private boolean isAdmin(GrupoDeEstudo grupo, String uid) {
+        return grupo.getAdmin() != null && grupo.getAdmin().getFirebaseUid().equals(uid);
+    }
+
+    private boolean invitedMatches(ConviteGrupo convite, String uid) {
+        return convite.getUidConvidado() != null && convite.getUidConvidado().equals(uid) && "PENDING".equals(convite.getStatus());
     }
 }
