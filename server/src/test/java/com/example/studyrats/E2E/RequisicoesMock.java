@@ -51,6 +51,13 @@ public class RequisicoesMock {
         this.postUrl = postURL;
     }
 
+    public void performGetOK(String complementoDoPath, String userToken) throws Exception {
+        driver.perform(get(getUrl+"/"+complementoDoPath)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer "+userToken))
+                .andExpect(status().isOk());
+    }
+
     public <T> T performGetOK(Class<T> expectedTypeResponse) throws Exception {
         String response = driver.perform(get(getUrl).contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -184,6 +191,16 @@ public class RequisicoesMock {
         return objectMapper.readValue(response, expectedTypeResponse);
     }
 
+    public void performPutOk(Object body, String userToken) throws Exception {
+        String jsonBody = objectMapper.writeValueAsString(body);
+        driver.perform(put(putUrl)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonBody)
+                        .header("Authorization", "Bearer "+userToken))
+                .andExpect(status().isOk());
+
+    }
+
     public void performDeleteUnauthorized() throws Exception {
         driver.perform(delete(deleteUrl)
                         .contentType(MediaType.APPLICATION_JSON))
@@ -204,8 +221,22 @@ public class RequisicoesMock {
                 .andExpect(status().isNoContent());
     }
 
+    public void performDeleteNoContent(String userToken, String complementoDoPath) throws Exception {
+        driver.perform(delete(deleteUrl+"/"+complementoDoPath)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer "+userToken))
+                .andExpect(status().isNoContent());
+    }
+
     public void performDeleteNotFound(String userToken) throws Exception {
         driver.perform(delete(deleteUrl)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer "+userToken))
+                .andExpect(status().isNotFound());
+    }
+
+    public void performDeleteNotFound(String complementoDoPath, String userToken) throws Exception {
+        driver.perform(delete(deleteUrl+"/"+complementoDoPath)
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "Bearer "+userToken))
                 .andExpect(status().isNotFound());
