@@ -17,6 +17,11 @@ public class Mensagens {
     public static final String UID_JA_CADASTRADO = "O id de usuário já está vinculado a uma conta ativa";
     public static final String EMAIL_JA_CADASTRADO = "Este e-mail já está vinculado a uma conta ativa.";
 
+    // Mensagens de exceções de Grupo de Estudo
+    public static final String GRUPO_NAO_ENCONTRADO = "O grupo de estudo solicitado não foi encontrado.";
+    public static final String CONVITE_NAO_ENCONTRADO = "O convite solicitado não foi encontrado.";
+
+
     // Mensagens dos tests
     public static final String NAO_RETORNOU_CONFLICT = "A rota não retornou 409 - Conflict - ";
     public static final String NAO_RETORNOU_UNAUTHORIZED = "A rota não retornou 401 - Unauthorized - ";

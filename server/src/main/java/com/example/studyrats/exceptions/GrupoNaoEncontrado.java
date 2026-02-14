@@ -1,7 +1,8 @@
 package com.example.studyrats.exceptions;
+import com.example.studyrats.util.Mensagens;
 
 public class GrupoNaoEncontrado extends RuntimeException {
     public GrupoNaoEncontrado() {
-        super("Grupo de estudo não encontrado");
+        super(Mensagens.GRUPO_NAO_ENCONTRADO);
     }
 }
