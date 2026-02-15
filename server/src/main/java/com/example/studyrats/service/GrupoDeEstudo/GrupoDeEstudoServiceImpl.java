@@ -108,7 +108,7 @@ public class GrupoDeEstudoServiceImpl implements GrupoDeEstudoService {
     }
 
     @Override
-    public void convidar(UUID idGrupo, String uidConvidado, String uid) { // Mudou de DTO para String
+    public void convidar(UUID idGrupo, String uidConvidado, String uid) { // aqui eu mudei o dto para sting
         GrupoDeEstudo grupo = grupoRepo.findById(idGrupo).orElseThrow(GrupoNaoEncontrado::new);
 
         var opt = membroRepo.findByGrupo_IdAndEstudante_FirebaseUid(idGrupo, uid);
