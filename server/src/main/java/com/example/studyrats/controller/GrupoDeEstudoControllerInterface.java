@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoPostPutRequestDTO;
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoResponseDTO;
+import com.example.studyrats.dto.ConviteGrupo.ConvitePostRequestDTO;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -96,13 +97,10 @@ public interface GrupoDeEstudoControllerInterface {
         @ApiResponse(responseCode = "404", description = "Grupo nao encontrado ou permissao insuficiente")
     })
 
-    @PostMapping("/{id}/convites")
+    @PostMapping("/convites")
     @ResponseStatus(HttpStatus.CREATED)
     void inviteUserToGrupo(
-            @Parameter(description = "ID do grupo", required = true)
-            @PathVariable UUID id,
-            @Parameter(description = "UID do usuário convidado", required = true)
-            @RequestParam("uid_convidado") String uidConvidado,
+            @RequestBody @Valid ConvitePostRequestDTO dto,
             HttpServletRequest request
     );
 

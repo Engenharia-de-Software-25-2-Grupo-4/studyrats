@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoPostPutRequestDTO;
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoResponseDTO;
+import com.example.studyrats.dto.ConviteGrupo.ConvitePostRequestDTO;
 import com.example.studyrats.service.GrupoDeEstudo.GrupoDeEstudoService;
 import com.example.studyrats.service.firebase.FirebaseService;
 import com.google.firebase.auth.FirebaseToken;
@@ -56,9 +57,9 @@ public class GrupoDeEstudoController implements GrupoDeEstudoControllerInterface
     }
 
     @Override
-    public void inviteUserToGrupo(UUID id, String uidConvidado, HttpServletRequest request) {
+    public void inviteUserToGrupo(ConvitePostRequestDTO dto, HttpServletRequest request) {
         String uid = getAuthenticatedUserId(request);
-        grupoService.convidar(id, uidConvidado, uid);
+        grupoService.convidar(dto.getIdGrupo(), dto.getUidConvidado(), uid);
     }
 
     @Override
