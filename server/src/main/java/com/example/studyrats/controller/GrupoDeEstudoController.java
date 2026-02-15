@@ -10,6 +10,7 @@ import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoPostPutRequestDTO;
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoResponseDTO;
 import com.example.studyrats.dto.ConviteGrupo.ConvitePostRequestDTO;
 import com.example.studyrats.service.GrupoDeEstudo.GrupoDeEstudoService;
+import com.example.studyrats.service.firebase.FirebaseService;
 import com.google.firebase.auth.FirebaseToken;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,6 +20,9 @@ public class GrupoDeEstudoController implements GrupoDeEstudoControllerInterface
 
     @Autowired
     private GrupoDeEstudoService grupoService;
+    
+    @Autowired
+    private FirebaseService firebaseService;
 
     @Override
     public GrupoDeEstudoResponseDTO createGrupoDeEstudo(GrupoDeEstudoPostPutRequestDTO dto, HttpServletRequest request) {
@@ -27,9 +31,12 @@ public class GrupoDeEstudoController implements GrupoDeEstudoControllerInterface
     }
 
     @Override
-    public GrupoDeEstudoResponseDTO getGrupoDeEstudo(UUID id) {
+    public GrupoDeEstudoResponseDTO getGrupoDeEstudo(UUID id, HttpServletRequest request) {
+        getAuthenticatedUserId(request);
         return grupoService.buscarPorId(id);
     }
+
+
 
     @Override
     public GrupoDeEstudoResponseDTO updateGrupoDeEstudo(UUID id, GrupoDeEstudoPostPutRequestDTO dto, HttpServletRequest request) {

@@ -5,9 +5,10 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 import com.example.studyrats.util.Mensagens;
 
-@ResponseStatus(HttpStatus.NOT_FOUND)
-public class ConviteNaoEncontrado extends RuntimeException {
-    public ConviteNaoEncontrado() {
-        super(Mensagens.CONVITE_NAO_ENCONTRADO);
+@ResponseStatus(HttpStatus.CONFLICT)
+public class GrupoJaExisteException extends RuntimeException {
+    public GrupoJaExisteException() {
+        super(Mensagens.GRUPO_JA_EXISTE);
     }
 }
+

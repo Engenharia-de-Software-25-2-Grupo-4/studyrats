@@ -4,7 +4,21 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="129b528f-473f-4232-86f1-f8a856280ff7" name="Changes" comment="" />
+    <list default="true" id="129b528f-473f-4232-86f1-f8a856280ff7" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/main/java/com/example/studyrats/config/FirebaseConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/java/com/example/studyrats/config/FirebaseConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/main/java/com/example/studyrats/controller/GrupoDeEstudoController.java" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/java/com/example/studyrats/controller/GrupoDeEstudoController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/main/java/com/example/studyrats/controller/GrupoDeEstudoControllerInterface.java" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/java/com/example/studyrats/controller/GrupoDeEstudoControllerInterface.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/main/java/com/example/studyrats/exceptions/ConviteNaoEncontrado.java" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/java/com/example/studyrats/exceptions/ConviteNaoEncontrado.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/main/java/com/example/studyrats/exceptions/GrupoNaoEncontrado.java" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/java/com/example/studyrats/exceptions/GrupoNaoEncontrado.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/main/java/com/example/studyrats/exceptions/ManipuladorGlobalDeExcecoes.java" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/java/com/example/studyrats/exceptions/ManipuladorGlobalDeExcecoes.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/main/java/com/example/studyrats/model/GrupoDeEstudo.java" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/java/com/example/studyrats/model/GrupoDeEstudo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/main/java/com/example/studyrats/repository/GrupoDeEstudoRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/java/com/example/studyrats/repository/GrupoDeEstudoRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/main/java/com/example/studyrats/service/GrupoDeEstudo/GrupoDeEstudoServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/java/com/example/studyrats/service/GrupoDeEstudo/GrupoDeEstudoServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/main/java/com/example/studyrats/util/Mensagens.java" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/main/java/com/example/studyrats/util/Mensagens.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/test/java/com/example/studyrats/E2E/estudante/EstudanteControllerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/test/java/com/example/studyrats/E2E/estudante/EstudanteControllerTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/server/src/test/java/com/example/studyrats/E2E/grupoDeEstudo/GrupoDeEstudoControllerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/server/src/test/java/com/example/studyrats/E2E/grupoDeEstudo/GrupoDeEstudoControllerTest.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -13,9 +27,9 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 5
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 5
+}</component>
   <component name="ProjectId" id="39Ia5VYYtUBVHalYF32kD0vobrx" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -27,9 +41,10 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "git-widget-placeholder": "Manipulador__global__de__exceções",
+    "git-widget-placeholder": "testes__E2E",
     "ignore.virus.scanning.warn.message": "true",
     "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/jao/Desktop/ES/studyrats",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -42,6 +57,7 @@
     <attachedChunks>
       <set>
         <option value="bundled-jdk-30f59d01ecdd-2fc7cc6b9a17-intellij.indexing.shared.core-IU-253.30387.90" />
+        <option value="bundled-js-predefined-d6986cc7102b-9b0f141eb926-JavaScript-IU-253.30387.90" />
       </set>
     </attachedChunks>
   </component>
@@ -53,6 +69,7 @@
       <option name="presentableId" value="Default" />
       <updated>1770385858376</updated>
       <workItem from="1770385865251" duration="1567000" />
+      <workItem from="1771168624358" duration="1182000" />
     </task>
     <servers />
   </component>

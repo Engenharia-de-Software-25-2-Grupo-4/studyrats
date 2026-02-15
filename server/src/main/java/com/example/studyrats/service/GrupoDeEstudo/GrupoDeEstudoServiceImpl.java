@@ -13,7 +13,9 @@ import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoResponseDTO;
 import com.example.studyrats.dto.ConviteGrupo.ConvitePostRequestDTO;
 import com.example.studyrats.exceptions.ConviteNaoEncontrado;
 import com.example.studyrats.exceptions.EstudanteNaoEncontrado;
+import com.example.studyrats.exceptions.GrupoJaExisteException;
 import com.example.studyrats.exceptions.GrupoNaoEncontrado;
+import com.example.studyrats.exceptions.SessaoDeEstudoNaoEncontrado;
 import com.example.studyrats.model.ConviteGrupo;
 import com.example.studyrats.model.GrupoDeEstudo;
 import com.example.studyrats.model.MembroGrupo;
@@ -49,6 +51,10 @@ public class GrupoDeEstudoServiceImpl implements GrupoDeEstudoService {
     @Override
     public GrupoDeEstudoResponseDTO criarGrupo(GrupoDeEstudoPostPutRequestDTO dto, String uid) {
         Estudante estudante = estudanteRepo.findById(uid).orElseThrow(EstudanteNaoEncontrado::new);
+
+        if (grupoRepo.existsByNomeAndAdmin_FirebaseUid(dto.getNome(), uid)) {
+            throw new GrupoJaExisteException();
+        }
         
         GrupoDeEstudo grupo = modelMapper.map(dto, GrupoDeEstudo.class);
         grupo.setAdmin(estudante);
@@ -149,10 +155,10 @@ public class GrupoDeEstudoServiceImpl implements GrupoDeEstudoService {
     @Override
     public void removerCheckinInvalido(UUID idGrupo, UUID idSessao, String uid) {
         GrupoDeEstudo grupo = grupoRepo.findById(idGrupo).orElseThrow(GrupoNaoEncontrado::new);
-        var sessao = sessaoRepo.findById(idSessao).orElseThrow(() -> new RuntimeException("Sessao nao encontrada"));
+        var sessao = sessaoRepo.findById(idSessao).orElseThrow(SessaoDeEstudoNaoEncontrado::new);
         
         if (!idGrupo.equals(sessao.getIdGrupo())) {
-            throw new RuntimeException("Sessao nao pertence ao grupo");
+            throw new SessaoDeEstudoNaoEncontrado();
         }
         
         boolean isAdmin = grupo.getAdmin() != null && grupo.getAdmin().getFirebaseUid().equals(uid);

@@ -45,7 +45,12 @@ public class GrupoDeEstudo {
     @JoinColumn(name = "admin_id", nullable = false)
     private Estudante admin;
 
-    @OneToMany(mappedBy = "grupo")
+    @Builder.Default
+    @OneToMany(
+        mappedBy = "grupo",
+        cascade = jakarta.persistence.CascadeType.ALL,
+        orphanRemoval = true
+    )
     @JsonIgnore
     private List<MembroGrupo> membros = new ArrayList<>();
 }

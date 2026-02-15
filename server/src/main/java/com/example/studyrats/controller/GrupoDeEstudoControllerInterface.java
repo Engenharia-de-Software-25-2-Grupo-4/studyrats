@@ -55,8 +55,8 @@ public interface GrupoDeEstudoControllerInterface {
     })
     @GetMapping("/{id}")
     GrupoDeEstudoResponseDTO getGrupoDeEstudo(
-        @Parameter(description = "ID do grupo", required = true)
-        @PathVariable UUID id
+        @PathVariable UUID id,
+        HttpServletRequest request
     );
 
     @Operation(summary = "Atualizar grupo")

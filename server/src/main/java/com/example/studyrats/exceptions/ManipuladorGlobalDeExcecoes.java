@@ -40,7 +40,9 @@ public class ManipuladorGlobalDeExcecoes {
     }
     @ExceptionHandler({
             EstudanteNaoEncontrado.class,
-            SessaoDeEstudoNaoEncontrado.class
+            SessaoDeEstudoNaoEncontrado.class,
+            GrupoNaoEncontrado.class,
+            ConviteNaoEncontrado.class
     })
     public ResponseEntity<?> manipularEstudanteNaoEncontrado(RuntimeException ex) {
         HttpStatus httpStatus = HttpStatus.NOT_FOUND;
@@ -49,7 +51,8 @@ public class ManipuladorGlobalDeExcecoes {
 
     @ExceptionHandler({
             EmailJaCadastrado.class,
-            UIDJaCadastrado.class
+            UIDJaCadastrado.class,
+            GrupoJaExisteException.class
     })
     public ResponseEntity<?> manipularEmailJaCadastrado(RuntimeException ex) {
         HttpStatus httpStatus = HttpStatus.CONFLICT;
