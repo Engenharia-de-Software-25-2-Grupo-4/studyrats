@@ -11,6 +11,7 @@ import com.example.studyrats.repository.GrupoDeEstudoRepository;
 import com.example.studyrats.repository.MembroGrupoRepository;
 import com.example.studyrats.service.firebase.FirebaseService;
 import com.example.studyrats.util.Mensagens;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
 import org.junit.jupiter.api.*;
@@ -27,6 +28,7 @@ import java.util.Random;
 
 import static org.assertj.core.api.Fail.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
@@ -49,6 +51,7 @@ public class GrupoDeEstudoControllerTest {
 
     private String tokenEstudante1 = "estudante1";
     private String tokenEstudante2 = "estudante2";
+    private String idQualquer = "00000000-eeee-dddd-aaaa-000000000000";
 
     private RequisicoesMock requisitor;
     private RequisicoesMock requisitorEstudante;
@@ -184,7 +187,7 @@ public class GrupoDeEstudoControllerTest {
             assertEquals(1, grupoDeEstudoRepository.findAll().size());
 
             setarToken(tokenEstudante2);
-            body = new EstudantePostPutRequestDTO("dono do grupo 2", "dono@grupo");
+            body = new EstudantePostPutRequestDTO("dono do grupo 2", "dono@grupo2");
             requisitorEstudante.performPostCreated(body, tokenEstudante2);
 
             bodyGrupo = new GrupoDeEstudoPostPutRequestDTO("grupo legal", "coisas legais");
@@ -192,7 +195,7 @@ public class GrupoDeEstudoControllerTest {
             assertEquals(2, grupoDeEstudoRepository.findAll().size());
 
             GrupoDeEstudo grupoAluno2Repo = grupoDeEstudoRepository.findById(grupoResponse.getId()).orElse(null);
-            assertEquals(tokenEstudante2, grupoAluno2Repo.getAdmin());
+            assertEquals(tokenEstudante2, grupoAluno2Repo.getAdmin().getFirebaseUid());
         }
 
         @Test
@@ -215,7 +218,7 @@ public class GrupoDeEstudoControllerTest {
         @DisplayName("Falha prevista ao tentar sem autenticação e banco vazio")
         void falhaSemAuth() throws Exception {
             try {
-                requisitor.performGetUnauthorized("idQualquer");
+                requisitor.performGetUnauthorized(idQualquer);
             } catch (AssertionError e) {
                 fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED);
             }
@@ -226,7 +229,7 @@ public class GrupoDeEstudoControllerTest {
         void falhaSemAuthBancoPovoado() throws Exception {
             gerarRandomsGruposEstudantes(100, 20);
             try {
-                requisitor.performGetUnauthorized("idQualquer");
+                requisitor.performGetUnauthorized(idQualquer);
             } catch (AssertionError e) {
                 fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED);
             }
@@ -236,7 +239,7 @@ public class GrupoDeEstudoControllerTest {
         @DisplayName("Falha prevista ao tentar com token invalido e banco vazio")
         void falharTokenInvalido() throws Exception {
             try {
-                requisitor.performGetUnauthorized("idQualquer", "tokenFeio");
+                requisitor.performGetUnauthorized(idQualquer, "tokenFeio");
             } catch (AssertionError e) {
                 fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED);
             }
@@ -247,7 +250,7 @@ public class GrupoDeEstudoControllerTest {
         void falharTokenInvalidoBancoPovoado() throws Exception {
             gerarRandomsGruposEstudantes(100, 20);
             try {
-                requisitor.performGetUnauthorized("idQualquer", "tokenFeio");
+                requisitor.performGetUnauthorized(idQualquer, "tokenFeio");
             } catch (AssertionError e) {
                 fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED);
             }
@@ -256,12 +259,12 @@ public class GrupoDeEstudoControllerTest {
         @Test
         @DisplayName("Get sem grupo cadastrado")
         void getSemGrupoCadastrado() throws Exception {
+            String token = "token";
+            setarToken(token);
+            EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO(randomChars(), randomChars());
+            requisitorEstudante.performPostCreated(body, token);
             try {
-                String token = "token";
-                setarToken(token);
-                EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO(randomChars(), randomChars());
-                requisitorEstudante.performPostCreated(body, token);
-                requisitor.performGetNotFound("idQualquer", token);
+                requisitor.performGetNotFound(idQualquer, token);
             } catch (AssertionError e) {
                 fail(Mensagens.NAO_RETORNOU_NOT_FOUND+e.getMessage());
             }
@@ -271,12 +274,12 @@ public class GrupoDeEstudoControllerTest {
         @DisplayName("Get de id inexistente com banco povoado")
         void getSemGrupoBancoPovoado() throws Exception {
             gerarRandomsGruposEstudantes(100, 10);
+            String token = "token";
+            setarToken(token);
+            EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO(randomChars(), randomChars());
+            requisitorEstudante.performPostCreated(body, token);
             try {
-                String token = "token";
-                setarToken(token);
-                EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO(randomChars(), randomChars());
-                requisitorEstudante.performPostCreated(body, token);
-                requisitor.performGetNotFound("idQUalquer", token);
+                requisitor.performGetNotFound(idQualquer, token);
             } catch (AssertionError e) {
                 fail(Mensagens.NAO_RETORNOU_NOT_FOUND+e.getMessage());
             }
@@ -338,7 +341,7 @@ public class GrupoDeEstudoControllerTest {
         @DisplayName("Falha prevista ao tentar com token invalido banco vazio")
         void falhaDeleteTokenInvalido() throws Exception {
             try {
-                requisitor.performDeleteUnauthorized("tokenQualquer");
+                requisitor.performDeleteUnauthorized(idQualquer, "tokenQualquer");
             } catch (AssertionError e) {
                 fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED);
             }
@@ -349,7 +352,7 @@ public class GrupoDeEstudoControllerTest {
         void falhaDeleteTokenInvalidoBancoPovoado() throws Exception {
             gerarRandomsGruposEstudantes(100, 10);
             try {
-                requisitor.performDeleteUnauthorized("tokenQualquer");
+                requisitor.performDeleteUnauthorized(idQualquer, "tokenQualquer");
             } catch (AssertionError e) {
                 fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED);
             }
@@ -374,6 +377,8 @@ public class GrupoDeEstudoControllerTest {
 
             List<GrupoDeEstudo> grupos = grupoDeEstudoRepository.findAll();
             assertEquals(0, grupos.size());
+            EstudanteResponseDTO estudantePos = requisitorEstudante.performGetOK(EstudanteResponseDTO.class, token, token);
+            assertEquals(estudante.getFirebaseUid(), estudantePos.getFirebaseUid());
         }
 
         @Test
@@ -390,20 +395,26 @@ public class GrupoDeEstudoControllerTest {
             GrupoDeEstudoPostPutRequestDTO bodyGrupo = new GrupoDeEstudoPostPutRequestDTO(randomChars(), randomChars());
             GrupoDeEstudoResponseDTO grupoTarget = requisitor.performPostCreated(GrupoDeEstudoResponseDTO.class, bodyGrupo, token);
 
+            List<GrupoDeEstudo> grupos = grupoDeEstudoRepository.findAll();
+            assertEquals((totalDeEstudantes*totalDeGruposPorEstudante)+1, grupos.size(), "Findall não trouxe o total de grupos esperados");
+
             try {
                 requisitor.performDeleteNoContent(token, grupoTarget.getId().toString());
             } catch (AssertionError e) {
                 fail(Mensagens.NAO_RETORNOU_NO_CONTENT+e.getMessage());
             }
 
-            List<GrupoDeEstudo> grupos = grupoDeEstudoRepository.findAll();
-            assertEquals((totalDeEstudantes*totalDeGruposPorEstudante)-1, grupos.size(), "Findall não trouxe o total de grupos esperados");
+            grupos = grupoDeEstudoRepository.findAll();
+            assertEquals((totalDeEstudantes*totalDeGruposPorEstudante), grupos.size(), "Findall não trouxe o total de grupos esperados");
 
             try {
                 requisitor.performGetNotFound(grupoTarget.getId().toString(), token);
             } catch (AssertionError e) {
                 fail("O get não retornou not found após deletar o grupo pesquisado");
             }
+
+            estudante = requisitorEstudante.performGetOK(EstudanteResponseDTO.class, token, token);
+            assertNotNull(estudante, "Não foi possível recuperar o estudante após deletar o grupo");
         }
 
         @Test
@@ -445,9 +456,93 @@ public class GrupoDeEstudoControllerTest {
     }
 
     @Nested
-    @DisplayName("Testes de convidar usuário")
+    @DisplayName("Testes de getAll por estudante")
+    class TestesGetAlPorEstudante {
+
+        @Test
+        @DisplayName("Falha prevista ao tentar sem autenticação banco vazio")
+        void falhaGetAllSemAuth() throws Exception {
+            try {
+                requisitor.performGetUnauthorized();
+            } catch (AssertionError e) {
+                fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED+e.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("Falha prevista ao tentar sem autenticação banco povoado")
+        void falhaGetAllSemAuthBancoPovoado() throws Exception {
+            gerarRandomsGruposEstudantes(100, 10);
+            try {
+                requisitor.performGetUnauthorized();
+            } catch (AssertionError e) {
+                fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED+e.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("Falha prevista ao tentar token invalido banco vazio")
+        void falhaGetAllTokenInvalido() throws Exception {
+            try {
+                String token = "token";
+                requisitor.performGetUnauthorized("", token);
+            } catch (AssertionError e) {
+                fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED+e.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("Falha prevista ao tentar token invalido banco p")
+        void falhaGetAllTokenInvalidoBancoPovoado() throws Exception {
+            gerarRandomsGruposEstudantes(100, 10);
+            try {
+                String token = "token";
+                requisitor.performGetUnauthorized("", token);
+            } catch (AssertionError e) {
+                fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED+e.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("Sucesso com banco povoado")
+        void sucessoComBancoPovoado() throws Exception {
+            gerarRandomsGruposEstudantes(100, 10);
+            setarToken(tokenEstudante1);
+            EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO("dono do grupo", "dono@grupo");
+            requisitorEstudante.performPostCreated(body, tokenEstudante1);
+
+            GrupoDeEstudoPostPutRequestDTO bodyGrupo = new GrupoDeEstudoPostPutRequestDTO("grupo legal", "coisas legais");
+            GrupoDeEstudoResponseDTO grupoResponse1 = requisitor.performPostCreated(GrupoDeEstudoResponseDTO.class, bodyGrupo, tokenEstudante1);
+            bodyGrupo = new GrupoDeEstudoPostPutRequestDTO("grupo legal 2", "coisas legais");
+            GrupoDeEstudoResponseDTO grupoResponse2 = requisitor.performPostCreated(GrupoDeEstudoResponseDTO.class, bodyGrupo, tokenEstudante1);
+
+            List<GrupoDeEstudoResponseDTO> grupos = requisitor.performGetOK(new TypeReference<List<GrupoDeEstudoResponseDTO>>() {}, tokenEstudante1);
+            assertEquals(2, grupos.size());
+
+            setarToken(tokenEstudante2);
+            body = new EstudantePostPutRequestDTO("dono do grupo", "dono@grupo2");
+            requisitorEstudante.performPostCreated(body, tokenEstudante2);
+            grupos = requisitor.performGetOK(new TypeReference<List<GrupoDeEstudoResponseDTO>>() {}, tokenEstudante2);
+            assertEquals(0, grupos.size());
+        }
+
+    }
+
+    @Nested
+    @DisplayName("Testes de convidar estudante")
     class TestesConvidarUsuario {
 
+        private String pathExtra = "/convites";
+
+        @Test
+        @DisplayName("Falha prevista ao tentar sem autenticação")
+        void falhaConvidarSemAuth() {
+//            try {
+//                requisitor.performPostUnauthorized();
+//            } catch (AssertionError e) {
+//
+//            }
+        }
     }
 
     @Nested

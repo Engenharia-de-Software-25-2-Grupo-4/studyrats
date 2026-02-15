@@ -21,6 +21,12 @@ public class ManipuladorGlobalDeExcecoes {
     }
     */
 
+//    @ExceptionHandler(Exception.class)
+//    public ResponseEntity<?> geralParaTests(Exception ex) {
+//        HttpStatus httpStatus = HttpStatus.OK;
+//        return testReturn(httpStatus, ex);
+//    }
+
     @ExceptionHandler(FirebaseJsonNaoEncontrado.class)
     public ResponseEntity<?> manipularFirebaseJsonNaoEncontrado(FirebaseJsonNaoEncontrado ex) {
         HttpStatus httpStatus = HttpStatus.SERVICE_UNAVAILABLE;
@@ -67,6 +73,13 @@ public class ManipuladorGlobalDeExcecoes {
                 .forEach(error -> campos.put(error.getField(), error.getDefaultMessage()));
 
         RespostaDeErroComCampos body = new RespostaDeErroComCampos(httpStatus.value(), httpStatus.getReasonPhrase(), "Campos invalidos", campos);
+        return ResponseEntity
+                .status(httpStatus)
+                .body(body);
+    }
+
+    private ResponseEntity<?> testReturn(HttpStatus httpStatus, Exception ex) {
+        RespostaDeErro body = new RespostaDeErro(httpStatus.value(), ex.toString(), ex.toString());
         return ResponseEntity
                 .status(httpStatus)
                 .body(body);
