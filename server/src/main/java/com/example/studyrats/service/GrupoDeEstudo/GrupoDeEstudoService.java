@@ -5,7 +5,6 @@ import java.util.UUID;
 
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoPostPutRequestDTO;
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoResponseDTO;
-import com.example.studyrats.dto.ConviteGrupo.ConvitePostRequestDTO;
 
 public interface GrupoDeEstudoService {
 
@@ -20,7 +19,7 @@ public interface GrupoDeEstudoService {
     List<GrupoDeEstudoResponseDTO> listarPorUsuario(String uid);
 
     // Convites
-    void convidar(UUID idGrupo, ConvitePostRequestDTO dto, String uid);
+    void convidar(UUID idGrupo, String uidConvidado, String uid);
 
     void aceitarConvite(UUID idConvite, String uid);
 

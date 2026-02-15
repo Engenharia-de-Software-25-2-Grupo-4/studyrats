@@ -5,18 +5,10 @@ import java.util.UUID;
 
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoPostPutRequestDTO;
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoResponseDTO;
-import com.example.studyrats.dto.ConviteGrupo.ConvitePostRequestDTO;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -103,13 +95,15 @@ public interface GrupoDeEstudoControllerInterface {
         @ApiResponse(responseCode = "401", description = "Nao autenticado"),
         @ApiResponse(responseCode = "404", description = "Grupo nao encontrado ou permissao insuficiente")
     })
+
     @PostMapping("/{id}/convites")
     @ResponseStatus(HttpStatus.CREATED)
     void inviteUserToGrupo(
-        @Parameter(description = "ID do grupo", required = true)
-        @PathVariable UUID id, 
-        @RequestBody @Valid ConvitePostRequestDTO dto, 
-        HttpServletRequest request
+            @Parameter(description = "ID do grupo", required = true)
+            @PathVariable UUID id,
+            @Parameter(description = "UID do usuário convidado", required = true)
+            @RequestParam("uid_convidado") String uidConvidado,
+            HttpServletRequest request
     );
 
     @Operation(summary = "Aceitar convite")

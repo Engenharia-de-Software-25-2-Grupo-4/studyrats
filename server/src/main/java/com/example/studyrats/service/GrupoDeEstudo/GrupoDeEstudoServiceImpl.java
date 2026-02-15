@@ -10,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoPostPutRequestDTO;
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoResponseDTO;
-import com.example.studyrats.dto.ConviteGrupo.ConvitePostRequestDTO;
 import com.example.studyrats.exceptions.ConviteNaoEncontrado;
 import com.example.studyrats.exceptions.EstudanteNaoEncontrado;
 import com.example.studyrats.exceptions.GrupoJaExisteException;
@@ -109,20 +108,22 @@ public class GrupoDeEstudoServiceImpl implements GrupoDeEstudoService {
     }
 
     @Override
-    public void convidar(UUID idGrupo, ConvitePostRequestDTO dto, String uid) {
+    public void convidar(UUID idGrupo, String uidConvidado, String uid) { // Mudou de DTO para String
         GrupoDeEstudo grupo = grupoRepo.findById(idGrupo).orElseThrow(GrupoNaoEncontrado::new);
-        
+
         var opt = membroRepo.findByGrupo_IdAndEstudante_FirebaseUid(idGrupo, uid);
         if (opt.isEmpty()) {
             throw new GrupoNaoEncontrado();
         }
-        
+
         Estudante convidante = estudanteRepo.findById(uid).orElseThrow(EstudanteNaoEncontrado::new);
 
         ConviteGrupo convite = new ConviteGrupo();
         convite.setGrupo(grupo);
         convite.setConvidante(convidante);
-        convite.setUidConvidado(dto.getUidConvidado());
+
+        convite.setUidConvidado(uidConvidado);
+
         convite.setStatus("PENDING");
         conviteRepo.save(convite);
     }

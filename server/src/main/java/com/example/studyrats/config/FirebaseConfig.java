@@ -7,10 +7,11 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseOptions;
 import jakarta.annotation.PostConstruct;
 import com.google.firebase.FirebaseApp;
+import org.springframework.context.annotation.Profile;
 
 import java.io.IOException;
 import java.io.InputStream;
-
+@Profile("!test")
 @Configuration
 public class FirebaseConfig {
 
