@@ -207,6 +207,13 @@ public class RequisicoesMock {
                 .andExpect(status().isUnauthorized());
     }
 
+    public void performDeleteUnauthorized(String complementoDoPath, String userToken) throws Exception {
+        driver.perform(delete(deleteUrl+"/"+complementoDoPath)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer "+userToken))
+                .andExpect(status().isUnauthorized());
+    }
+
     public void performDeleteUnauthorized(String userToken) throws Exception {
         driver.perform(delete(deleteUrl)
                         .contentType(MediaType.APPLICATION_JSON)

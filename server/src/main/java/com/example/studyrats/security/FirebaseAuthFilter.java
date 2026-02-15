@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import com.google.firebase.auth.FirebaseToken;
 import jakarta.servlet.FilterChain;
 
+import java.io.IOException;
 import java.util.List;
 
 public class FirebaseAuthFilter extends OncePerRequestFilter {
@@ -20,12 +21,23 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException {
         try {
             String authHeader = request.getHeader("Authorization");
 
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+                String json = """
+                {
+                    "error": "Firebase incomplete",
+                    "message": "%s"
+                }
+                """.formatted("authHeader: "+authHeader);
+
+                response.getWriter().write(json);
+                response.getWriter().flush();
                 return;
             } else {
                 String token = authHeader.substring(7);
@@ -44,6 +56,17 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
 
         } catch (Exception e) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            String json = """
+            {
+                "error": "Firebase catch",
+                "message": "%s"
+            }
+            """.formatted(e.getMessage());
+
+            response.getWriter().write(json);
+            response.getWriter().flush();
             return;
         }
     }
