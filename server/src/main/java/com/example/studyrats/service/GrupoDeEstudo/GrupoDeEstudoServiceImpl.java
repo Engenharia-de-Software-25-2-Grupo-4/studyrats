@@ -13,6 +13,7 @@ import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoResponseDTO;
 import com.example.studyrats.dto.ConviteGrupo.ConvitePostRequestDTO;
 import com.example.studyrats.exceptions.ConviteNaoEncontrado;
 import com.example.studyrats.exceptions.EstudanteNaoEncontrado;
+import com.example.studyrats.exceptions.GrupoJaExisteException;
 import com.example.studyrats.exceptions.GrupoNaoEncontrado;
 import com.example.studyrats.exceptions.SessaoDeEstudoNaoEncontrado;
 import com.example.studyrats.model.ConviteGrupo;
@@ -50,6 +51,10 @@ public class GrupoDeEstudoServiceImpl implements GrupoDeEstudoService {
     @Override
     public GrupoDeEstudoResponseDTO criarGrupo(GrupoDeEstudoPostPutRequestDTO dto, String uid) {
         Estudante estudante = estudanteRepo.findById(uid).orElseThrow(EstudanteNaoEncontrado::new);
+
+        if (grupoRepo.existsByNomeAndAdmin_FirebaseUid(dto.getNome(), uid)) {
+            throw new GrupoJaExisteException();
+        }
         
         GrupoDeEstudo grupo = modelMapper.map(dto, GrupoDeEstudo.class);
         grupo.setAdmin(estudante);

@@ -20,7 +20,7 @@ public class Mensagens {
     // Mensagens de exceções de Grupo de Estudo
     public static final String GRUPO_NAO_ENCONTRADO = "O grupo de estudo solicitado não foi encontrado.";
     public static final String CONVITE_NAO_ENCONTRADO = "O convite solicitado não foi encontrado.";
-
+    public static final String GRUPO_JA_EXISTE = "Grupo com mesmo nome já existe para este estudante";
 
     // Mensagens dos tests
     public static final String NAO_RETORNOU_CONFLICT = "A rota não retornou 409 - Conflict - ";
