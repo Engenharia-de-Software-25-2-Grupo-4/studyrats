@@ -27,6 +27,7 @@ import java.util.Random;
 
 import static org.assertj.core.api.Fail.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
@@ -392,20 +393,26 @@ public class GrupoDeEstudoControllerTest {
             GrupoDeEstudoPostPutRequestDTO bodyGrupo = new GrupoDeEstudoPostPutRequestDTO(randomChars(), randomChars());
             GrupoDeEstudoResponseDTO grupoTarget = requisitor.performPostCreated(GrupoDeEstudoResponseDTO.class, bodyGrupo, token);
 
+            List<GrupoDeEstudo> grupos = grupoDeEstudoRepository.findAll();
+            assertEquals((totalDeEstudantes*totalDeGruposPorEstudante)+1, grupos.size(), "Findall não trouxe o total de grupos esperados");
+
             try {
                 requisitor.performDeleteNoContent(token, grupoTarget.getId().toString());
             } catch (AssertionError e) {
                 fail(Mensagens.NAO_RETORNOU_NO_CONTENT+e.getMessage());
             }
 
-            List<GrupoDeEstudo> grupos = grupoDeEstudoRepository.findAll();
-            assertEquals((totalDeEstudantes*totalDeGruposPorEstudante)-1, grupos.size(), "Findall não trouxe o total de grupos esperados");
+            grupos = grupoDeEstudoRepository.findAll();
+            assertEquals((totalDeEstudantes*totalDeGruposPorEstudante), grupos.size(), "Findall não trouxe o total de grupos esperados");
 
             try {
                 requisitor.performGetNotFound(grupoTarget.getId().toString(), token);
             } catch (AssertionError e) {
                 fail("O get não retornou not found após deletar o grupo pesquisado");
             }
+
+            estudante = requisitorEstudante.performGetOK(EstudanteResponseDTO.class, token, token);
+            assertNotNull(estudante, "Não foi possível recuperar o estudante após deletar o grupo");
         }
 
         @Test
@@ -523,11 +530,13 @@ public class GrupoDeEstudoControllerTest {
     @DisplayName("Testes de convidar estudante")
     class TestesConvidarUsuario {
 
+        private String pathExtra = "/convites";
+
         @Test
         @DisplayName("Falha prevista ao tentar sem autenticação")
         void falhaConvidarSemAuth() {
 //            try {
-//                requisitor.performPostCreated();
+//                requisitor.performPostUnauthorized();
 //            } catch (AssertionError e) {
 //
 //            }
