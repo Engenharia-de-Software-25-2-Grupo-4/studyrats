@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoPostPutRequestDTO;
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoResponseDTO;
-import com.example.studyrats.dto.ConviteGrupo.ConvitePostRequestDTO;
+import com.example.studyrats.dto.ConviteGrupo.ConviteResponseDTO;
 import com.example.studyrats.service.GrupoDeEstudo.GrupoDeEstudoService;
 import com.example.studyrats.service.firebase.FirebaseService;
 import com.google.firebase.auth.FirebaseToken;
@@ -57,21 +57,21 @@ public class GrupoDeEstudoController implements GrupoDeEstudoControllerInterface
     }
 
     @Override
-    public void inviteUserToGrupo(ConvitePostRequestDTO dto, HttpServletRequest request) {
+    public String generateInviteLink(UUID idGrupo, HttpServletRequest request) {
         String uid = getAuthenticatedUserId(request);
-        grupoService.convidar(dto.getIdGrupo(), dto.getUidConvidado(), uid);
+        return grupoService.gerarConviteLink(idGrupo, uid);
     }
 
     @Override
-    public void acceptInvite(UUID idConvite, HttpServletRequest request) {
+    public ConviteResponseDTO validateInvite(String token, HttpServletRequest request) {
         String uid = getAuthenticatedUserId(request);
-        grupoService.aceitarConvite(idConvite, uid);
+        return grupoService.validarConvite(token, uid);
     }
 
     @Override
-    public List<?> listInvites(HttpServletRequest request) {
+    public void joinGroupViaInvite(String token, HttpServletRequest request) {
         String uid = getAuthenticatedUserId(request);
-        return grupoService.listarConvites(uid);
+        grupoService.aceitarConvite(token, uid);
     }
 
     @Override

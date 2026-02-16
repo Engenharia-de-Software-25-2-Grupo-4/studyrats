@@ -1,15 +1,10 @@
 package com.example.studyrats.model;
 
 import java.util.UUID;
-
+import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -25,17 +20,20 @@ public class ConviteGrupo {
     @JsonProperty("id_convite")
     private UUID id;
 
+    @Column(unique = true, nullable = false)
+    private String token;
+
     @ManyToOne
     @JoinColumn(name = "grupo_id", nullable = false)
     private GrupoDeEstudo grupo;
 
     @ManyToOne
-    @JoinColumn(name = "convidante_id", nullable = false)
-    private Estudante convidante;
+    @JoinColumn(name = "criador_id", nullable = false)
+    private Estudante criador;
 
-    @JsonProperty("uid_convidado")
-    private String uidConvidado;
+    @Column(nullable = false)
+    private LocalDateTime dataExpiracao;
 
-    @JsonProperty("status")
-    private String status;
+    @Column(nullable = false)
+    private boolean ativo = true;
 }

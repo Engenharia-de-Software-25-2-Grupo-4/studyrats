@@ -42,7 +42,8 @@ public class ManipuladorGlobalDeExcecoes {
             EstudanteNaoEncontrado.class,
             SessaoDeEstudoNaoEncontrado.class,
             GrupoNaoEncontrado.class,
-            ConviteNaoEncontrado.class
+            ConviteNaoEncontrado.class,
+            ConviteExpirado.class,
     })
     public ResponseEntity<?> manipularEstudanteNaoEncontrado(RuntimeException ex) {
         HttpStatus httpStatus = HttpStatus.NOT_FOUND;
@@ -52,14 +53,19 @@ public class ManipuladorGlobalDeExcecoes {
     @ExceptionHandler({
             EmailJaCadastrado.class,
             UIDJaCadastrado.class,
-            GrupoJaExisteException.class
+            GrupoJaExisteException.class,
+            EstudanteJaParticipa.class,
     })
     public ResponseEntity<?> manipularEmailJaCadastrado(RuntimeException ex) {
         HttpStatus httpStatus = HttpStatus.CONFLICT;
         return baseReturn(httpStatus, ex);
     }
 
-    @ExceptionHandler(EstudanteNaoAutenticado.class)
+    @ExceptionHandler({
+            EstudanteNaoAutenticado.class,
+            UsuarioNaoAdmin.class
+    })
+
     public ResponseEntity<?> manipularEstudanteNaoAutenticado(EstudanteNaoAutenticado ex) {
         HttpStatus httpStatus = HttpStatus.UNAUTHORIZED;
         return baseReturn(httpStatus, ex);

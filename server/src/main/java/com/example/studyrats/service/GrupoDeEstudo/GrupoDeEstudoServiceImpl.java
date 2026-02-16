@@ -1,20 +1,18 @@
 package com.example.studyrats.service.GrupoDeEstudo;
 
 import java.util.List;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
+import com.example.studyrats.exceptions.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.studyrats.dto.ConviteGrupo.ConviteResponseDTO;
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoPostPutRequestDTO;
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoResponseDTO;
-import com.example.studyrats.exceptions.ConviteNaoEncontrado;
-import com.example.studyrats.exceptions.EstudanteNaoEncontrado;
-import com.example.studyrats.exceptions.GrupoJaExisteException;
-import com.example.studyrats.exceptions.GrupoNaoEncontrado;
-import com.example.studyrats.exceptions.SessaoDeEstudoNaoEncontrado;
 import com.example.studyrats.model.ConviteGrupo;
 import com.example.studyrats.model.GrupoDeEstudo;
 import com.example.studyrats.model.MembroGrupo;
@@ -108,49 +106,73 @@ public class GrupoDeEstudoServiceImpl implements GrupoDeEstudoService {
     }
 
     @Override
-    public void convidar(UUID idGrupo, String uidConvidado, String uid) { // aqui eu mudei o dto para sting
-        GrupoDeEstudo grupo = grupoRepo.findById(idGrupo).orElseThrow(GrupoNaoEncontrado::new);
+    public String gerarConviteLink(UUID idGrupo, String uidAdmin) {
+        GrupoDeEstudo grupo = grupoRepo.findById(idGrupo)
+                .orElseThrow(GrupoNaoEncontrado::new);
 
-        var opt = membroRepo.findByGrupo_IdAndEstudante_FirebaseUid(idGrupo, uid);
-        if (opt.isEmpty()) {
-            throw new GrupoNaoEncontrado();
+        if (!grupo.getAdmin().getFirebaseUid().equals(uidAdmin)) {
+            throw new UsuarioNaoAdmin();
         }
 
-        Estudante convidante = estudanteRepo.findById(uid).orElseThrow(EstudanteNaoEncontrado::new);
+        Estudante admin = estudanteRepo.findById(uidAdmin)
+                .orElseThrow(EstudanteNaoEncontrado::new);
 
         ConviteGrupo convite = new ConviteGrupo();
         convite.setGrupo(grupo);
-        convite.setConvidante(convidante);
+        convite.setCriador(admin);
+        convite.setToken(UUID.randomUUID().toString());
+        convite.setDataExpiracao(LocalDateTime.now().plusHours(48));
+        convite.setAtivo(true);
 
-        convite.setUidConvidado(uidConvidado);
-
-        convite.setStatus("PENDING");
         conviteRepo.save(convite);
+
+        return convite.getToken();
     }
 
+
     @Override
-    public void aceitarConvite(UUID idConvite, String uid) {
-        ConviteGrupo convite = conviteRepo.findById(idConvite).orElseThrow(ConviteNaoEncontrado::new);
-        
-        if (!invitedMatches(convite, uid)) {
-            throw new ConviteNaoEncontrado();
+    public ConviteResponseDTO validarConvite(String token, String uidUsuario) {
+        ConviteGrupo convite = conviteRepo.findByToken(token)
+                .orElseThrow(ConviteNaoEncontrado::new);
+
+        if (!convite.isAtivo() || LocalDateTime.now().isAfter(convite.getDataExpiracao())) {
+            throw new ConviteExpirado();
         }
-        
-        convite.setStatus("ACCEPTED");
-        conviteRepo.save(convite);
 
-        Estudante estudante = estudanteRepo.findById(uid).orElseThrow(EstudanteNaoEncontrado::new);
-        
-        MembroGrupo membro = new MembroGrupo();
-        membro.setGrupo(convite.getGrupo());
-        membro.setEstudante(estudante);
-        membro.setRole("MEMBER");
-        membroRepo.save(membro);
+        GrupoDeEstudo grupo = convite.getGrupo();
+
+        boolean jaMembro = membroRepo.existsByGrupo_IdAndEstudante_FirebaseUid(grupo.getId(), uidUsuario);
+
+        return new ConviteResponseDTO(
+                grupo.getId(),
+                grupo.getNome(),
+                grupo.getDescricao(),
+                jaMembro
+        );
     }
 
     @Override
-    public List<?> listarConvites(String uid) {
-        return conviteRepo.findByUidConvidado(uid);
+    public void aceitarConvite(String token, String uidUsuario) {
+        ConviteGrupo convite = conviteRepo.findByToken(token)
+                .orElseThrow(ConviteNaoEncontrado::new);
+
+        if (!convite.isAtivo() || LocalDateTime.now().isAfter(convite.getDataExpiracao())) {
+            throw new ConviteExpirado();
+        }
+
+        if (membroRepo.existsByGrupo_IdAndEstudante_FirebaseUid(convite.getGrupo().getId(), uidUsuario)) {
+            throw new EstudanteJaParticipa();
+        }
+
+        Estudante estudante = estudanteRepo.findById(uidUsuario)
+                .orElseThrow(EstudanteNaoEncontrado::new);
+
+        MembroGrupo novoMembro = new MembroGrupo();
+        novoMembro.setGrupo(convite.getGrupo());
+        novoMembro.setEstudante(estudante);
+        novoMembro.setRole("MEMBER");
+
+        membroRepo.save(novoMembro);
     }
 
     @Override
@@ -174,9 +196,5 @@ public class GrupoDeEstudoServiceImpl implements GrupoDeEstudoService {
 
     private boolean isAdmin(GrupoDeEstudo grupo, String uid) {
         return grupo.getAdmin() != null && grupo.getAdmin().getFirebaseUid().equals(uid);
-    }
-
-    private boolean invitedMatches(ConviteGrupo convite, String uid) {
-        return convite.getUidConvidado() != null && convite.getUidConvidado().equals(uid) && "PENDING".equals(convite.getStatus());
     }
 }

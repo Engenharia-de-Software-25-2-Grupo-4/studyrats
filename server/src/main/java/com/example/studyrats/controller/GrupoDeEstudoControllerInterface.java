@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoPostPutRequestDTO;
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoResponseDTO;
-import com.example.studyrats.dto.ConviteGrupo.ConvitePostRequestDTO;
+import com.example.studyrats.dto.ConviteGrupo.ConviteResponseDTO;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -89,55 +89,57 @@ public interface GrupoDeEstudoControllerInterface {
     @GetMapping
     List<GrupoDeEstudoResponseDTO> listGrupoDeEstudosByUser(HttpServletRequest request);
 
-    @Operation(summary = "Convidar usuario para o grupo")
+    @Operation(summary = "Gerar link de convite (Admin)")
     @ApiResponses({
-        @ApiResponse(responseCode = "201", description = "Convite enviado"),
-        @ApiResponse(responseCode = "400", description = "Dados invalidos"),
-        @ApiResponse(responseCode = "401", description = "Nao autenticado"),
-        @ApiResponse(responseCode = "404", description = "Grupo nao encontrado ou permissao insuficiente")
+            @ApiResponse(responseCode = "200", description = "Token gerado com sucesso"),
+            @ApiResponse(responseCode = "403", description = "Apenas admin pode gerar convites"),
+            @ApiResponse(responseCode = "404", description = "Grupo nao encontrado")
     })
-
-    @PostMapping("/convites")
-    @ResponseStatus(HttpStatus.CREATED)
-    void inviteUserToGrupo(
-            @RequestBody @Valid ConvitePostRequestDTO dto,
+    @PostMapping("/{idGrupo}/convites/gerar")
+    String generateInviteLink(
+            @Parameter(description = "ID do grupo", required = true)
+            @PathVariable UUID idGrupo,
             HttpServletRequest request
     );
 
-    @Operation(summary = "Aceitar convite")
+    @Operation(summary = "Validar link de convite (Obter info do grupo)")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Convite aceito"),
-        @ApiResponse(responseCode = "401", description = "Nao autenticado"),
-        @ApiResponse(responseCode = "404", description = "Convite nao encontrado")
+            @ApiResponse(responseCode = "200", description = "Convite valido"),
+            @ApiResponse(responseCode = "404", description = "Convite invalido ou expirado")
     })
-    @PostMapping("/convites/{idConvite}/aceitar")
-    void acceptInvite(
-        @Parameter(description = "ID do convite", required = true)
-        @PathVariable UUID idConvite, 
-        HttpServletRequest request
+    @GetMapping("/convites/{token}")
+    ConviteResponseDTO validateInvite(
+            @Parameter(description = "Token do convite", required = true)
+            @PathVariable String token,
+            HttpServletRequest request
     );
 
-    @Operation(summary = "Listar convites do usuario autenticado")
+    @Operation(summary = "Entrar no grupo via link")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Lista retornada"),
-        @ApiResponse(responseCode = "401", description = "Nao autenticado")
+            @ApiResponse(responseCode = "200", description = "Entrada realizada com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Usuario ja pertence ao grupo ou convite expirado"),
+            @ApiResponse(responseCode = "404", description = "Convite invalido")
     })
-    @GetMapping("/convites")
-    List<?> listInvites(HttpServletRequest request);
+    @PostMapping("/convites/{token}/entrar")
+    void joinGroupViaInvite(
+            @Parameter(description = "Token do convite", required = true)
+            @PathVariable String token,
+            HttpServletRequest request
+    );
 
     @Operation(summary = "Remover check-in inválido (admins)")
     @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "Check-in removido"),
-        @ApiResponse(responseCode = "401", description = "Nao autenticado"),
-        @ApiResponse(responseCode = "404", description = "Grupo ou Sessao nao encontrada")
+            @ApiResponse(responseCode = "204", description = "Check-in removido"),
+            @ApiResponse(responseCode = "401", description = "Nao autenticado"),
+            @ApiResponse(responseCode = "404", description = "Grupo ou Sessao nao encontrada")
     })
     @DeleteMapping("/{idGrupo}/checkins/{idSessao}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void removeInvalidCheckin(
-        @Parameter(description = "ID do grupo", required = true)
-        @PathVariable UUID idGrupo, 
-        @Parameter(description = "ID da sessao", required = true)
-        @PathVariable UUID idSessao, 
-        HttpServletRequest request
+            @Parameter(description = "ID do grupo", required = true)
+            @PathVariable UUID idGrupo,
+            @Parameter(description = "ID da sessao", required = true)
+            @PathVariable UUID idSessao,
+            HttpServletRequest request
     );
 }
