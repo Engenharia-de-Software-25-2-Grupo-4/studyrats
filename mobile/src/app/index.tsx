@@ -1,50 +1,28 @@
-import Onboarding from "@/components/Onboarding";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, useWindowDimensions, View } from "react-native";
-import Login from "./login";
+import { useState } from "react";
+import NovoCheckIn from "./sessao_estudo";
+import Publicacao from "./publicacao";
 
-const Loading = () => {
-    return (
-        <View>
-            <ActivityIndicator size="large"/>
-        </View>
-    )
+export default function Index() {
+  const [publicacao, setPublicacao] = useState(false);
+  const [dadosCheckIn, setDadosCheckIn] = useState<any>(null);
+
+  function handleCriarCheckIn(dados: any) {
+    setDadosCheckIn(dados);
+    setPublicacao(true);
+  }
+
+  function handleEditar() {
+    setPublicacao(false);
+  }
+
+  return publicacao ? (
+    <Publicacao
+      dados={dadosCheckIn}
+      onVoltar={() => setPublicacao(false)}
+      onEditar={handleEditar}
+    />
+  ) : (
+    <NovoCheckIn sessao={dadosCheckIn} onCriar={handleCriarCheckIn} />
+  );
+
 }
-
-export default function Index(){
-    const { width } = useWindowDimensions()
-
-    const [loading, setLoading] = useState(true);
-    const [viewedOnboarding, setViewedOnboarding] = useState(false)
-
-    const checkOnboarding = async () => {
-        try {
-            const value = await AsyncStorage.getItem('@viewedOnboarding')
-
-            if (value !== null){
-                setViewedOnboarding(true)
-            }
-        } catch (error) {
-            console.log('Error @checkOnboarding: ', error)
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        checkOnboarding()
-    }, [])
-
-    return (
-        <View style={[styles.container, { width }]}>
-            {loading ? <Loading/> : viewedOnboarding ? <Login/> : <Onboarding/>} 
-        </View>
-    )
-}
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    }
-})

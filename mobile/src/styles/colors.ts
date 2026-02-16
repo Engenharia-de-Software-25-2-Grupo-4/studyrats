@@ -3,6 +3,7 @@ export const colors = {
     100: "#F8FFFC",
     200: "#EEF4F1",
     300: "#EAF9FF",
+    400: "#F3FBFF"
   },
 
   azul: {

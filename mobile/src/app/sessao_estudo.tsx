@@ -1,35 +1,52 @@
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Image } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Image, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Modal } from "react-native";
 
+type Props = {
+  onCriar: (dados: any) => void;
+  sessao?: any;
+};
 
-export default function NovoCheckIn() {
+export default function NovoCheckIn({onCriar, sessao}: Props) {
     
     const [image, setImage] = useState<string | null>(null);
     const [titulo, setTitulo] = useState("");
     const [descricao, setDescricao] = useState("");
-    const [disciplina, setDisciplina] = useState<string | null>(null);
+    const [disciplina, setDisciplina] = useState<{ id: string; nome: string } | null>(null);
     const [mostrarDisciplinas, setMostrarDisciplinas] = useState(false);
+    const [criandoNova, setCriandoNova] = useState(false);
+    const [novaDisciplina, setNovaDisciplina] = useState("");
     const [dataHora, setDataHora] = useState(new Date());
+    const [duracao, setDuracao] = useState<string>("");
+    const [topico, setTopico] = useState<string>("");
     const [mostrarPicker, setMostrarPicker] = useState(false)
 
-    const pickImage = async () => {
-        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (!permission.granted) return;
+    useEffect(() => {
+      if (sessao) {
+        setTitulo(sessao.titulo);
+        setDescricao(sessao.descricao);
+        setDisciplina(sessao.disciplina);
+        setDataHora(new Date(sessao.dataHora));
+        setImage(sessao.image);
+        setDuracao(sessao.duracao);
+        setTopico(sessao.topico);
+      }
+    }, [sessao]);
 
+    const pickImage = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 0.8,
+            mediaTypes: ["images"],
+            allowsEditing: true,
+            quality: 1,
         });
 
         if (!result.canceled) {
-        setImage(result.assets[0].uri);
+            setImage(result.assets[0].uri);
         }
     };
-
     const disciplinas = [
     { id: "1", nome: "Matemática" },
     { id: "2", nome: "Programação" },
@@ -37,15 +54,27 @@ export default function NovoCheckIn() {
     ];
 
     const handleSubmit = () => {
-        console.log({
+       if (!titulo.trim()) {
+            Alert.alert("Erro", "O título é obrigatório.");
+            return;
+        }
+
+        if (!disciplina) {
+            Alert.alert("Erro", "A disciplina é obrigatória.");
+            return;
+        }
+
+        const dados = {
             titulo,
             descricao,
             disciplina,
             dataHora,
             image,
-    });
-    
-};
+            duracao,
+            topico
+      };
+      onCriar(dados);
+    };
 
     return (
         <View style={styles.container}>
@@ -56,9 +85,9 @@ export default function NovoCheckIn() {
             <Ionicons name="arrow-back" size={24} />
             </TouchableOpacity>
 
-           <Text style={styles.headerTitle}>Novo check-in</Text>
+           <Text style={styles.headerTitle}>{sessao ? "Editar check-in":"Novo check-in"}</Text>
            <TouchableOpacity onPress={handleSubmit}>
-                <Text style={styles.publish}>Publicar</Text>
+                <Text style={styles.publish}>{sessao ? "Salvar":"Criar"}</Text>
             </TouchableOpacity>
             
         </View>
@@ -85,7 +114,7 @@ export default function NovoCheckIn() {
             placeholderTextColor="#2b2c2c"
             style={styles.input}
             value={titulo}
-            onChangeText={setDescricao}
+            onChangeText={setTitulo}
         />
 
         <TextInput
@@ -102,10 +131,11 @@ export default function NovoCheckIn() {
         >
           <Text style={{ color: disciplina ? "#000" : "#2b2c2c" }}>
             {disciplina
-              ? disciplinas.find(d => d.id === disciplina)?.nome
+              ? disciplina.nome
               : "Selecionar disciplina"}
           </Text>
         </TouchableOpacity>
+
         <Modal
           visible={mostrarDisciplinas}
           transparent
@@ -113,27 +143,75 @@ export default function NovoCheckIn() {
         >
           <View style={styles.modalOverlay}>
 
-            {/* Fecha ao tocar fora */}
             <TouchableOpacity
               style={StyleSheet.absoluteFill}
-              onPress={() => setMostrarDisciplinas(false)}
+              onPress={() => {
+                setMostrarDisciplinas(false);
+                setCriandoNova(false);
+              }}
             />
 
-            {/* Caixa */}
             <View style={styles.modalBox}>
               <ScrollView>
+
+                {/* Lista do banco */}
                 {disciplinas.map((d) => (
                   <TouchableOpacity
                     key={d.id}
                     style={styles.option}
                     onPress={() => {
-                      setDisciplina(d.id);
+                      setDisciplina(d);
                       setMostrarDisciplinas(false);
+                      setCriandoNova(false);
                     }}
                   >
                     <Text style={styles.optionText}>{d.nome}</Text>
                   </TouchableOpacity>
                 ))}
+
+                {/* Botão criar nova */}
+                <TouchableOpacity
+                  style={styles.option}
+                  onPress={() => setCriandoNova(true)}
+                >
+                  <Text style={[styles.optionText, { color: "#1E6F7C" }]}>
+                    + Nova disciplina
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Campo para nova disciplina */}
+                {criandoNova && (
+                  <>
+                    <TextInput
+                      placeholder="Digite o nome"
+                      style={styles.input}
+                      value={novaDisciplina}
+                      onChangeText={setNovaDisciplina}
+                    />
+
+                    <TouchableOpacity
+                      style={styles.option}
+                      onPress={() => {
+                        if (!novaDisciplina.trim()) return;
+
+                        const nova = {
+                          id: "n", 
+                          nome: novaDisciplina
+                        };
+
+                        setDisciplina(nova);
+                        setNovaDisciplina("");
+                        setCriandoNova(false);
+                        setMostrarDisciplinas(false);
+                      }}
+                    >
+                      <Text style={[styles.optionText, { color: "green" }]}>
+                        Salvar disciplina
+                      </Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+
               </ScrollView>
             </View>
 
@@ -145,33 +223,45 @@ export default function NovoCheckIn() {
             placeholder="Tópico"
             placeholderTextColor="#2b2c2c"
             style={styles.input}
+            value={topico}
+            onChangeText={setTopico}
         />
 
-        <TouchableOpacity
-            style={styles.input}
-            onPress={() => setMostrarPicker(true)}
-        >
-            <Text>
-                {dataHora.toLocaleDateString()}{" "}
-                {dataHora.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-            </Text>
-        </TouchableOpacity>
-        
-        {mostrarPicker && (
+        <View style={styles.input}>
+          <Text>Data e hora do check-in</Text>
+
+          <TouchableOpacity
+              style={styles.input}
+              onPress={() => setMostrarPicker(true)}
+          >
+              <Text>
+                  {dataHora.toLocaleDateString()}{" "}
+                  {dataHora.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                  })}
+              </Text>
+          </TouchableOpacity>
+        </View>
+
+    {mostrarPicker && (
         <DateTimePicker
             value={dataHora}
             mode="datetime"
             display="default"
             onChange={(event, selectedDate) => {
-            setMostrarPicker(false);
-            if (selectedDate) setDataHora(selectedDate);
+                setMostrarPicker(false);
+                if (selectedDate) setDataHora(selectedDate);
             }}
         />
-)}
+    )}
+
         <TextInput
             placeholder="Duração"
             placeholderTextColor="#2b2c2c"
             style={styles.input}
+            value={duracao}
+            onChangeText={setDuracao}
         />
 
 
@@ -182,7 +272,7 @@ export default function NovoCheckIn() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F3FBFF",
+    backgroundColor: "#F8FFFC",
   },
 
   header: {
@@ -211,7 +301,7 @@ const styles = StyleSheet.create({
   },
 
   photoBox: {
-    height: 150,
+    height: 300,
     borderWidth: 1,
     backgroundColor: "#e4f4fc",
     borderColor: "#cbeefc",
