@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, useWindowDimensions, View } from "react-native";
 import Login from "./login";
+import StudyGroupScreen from "./groupStudy/StudyGroupScreen";
 
 const Loading = () => {
     return (
@@ -38,7 +39,7 @@ export default function Index(){
 
     return (
         <View style={[styles.container, { width }]}>
-            {loading ? <Loading/> : viewedOnboarding ? <Login/> : <Onboarding/>} 
+            {loading ? <Loading/> : viewedOnboarding ? <StudyGroupScreen/> : <Onboarding/>} 
         </View>
     )
 }
