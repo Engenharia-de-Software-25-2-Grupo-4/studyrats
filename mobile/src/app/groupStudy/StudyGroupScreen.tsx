@@ -1,12 +1,14 @@
 import { GroupOverviewCard } from "@/components/GroupOverviewCard";
+import { Menu } from "@/components/Menu";
 import { Post } from "@/components/Post";
 import { UserItem } from "@/components/UserItem";
 import { colors } from "@/styles/colors";
 import { categories } from "@/utils/categories";
 import { posts } from "@/utils/posts";
+import { RootStackParamList } from "@/utils/routesStack";
 import { users } from "@/utils/users";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-// import type { NavigationProp } from "@react-navigation/native";
+import type { NavigationProp } from "@react-navigation/native";
 import { useNavigation } from "@react-navigation/native";
 import { useState } from "react";
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -17,7 +19,7 @@ enum Tab {
 }
 
 export default function StudyGroupScreen() {
-    const navigation = useNavigation();
+    const navigation = useNavigation<NavigationProp<RootStackParamList>>();
     const [tab, setTab] = useState(Tab.ESTATISTICAS);
     const post = posts[0];
 
@@ -35,11 +37,18 @@ export default function StudyGroupScreen() {
         setVisibleCount(prev => prev + ITEMS_PER_LOAD);
     };
 
+    const handleNavigateToHome = () => {
+        navigation.navigate("Home")
+    }
+
+    const handleNavigateToFeed = () => {
+        navigation.navigate("Feed")
+    };
+
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                {/* onPress={() => navigation.goBack()} */}
-                <TouchableOpacity>
+                <TouchableOpacity onPress={handleNavigateToHome}>
                     <Ionicons name="arrow-back" size={24} />
                 </TouchableOpacity>
 
@@ -66,7 +75,7 @@ export default function StudyGroupScreen() {
                         <Text style={styles.cardTitle}>
                             Acompanhe as publicações recentes
                         </Text>
-                        <TouchableOpacity>
+                        <TouchableOpacity onPress={handleNavigateToFeed}>
                             <Post
                                 title={post.title}
                                 user={post.user}
@@ -121,6 +130,11 @@ export default function StudyGroupScreen() {
                     />
                 )}
             </View>
+            
+        <Menu
+            tabs={categories}
+            activeTabId="2" // "2" = Desafios
+        />
         </View>
     );
 }

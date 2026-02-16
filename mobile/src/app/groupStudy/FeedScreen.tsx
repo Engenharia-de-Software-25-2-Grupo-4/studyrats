@@ -1,3 +1,4 @@
+import { Menu } from "@/components/Menu";
 import { Post } from "@/components/Post";
 import { colors } from "@/styles/colors";
 import { categories } from "@/utils/categories";
@@ -54,6 +55,11 @@ export default function FeedScreen() {
                 )}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ padding: 20, paddingTop: 8, gap: 10 }}
+            />
+
+            <Menu
+                tabs={categories}
+                activeTabId="2"
             />
         </View>)
 }
