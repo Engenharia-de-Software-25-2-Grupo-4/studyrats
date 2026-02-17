@@ -104,7 +104,8 @@ public interface SessaoDeEstudoControllerInterface {
 //        @ApiResponse(responseCode = "404", description = "Grupo nao encontrado")
 //    })
 //    @GetMapping("/byGrupo/{idGrupo}")
-//    List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosByGrupo(
+//    List<SessaoDeEstudoResponseDTO>
+//    (
 //        @Parameter(description = "ID do grupo", required = true)
 //        @PathVariable UUID idGrupo,
 //        HttpServletRequest request
