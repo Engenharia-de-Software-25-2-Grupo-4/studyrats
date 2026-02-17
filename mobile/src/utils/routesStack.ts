@@ -1,4 +1,4 @@
-type RootStackParamList = {
+type StackParams = {
   Index: undefined;
   Login: undefined;
   Home: undefined;
@@ -6,7 +6,7 @@ type RootStackParamList = {
   StudyGroupScreen: undefined;
   Feed: undefined;
   CriarGrupo: undefined; 
-  GrupoCriado: undefined;
+  GrupoCriado: { desafio: any } // colocar tipo dps
 };
 
-export { RootStackParamList }
+export { StackParams }

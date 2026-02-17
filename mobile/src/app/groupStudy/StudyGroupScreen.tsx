@@ -5,7 +5,7 @@ import { UserItem } from "@/components/UserItem";
 import { colors } from "@/styles/colors";
 import { categories } from "@/utils/categories";
 import { posts } from "@/utils/posts";
-import { RootStackParamList } from "@/utils/routesStack";
+import { StackParams } from "@/utils/routesStack";
 import { users } from "@/utils/users";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import type { NavigationProp } from "@react-navigation/native";
@@ -19,7 +19,7 @@ enum Tab {
 }
 
 export default function StudyGroupScreen() {
-    const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+    const navigation = useNavigation<NavigationProp<StackParams>>();
     const [tab, setTab] = useState(Tab.ESTATISTICAS);
     const post = posts[0];
 

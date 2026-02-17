@@ -5,13 +5,13 @@ import { useState, useEffect } from "react";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
-import { RootStackParamList } from '@/utils/routesStack';
-
-type CriarGrupoRouteProp = RouteProp<RootStackParamList, 'CriarGrupo'>;
+import { StackParams } from '@/utils/routesStack';
+import { Menu } from "@/components/Menu";
+import { categories } from "@/utils/categories";
 
 export default function CriarGrupo() {
     
-    const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+    const navigation = useNavigation<NavigationProp<StackParams>>();
     const route = useRoute();
     
     const grupo = (route.params as any)?.grupo;
@@ -77,8 +77,7 @@ export default function CriarGrupo() {
                 { text: "OK", onPress: () => navigation.goBack() }
             ]);
         } else {
-            // Passa os dados via navigate sem tipagem de params
-            navigation.navigate("GrupoCriado", { desafio: dados } as any);
+            navigation.navigate("GrupoCriado", { desafio: dados })
         }
     };
 
@@ -203,6 +202,11 @@ export default function CriarGrupo() {
         )}
 
         </ScrollView>
+
+        <Menu
+            tabs={categories}
+            activeTabId="2" // "2" = Desafios
+        />
         </View>
     );
 }

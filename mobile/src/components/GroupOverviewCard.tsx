@@ -1,8 +1,22 @@
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { colors } from "@/styles/colors";
+import { StackParams } from "@/utils/routesStack";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { NavigationProp, useNavigation } from "@react-navigation/native";
 
 export function GroupOverviewCard() {
+    const navigation = useNavigation<NavigationProp<StackParams>>();
+
+
+    const clearOnboarding = async () => {
+        try {
+            await AsyncStorage.removeItem("@viewedOnboarding");
+            navigation.navigate("Index");
+        } catch (error) {
+            console.log("Error @clearOnboarding: ", error);
+        }
+    };
     return (
         <View style={styles.container}>
             <View style={styles.contentLeft}>
@@ -15,7 +29,7 @@ export function GroupOverviewCard() {
                     <Text style={styles.description}>Fim: 26 de janeiro</Text>
                 </View>
 
-                <TouchableOpacity style={styles.buttonStyle}>
+                <TouchableOpacity style={styles.buttonStyle} onPress={clearOnboarding}>
                     <Text style={styles.buttonText}>FAZER CHECK-IN</Text>
                 </TouchableOpacity>
             </View>

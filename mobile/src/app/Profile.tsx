@@ -1,16 +1,32 @@
 // app/profile.tsx ou screens/ProfileScreen.tsx
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Menu } from "@/components/Menu";
 import { categories } from "@/utils/categories";
 import { colors } from "@/styles/colors";
+import { MaterialIcons } from "@expo/vector-icons";
+import { NavigationProp, useNavigation } from "@react-navigation/native";
+import { StackParams } from "@/utils/routesStack";
 
 export default function Profile() {
+  const navigation = useNavigation<NavigationProp<StackParams>>();
+
+  const handleNavigateToCriarGrupo = () => {
+    navigation.navigate("CriarGrupo")
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Perfil</Text>
         <Text style={styles.subtitle}>Tela de Perfil</Text>
       </View>
+
+      <TouchableOpacity style={styles.addIcon} onPress={handleNavigateToCriarGrupo}>
+          <MaterialIcons
+              name="add"
+              color={colors.cinza[100]}
+              size={23} />
+      </TouchableOpacity> 
       
       <Menu
         tabs={categories}
@@ -40,4 +56,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: colors.cinza[600],
   },
+  addIcon: {
+      alignSelf: "center",
+      width: 50,
+      height: 50,
+      borderRadius: 28,
+      backgroundColor: colors.azul[300],
+      justifyContent: "center",
+      alignItems: "center",
+    },
 });

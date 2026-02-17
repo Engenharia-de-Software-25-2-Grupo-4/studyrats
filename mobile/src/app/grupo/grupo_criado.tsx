@@ -1,12 +1,12 @@
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
-import { RootStackParamList } from '@/utils/routesStack'; 
-
-type GrupoCriadoRouteProp = RouteProp<RootStackParamList, 'GrupoCriado'>;
+import { StackParams } from '@/utils/routesStack'; 
+import { Menu } from "@/components/Menu";
+import { categories } from "@/utils/categories";
 
 export default function GrupoCriado() {
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NavigationProp<StackParams>>();
   const route = useRoute();
   
   const dados = (route.params as any)?.desafio;
@@ -78,6 +78,11 @@ export default function GrupoCriado() {
         </View>
 
       </ScrollView>
+
+      <Menu
+          tabs={categories}
+          activeTabId="2" // "2" = Desafios
+      />
       
     </View>
   );

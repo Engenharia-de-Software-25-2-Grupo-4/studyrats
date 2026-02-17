@@ -8,8 +8,9 @@ import FeedScreen from '@/app/groupStudy/FeedScreen';
 import Home from '@/app/Home';
 import GrupoCriado from '@/app/grupo/grupo_criado';
 import CriarGrupo from '@/app/grupo/criar_grupo';
-import { RootStackParamList } from '@/utils/routesStack';
-const Stack = createStackNavigator<RootStackParamList>();
+import { StackParams } from '@/utils/routesStack';
+
+const Stack = createStackNavigator<StackParams>();
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
         <Stack.Screen name="Profile" component={Profile} />
         <Stack.Screen name="CriarGrupo" component={CriarGrupo} /> 
         <Stack.Screen name="GrupoCriado" component={GrupoCriado} />
+        
       </Stack.Navigator>
     </NavigationContainer>
   )

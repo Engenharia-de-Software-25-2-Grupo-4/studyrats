@@ -1,7 +1,7 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StackParams } from '@/utils/routesStack';
 import { Feather } from "@expo/vector-icons";
 import { useNavigation } from '@react-navigation/native';
-import { RootStackParamList } from '@/utils/routesStack';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { colors } from '@/styles/colors';
 
@@ -14,13 +14,13 @@ import { StackNavigationProp } from '@react-navigation/stack/';
 
 
 export function NextButton({ scrollTo, isLastPage }: NextButtonProps) {
-    const navigation =  useNavigation<StackNavigationProp<RootStackParamList>>()
+    const navigation =  useNavigation<StackNavigationProp<StackParams>>()
 
     function handlePress() {
         scrollTo();
         if (isLastPage) {
             isLastPage = false;
-            navigation.replace("Login");
+            navigation.replace("StudyGroupScreen");
         }     
     }
 
