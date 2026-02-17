@@ -6,6 +6,7 @@
     "version": "1.0.0",
     "plugins": [
       "@react-native-community/datetimepicker"
-    ]
+    ],
+    "scheme": "studyrats"
   }
 }

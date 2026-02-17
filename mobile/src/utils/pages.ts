@@ -16,7 +16,7 @@ const cardContents: CardContent[] = [
     },
     {
         id: "2",
-        title: "Mantenha a contância em grupo",
+        title: "Mantenha a constância em grupo",
         description: "Acompanhe seu progresso, construa sua sequência de dias estudados e siga evoluindo com o apoio e a presença de outros estudantes.",
         image: require("@/assets/image-2.png")
     },

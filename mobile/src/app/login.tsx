@@ -9,14 +9,14 @@ import { Input } from "@/components/Input";
 
 import { colors } from "@/styles/colors";
 import { studentServer } from "@/server/student-server";
-import { StackParams } from "App";
+import { RootStackParamList } from "@/utils/routesStack";
 
 export default function Login(){
     // DATA
     const [name, setName] = useState("")
     const [email, setEmail] = useState("")
 
-    const navigation =  useNavigation<StackNavigationProp<StackParams>>()
+    const navigation =  useNavigation<StackNavigationProp<RootStackParamList>>()
 
     const clearOnboarding = async () => {
         try {

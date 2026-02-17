@@ -1,24 +1,35 @@
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
+import { RootStackParamList } from '@/utils/routesStack'; 
 
-type Props = {
-  dados: any;
-  onVoltar: () => void;
-  onEditar: () => void;
-};
+type GrupoCriadoRouteProp = RouteProp<RootStackParamList, 'GrupoCriado'>;
 
-export default function GrupoCriado({ dados, onVoltar, onEditar }: Props) {
+export default function GrupoCriado() {
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const route = useRoute();
+  
+  const dados = (route.params as any)?.desafio;
+
+  const handleVoltar = () => {
+    navigation.goBack();
+  };
+
+  const handleEditar = () => {
+    navigation.navigate('CriarGrupo', { grupo: dados } as any);
+  };
+
   return (
     <View style={styles.container}>
 
       {/* HEADER */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={onVoltar}>
+        <TouchableOpacity onPress={handleVoltar}>
           <Ionicons name="arrow-back" size={24} color="#01415B"/>
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>Desafio</Text>
-        <TouchableOpacity onPress={onEditar}>
+        <TouchableOpacity onPress={handleEditar}>
           <Text style={styles.editButton}>Editar</Text>
         </TouchableOpacity>
       </View>
@@ -67,6 +78,7 @@ export default function GrupoCriado({ dados, onVoltar, onEditar }: Props) {
         </View>
 
       </ScrollView>
+      
     </View>
   );
 }

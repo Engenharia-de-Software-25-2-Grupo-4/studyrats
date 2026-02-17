@@ -3,13 +3,18 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useState, useEffect } from "react";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import type { NavigationProp } from '@react-navigation/native';
+import { RootStackParamList } from '@/utils/routesStack';
 
-type Props = {
-  onCriar: (dados: any) => void;
-  grupo?: any;
-};
+type CriarGrupoRouteProp = RouteProp<RootStackParamList, 'CriarGrupo'>;
 
-export default function CriarGrupo({ onCriar, grupo }: Props) {
+export default function CriarGrupo() {
+    
+    const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+    const route = useRoute();
+    
+    const grupo = (route.params as any)?.grupo;
     
     const [imagem, setImage] = useState<string | null>(null);
     const [nomeDesafio, setnomeDesafio] = useState("");
@@ -17,7 +22,7 @@ export default function CriarGrupo({ onCriar, grupo }: Props) {
     const [regras, setRegras] = useState("");
     const [dataInicio, setDataInicio] = useState(new Date());
     const [dataFinal, setDataFinal] = useState(new Date());
-    const [mostrarPicker, setMostrarPicker] = useState(false)
+    const [mostrarPicker, setMostrarPicker] = useState(false);
 
     useEffect(() => {
         if (grupo) {
@@ -25,11 +30,10 @@ export default function CriarGrupo({ onCriar, grupo }: Props) {
             setDescricao(grupo.descricao);
             setRegras(grupo.regras);
             setDataInicio(new Date(grupo.dataInicio));
-            setDataFinal(new Date(grupo.dataFinal))
+            setDataFinal(new Date(grupo.dataFinal));
             setImage(grupo.imagem);
         }
-        }, [grupo]);
-
+    }, [grupo]);
 
     const pickImage = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
@@ -43,7 +47,7 @@ export default function CriarGrupo({ onCriar, grupo }: Props) {
         }
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (!nomeDesafio.trim()) {
             Alert.alert("Erro", "O nome do desafio é obrigatório.");
             return;
@@ -68,8 +72,19 @@ export default function CriarGrupo({ onCriar, grupo }: Props) {
             imagem
         };
 
-        onCriar(dados);
-        };
+        if (grupo) {
+            Alert.alert("Sucesso", "Desafio atualizado!", [
+                { text: "OK", onPress: () => navigation.goBack() }
+            ]);
+        } else {
+            // Passa os dados via navigate sem tipagem de params
+            navigation.navigate("GrupoCriado", { desafio: dados } as any);
+        }
+    };
+
+    const handleGoBack = () => {
+        navigation.goBack();
+    };
 
 
     return (
@@ -77,8 +92,8 @@ export default function CriarGrupo({ onCriar, grupo }: Props) {
 
         {/* HEADER */}
         <View style={styles.header}>
-            <TouchableOpacity>
-            <Ionicons name="arrow-back" size={24} />
+            <TouchableOpacity onPress={handleGoBack}>
+                <Ionicons name="arrow-back" size={24} />
             </TouchableOpacity>
 
            <Text style={styles.headerTitle}>{grupo ? "Editar desafio" : "Novo desafio"}</Text>

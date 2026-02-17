@@ -1,6 +1,7 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Feather } from "@expo/vector-icons";
 import { useNavigation } from '@react-navigation/native';
+import { RootStackParamList } from '@/utils/routesStack';
 
 import { colors } from '@/styles/colors';
 
@@ -10,11 +11,10 @@ type NextButtonProps = {
 }
 
 import { StackNavigationProp } from '@react-navigation/stack/';
-import { StackParams } from 'App'; 
 
 
 export function NextButton({ scrollTo, isLastPage }: NextButtonProps) {
-    const navigation =  useNavigation<StackNavigationProp<StackParams>>()
+    const navigation =  useNavigation<StackNavigationProp<RootStackParamList>>()
 
     function handlePress() {
         scrollTo();
