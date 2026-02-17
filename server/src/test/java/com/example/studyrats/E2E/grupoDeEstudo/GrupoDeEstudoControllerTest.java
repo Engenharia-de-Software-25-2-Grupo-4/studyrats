@@ -31,8 +31,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.*;
 
 import static org.assertj.core.api.Fail.fail;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
@@ -606,6 +605,7 @@ public class GrupoDeEstudoControllerTest {
                         fail("Houve uma falha ao tentar recuperar dados de um grupo via convite - "+e.getMessage());
                     }
 
+                    assertFalse(dadosDoGrupoViaConvite.isJaMembro(), "O estudante apenas validou e não entrou no grupo mas já está marcado como membro");
                     assertEquals(dadosDoGrupoViaConvite.getIdGrupo(), grupoTarget.getId(), "O id do grupo recuperado é diferente do esperado");
                     assertEquals(dadosDoGrupoViaConvite.getNomeGrupo(), grupoTarget.getNome(), "O nome do grupo é diferente do esperado");
                     assertEquals(dadosDoGrupoViaConvite.getDescricaoGrupo(), grupoTarget.getDescricao(), "A descrição do grupo é diferente do esperado");
