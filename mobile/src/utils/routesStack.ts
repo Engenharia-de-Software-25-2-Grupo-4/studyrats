@@ -3,6 +3,7 @@ type StackParams = {
   Login: undefined;
   Home: undefined;
   Profile: undefined;
+  Disciplinas: undefined;
   StudyGroupScreen: undefined;
   Feed: undefined;
   CriarGrupo: undefined; 

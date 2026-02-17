@@ -9,6 +9,7 @@ import Home from '@/app/Home';
 import GrupoCriado from '@/app/grupo/grupo_criado';
 import CriarGrupo from '@/app/grupo/criar_grupo';
 import { StackParams } from '@/utils/routesStack';
+import Disciplinas from '@/app/disciplinas';
 
 const Stack = createStackNavigator<StackParams>();
 
@@ -25,6 +26,7 @@ export default function App() {
         <Stack.Screen name="StudyGroupScreen" component={StudyGroupScreen} />
         <Stack.Screen name="Feed" component={FeedScreen} />
         <Stack.Screen name="Profile" component={Profile} />
+        <Stack.Screen name="Disciplinas" component={Disciplinas} />
         <Stack.Screen name="CriarGrupo" component={CriarGrupo} /> 
         <Stack.Screen name="GrupoCriado" component={GrupoCriado} />
         
