@@ -96,6 +96,7 @@ public interface GrupoDeEstudoControllerInterface {
             @ApiResponse(responseCode = "404", description = "Grupo nao encontrado")
     })
     @PostMapping("/{idGrupo}/convites/gerar")
+    @ResponseStatus(HttpStatus.CREATED)
     String generateInviteLink(
             @Parameter(description = "ID do grupo", required = true)
             @PathVariable UUID idGrupo,

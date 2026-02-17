@@ -1,17 +1,22 @@
 package com.example.studyrats.E2E.grupoDeEstudo;
 
 import com.example.studyrats.E2E.RequisicoesMock;
+import com.example.studyrats.dto.ConviteGrupo.ConvitePostRequestDTO;
+import com.example.studyrats.dto.ConviteGrupo.ConviteResponseDTO;
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoPostPutRequestDTO;
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoResponseDTO;
 import com.example.studyrats.dto.estudante.EstudantePostPutRequestDTO;
 import com.example.studyrats.dto.estudante.EstudanteResponseDTO;
+import com.example.studyrats.model.ConviteGrupo;
 import com.example.studyrats.model.GrupoDeEstudo;
+import com.example.studyrats.repository.ConviteGrupoRepository;
 import com.example.studyrats.repository.EstudanteRepository;
 import com.example.studyrats.repository.GrupoDeEstudoRepository;
 import com.example.studyrats.repository.MembroGrupoRepository;
 import com.example.studyrats.service.firebase.FirebaseService;
 import com.example.studyrats.util.Mensagens;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
 import org.junit.jupiter.api.*;
@@ -21,9 +26,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 import static org.assertj.core.api.Fail.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -44,6 +49,8 @@ public class GrupoDeEstudoControllerTest {
     private EstudanteRepository estudanteRepository;
     @Autowired
     private MembroGrupoRepository membroGrupoRepository;
+    @Autowired
+    private ConviteGrupoRepository conviteGrupoRepository;
     @Autowired
     private MockMvc driver;
 
@@ -73,6 +80,7 @@ public class GrupoDeEstudoControllerTest {
     }
 
     private void gerarRandomsGruposEstudantes(int totEstudantes, int totGruposPorEstudante) throws FirebaseAuthException {
+        RequisicoesMock requisicoesMock = new RequisicoesMock(driver, "/grupos");
         String token;
         for (int i = 0; i < totEstudantes; i++) {
             token = randomChars();
@@ -85,7 +93,7 @@ public class GrupoDeEstudoControllerTest {
             for (int j = 0; j < totGruposPorEstudante; j++) {
                 GrupoDeEstudoPostPutRequestDTO bodyGrupo = new GrupoDeEstudoPostPutRequestDTO(randomChars(), randomChars());
                 try {
-                    requisitor.performPostCreated(bodyGrupo, token);
+                    requisicoesMock.performPostCreated(bodyGrupo, token);
                 } catch (Exception ignored) {}
             }
         }
@@ -98,6 +106,7 @@ public class GrupoDeEstudoControllerTest {
         baseUrl = "/estudantes";
         requisitorEstudante = new RequisicoesMock(driver, baseUrl);
 
+        conviteGrupoRepository.deleteAll();
         membroGrupoRepository.deleteAll();
         grupoDeEstudoRepository.deleteAll();
         estudanteRepository.deleteAll();
@@ -527,32 +536,146 @@ public class GrupoDeEstudoControllerTest {
     }
 
     @Nested
-    @DisplayName("Testes de convidar estudante")
+    @DisplayName("Testes de convidar, listar e aceitar")
     class TestesConvidarUsuario {
 
-        private String pathExtra = "/convites";
+        private List<EstudanteResponseDTO> gerarNEstudantes(int n) throws Exception {
+            List<EstudanteResponseDTO> estudantes = new ArrayList<>();
+            for (int i = 0; i < n; i++) {
+                String token = randomChars();
+                setarToken(token);
+                EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO(randomChars(), randomChars());
+                estudantes.add(requisitorEstudante.performPostCreated(EstudanteResponseDTO.class, body, token));
+            }
+            return estudantes;
+        }
+
+        private List<List<GrupoDeEstudoResponseDTO>> gerarNEstudantesComGrupos(int nEstudantes, int maxGrupos) throws Exception {
+            List<List<GrupoDeEstudoResponseDTO>> gruposPorAdmin = new ArrayList<>();
+            Random rd = new Random();
+            for (int i = 0; i < nEstudantes; i++) {
+                String token = randomChars();
+                setarToken(token);
+                EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO(randomChars(), randomChars());
+                requisitorEstudante.performPostCreated(body, token);
+
+                List<GrupoDeEstudoResponseDTO> gruposDesseAdmin = new ArrayList<>();
+                int totalDeGrupos = rd.nextInt(1, maxGrupos);
+                for (int j = 0; j < totalDeGrupos; j++) {
+                    GrupoDeEstudoPostPutRequestDTO bodyGrupo = new GrupoDeEstudoPostPutRequestDTO(randomChars(), randomChars());
+                    gruposDesseAdmin.add(requisitor.performPostCreated(GrupoDeEstudoResponseDTO.class, bodyGrupo, token));
+                }
+                gruposPorAdmin.add(gruposDesseAdmin);
+            }
+            return gruposPorAdmin;
+        }
+
+        private List<List<String>> gerarNConvitesPorGrupo(List<List<GrupoDeEstudoResponseDTO>> grupos) throws Exception {
+            List<List<String>> convitesPorAdminEGrupos = new ArrayList<>();
+            Random rd = new Random();
+            for (List<GrupoDeEstudoResponseDTO> gruposDoAdmin : grupos) {
+                List<String> convitesPorGrupos = new ArrayList<>();
+                String token = gruposDoAdmin.get(0).getAdmin().getFirebaseUid();
+                setarToken(token);
+                for (GrupoDeEstudoResponseDTO grupo : gruposDoAdmin) {
+                    convitesPorGrupos.add(requisitor.performPostCreatedStringReturn(grupo.getId().toString()+"/convites/gerar", token));
+                }
+                convitesPorAdminEGrupos.add(convitesPorGrupos);
+            }
+            return convitesPorAdminEGrupos;
+        }
+
+        private void assertConvitesEqualsGrupo(List<List<String>> convitesPorAdmin, List<List<GrupoDeEstudoResponseDTO>> gruposPorAdmin) throws Exception {
+            List<GrupoDeEstudoResponseDTO> gruposDoAdmin;
+            List<String> convitesDoAdmin;
+            ConviteResponseDTO dadosDoGrupoViaConvite=null;
+            GrupoDeEstudoResponseDTO grupoTarget;
+            String conviteTarget;
+
+            for (int adminIdx = 0; adminIdx < convitesPorAdmin.size(); adminIdx++) {
+                gruposDoAdmin = gruposPorAdmin.get(adminIdx);
+                convitesDoAdmin = convitesPorAdmin.get(adminIdx);
+                String token = gruposDoAdmin.get(0).getAdmin().getFirebaseUid();
+                setarToken(token);
+                for (int grupoIdx = 0; grupoIdx < gruposDoAdmin.size(); grupoIdx++) {
+                    grupoTarget = gruposDoAdmin.get(grupoIdx);
+                    conviteTarget = convitesDoAdmin.get(grupoIdx);
+                    try {
+                        dadosDoGrupoViaConvite = requisitor.performGetOK(ConviteResponseDTO.class, "convites/"+conviteTarget, token);
+                    } catch (AssertionError e) {
+                        fail("Houve uma falha ao tentar recuperar dados de um grupo via convite - "+e.getMessage());
+                    }
+
+                    assertEquals(dadosDoGrupoViaConvite.getIdGrupo(), grupoTarget.getId(), "O id do grupo recuperado é diferente do esperado");
+                    assertEquals(dadosDoGrupoViaConvite.getNomeGrupo(), grupoTarget.getNome(), "O nome do grupo é diferente do esperado");
+                    assertEquals(dadosDoGrupoViaConvite.getDescricaoGrupo(), grupoTarget.getDescricao(), "A descrição do grupo é diferente do esperado");
+                }
+            }
+        }
+
+        private <T> List<T> escolherN(List<T> lista, int totalParaEscolher) {
+            List<T> escolhas = new ArrayList<>();
+            Random rd = new Random();
+            int i = 0;
+            while (escolhas.size() < totalParaEscolher) {
+                if (rd.nextInt(100) >= 5 && !escolhas.contains(lista.get(i))) { escolhas.add(lista.get(i)); }
+                i = (i + 1) % lista.size();
+            }
+            return escolhas;
+        }
+
+        private void assertGruposContemGrupo(List<GrupoDeEstudoResponseDTO> grupos, GrupoDeEstudoResponseDTO grupoAlvo) {
+            for (GrupoDeEstudoResponseDTO grupo : grupos) {
+                if (grupoAlvo.equals(grupo)) {
+                    return;
+                }
+            }
+            fail("A lista de grupos do estudante não continha todos os grupos que ele participava");
+        }
+
+        private void convidarNEstudantesPorGrupo(List<EstudanteResponseDTO> estudantes, List<List<String>> convites, List<List<GrupoDeEstudoResponseDTO>> grupos, int maxConvites) throws Exception {
+            Map<String, List<GrupoDeEstudoResponseDTO>> gruposPorEstudante = new HashMap<>();
+            Random rd = new Random();
+            List<String> convitesDoAdmin;
+            List<GrupoDeEstudoResponseDTO> gruposDoAdmin;
+            String conviteAlvo;
+            GrupoDeEstudoResponseDTO grupoAlvo;
+            for (int adminIdx = 0; adminIdx < convites.size(); adminIdx++) {
+                convitesDoAdmin = convites.get(adminIdx);
+                gruposDoAdmin = grupos.get(adminIdx);
+                for (int grupoIdx = 0; grupoIdx < convitesDoAdmin.size(); grupoIdx++) {
+                    conviteAlvo = convitesDoAdmin.get(grupoIdx);
+                    grupoAlvo = gruposDoAdmin.get(grupoIdx);
+                    List<EstudanteResponseDTO> escolhidos = escolherN(estudantes, rd.nextInt(1, maxConvites));
+                    for (EstudanteResponseDTO estudante : escolhidos) {
+                        String token = estudante.getFirebaseUid();
+                        setarToken(token);
+                        try {
+                            requisitor.performPostOk("convites/"+conviteAlvo+"/entrar", token);
+                        } catch (AssertionError e) {
+                            fail("Falha ao tentar entrar no grupo via convite"+e.getMessage());
+                        }
+                        List<GrupoDeEstudoResponseDTO> gruposDoGet = requisitor.performGetOK(new TypeReference<List<GrupoDeEstudoResponseDTO>>() {}, token);
+                        assertGruposContemGrupo(gruposDoGet, grupoAlvo);
+                    }
+                }
+            }
+        }
 
         @Test
-        @DisplayName("Falha prevista ao tentar sem autenticação")
-        void falhaConvidarSemAuth() {
-//            try {
-//                requisitor.performPostUnauthorized();
-//            } catch (AssertionError e) {
-//
-//            }
+        @DisplayName("Teste geral N grupos, M convites, criar, comparar e entrar")
+        void sucessoMultiplosGrupos() throws Exception {
+            int totalDeEstudantes = 100;
+            int totalDeEstudantesComGrupos = 5;
+            int maximoDeGruposPorDono = 10;
+            int maximoConvitesParaEstudantes = 10;
+
+            List<EstudanteResponseDTO> estudantes = gerarNEstudantes(totalDeEstudantes);
+            List<List<GrupoDeEstudoResponseDTO>> grupos = gerarNEstudantesComGrupos(totalDeEstudantesComGrupos, maximoDeGruposPorDono);
+            List<List<String>> convites = gerarNConvitesPorGrupo(grupos);
+            assertConvitesEqualsGrupo(convites, grupos);
+            convidarNEstudantesPorGrupo(estudantes, convites, grupos, maximoConvitesParaEstudantes);
         }
-    }
-
-    @Nested
-    @DisplayName("Testes de aceitar convite")
-    class TestesAceitarConvite {
-
-    }
-
-    @Nested
-    @DisplayName("Testes de listar convites")
-    class TestesListarConvites {
-
     }
 
     @Nested

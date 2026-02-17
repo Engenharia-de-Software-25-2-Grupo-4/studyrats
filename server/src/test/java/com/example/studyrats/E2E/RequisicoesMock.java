@@ -4,7 +4,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MockMvc;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -116,6 +115,13 @@ public class RequisicoesMock {
                 .andExpect(status().isUnauthorized());
     }
 
+    public void performGetUnauthorizedToken(String userToken) throws Exception {
+        driver.perform(get(getUrl)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer "+userToken))
+                .andExpect(status().isUnauthorized());
+    }
+
     public void performGetUnauthorized() throws Exception {
         driver.perform(get(getUrl).contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized());
@@ -127,6 +133,11 @@ public class RequisicoesMock {
                 .andExpect(status().isUnauthorized());
     }
 
+    public void performPostUnauthorized(String complementoDoPath) throws Exception {
+        driver.perform(post(postUrl+"/"+complementoDoPath).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
+    }
+
     public void performPostUnauthorized(Object body, String userToken) throws Exception {
         String jsonBody = objectMapper.writeValueAsString(body);
         driver.perform(post(postUrl)
@@ -134,6 +145,29 @@ public class RequisicoesMock {
                         .content(jsonBody)
                         .header("Authorization", "Bearer "+userToken))
                 .andExpect(status().isUnauthorized());
+    }
+
+    public void performPostUnauthorized(String complementoDoPath, String userToken) throws Exception {
+        driver.perform(post(postUrl+"/"+complementoDoPath)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer "+userToken))
+                .andExpect(status().isUnauthorized());
+    }
+
+    public void performPostOk(Object body, String complementoDoPath, String userToken) throws Exception {
+        String jsonBody = objectMapper.writeValueAsString(body);
+        driver.perform(post(postUrl+"/"+complementoDoPath)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonBody)
+                        .header("Authorization", "Bearer "+userToken))
+                .andExpect(status().isOk());
+    }
+
+    public void performPostOk(String complementoDoPath, String userToken) throws Exception {
+        driver.perform(post(postUrl+"/"+complementoDoPath)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer "+userToken))
+                .andExpect(status().isOk());
     }
 
     public <T> T performPostCreated(Class<T> expectedTypeResponse, Object body, String userToken) throws Exception {
@@ -147,6 +181,23 @@ public class RequisicoesMock {
 
         return objectMapper.readValue(response, expectedTypeResponse);
     }
+
+    public String performPostCreatedStringReturn(String complementoDoPath, String userToken) throws Exception {
+        return driver.perform(post(postUrl+"/"+complementoDoPath)
+                        .header("Authorization", "Bearer "+userToken))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+    }
+
+    public void performPostCreated(Object body, String complementoDoPath, String userToken) throws Exception {
+        String jsonBody = objectMapper.writeValueAsString(body);
+        driver.perform(post(postUrl+"/"+complementoDoPath)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonBody)
+                        .header("Authorization", "Bearer "+userToken))
+                .andExpect(status().isCreated());
+    }
+
 
     public void performPostCreated(Object body, String userToken) throws Exception {
         String jsonBody = objectMapper.writeValueAsString(body);

@@ -47,11 +47,14 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'com.fasterxml.jackson.core:jackson-databind'
+    testImplementation 'org.junit.platform:junit-platform-suite-api'
 
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testRuntimeOnly 'com.h2database:h2'
 }
 
 tasks.named('test') {
-	useJUnitPlatform()
+	useJUnitPlatform {
+        includeTags 'prod'
+    }
 }
