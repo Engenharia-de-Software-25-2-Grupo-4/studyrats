@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Image, Alert } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Image, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useState, useEffect } from "react";
@@ -8,6 +8,7 @@ import type { NavigationProp } from '@react-navigation/native';
 import { StackParams } from '@/utils/routesStack';
 import { Menu } from "@/components/Menu";
 import { categories } from "@/utils/categories";
+import { colors } from "@/styles/colors";
 
 export default function CriarGrupo() {
     
@@ -102,107 +103,116 @@ export default function CriarGrupo() {
             
         </View>
 
-        <ScrollView contentContainerStyle={styles.content}>
+       <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+        >
+            <ScrollView 
+                contentContainerStyle={styles.content}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+            >
             
-        {/* FOTO */}
-        <TouchableOpacity style={styles.photoBox} onPress={pickImage}>
-        {imagem ? (
-          <Image source={{ uri: imagem }} style={styles.photo} />
-        ) : (
-          <>
-            <Ionicons name="add" size={32} color="#1E6F7C" />
-            <Text style={styles.photoText}>Adicione aqui a foto do banner</Text>
-          </>
-        )}
-        </TouchableOpacity>
-        
-        {/* FORMULÁRIO */}
-        <Text style={styles.sectionTitle}>Informações</Text>
+                {/* FOTO */}
+                <TouchableOpacity style={styles.photoBox} onPress={pickImage}>
+                {imagem ? (
+                <Image source={{ uri: imagem }} style={styles.photo} />
+                ) : (
+                <>
+                    <Ionicons name="add" size={32} color="#1E6F7C" />
+                    <Text style={styles.photoText}>Adicione aqui a foto do banner</Text>
+                </>
+                )}
+                </TouchableOpacity>
+                
+                {/* FORMULÁRIO */}
+                <Text style={styles.sectionTitle}>Informações</Text>
 
-       <TextInput
-            placeholder="Nome do desafio"
-            placeholderTextColor="#2b2c2c"
-            style={styles.input}
-            value={nomeDesafio}
-            onChangeText={setnomeDesafio}
-        />
+            <TextInput
+                    placeholder="Nome do desafio"
+                    placeholderTextColor="#2b2c2c"
+                    style={styles.input}
+                    value={nomeDesafio}
+                    onChangeText={setnomeDesafio}
+                />
 
-        <TextInput
-            placeholder="Descrição"
-            placeholderTextColor="#2b2c2c"
-            style={styles.input}
-            value={descricao}
-            onChangeText={setDescricao}
-        />
+                <TextInput
+                    placeholder="Descrição"
+                    placeholderTextColor="#2b2c2c"
+                    style={styles.input}
+                    value={descricao}
+                    onChangeText={setDescricao}
+                />
 
-        <TextInput
-            placeholder="Regras"
-            placeholderTextColor="#2b2c2c"
-            style={styles.input}
-            value={regras}
-            onChangeText={setRegras}
-        />
+                <TextInput
+                    placeholder="Regras"
+                    placeholderTextColor="#2b2c2c"
+                    style={styles.input}
+                    value={regras}
+                    onChangeText={setRegras}
+                />
 
-        <View style={styles.field}>
-            <Text style={styles.label}>Data de início</Text>
+                <View style={styles.field}>
+                    <Text style={styles.label}>Data de início</Text>
 
-            <TouchableOpacity
-                style={styles.input}
-                onPress={() => setMostrarPicker(true)}
-            >
-                <Text style={styles.inputText}>
-                {dataInicio.toLocaleDateString()}{" "}
-                {dataInicio.toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                })}
-                </Text>
-            </TouchableOpacity>
-            </View>
+                    <TouchableOpacity
+                        style={styles.input}
+                        onPress={() => setMostrarPicker(true)}
+                    >
+                        <Text style={styles.inputText}>
+                        {dataInicio.toLocaleDateString()}{" "}
+                        {dataInicio.toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                        })}
+                        </Text>
+                    </TouchableOpacity>
+                    </View>
 
-            {mostrarPicker && (
-            <DateTimePicker
-                value={dataInicio}
-                mode="datetime"
-                display="default"
-                onChange={(event, selectedDate) => {
-                setMostrarPicker(false);
-                if (selectedDate) setDataInicio(selectedDate);
-                }}
-            />
-        )}
+                    {mostrarPicker && (
+                    <DateTimePicker
+                        value={dataInicio}
+                        mode="datetime"
+                        display="default"
+                        onChange={(event, selectedDate) => {
+                        setMostrarPicker(false);
+                        if (selectedDate) setDataInicio(selectedDate);
+                        }}
+                    />
+                )}
 
-        <View style={styles.field}>
-            <Text style={styles.label}>Data final</Text>
+                <View style={styles.field}>
+                    <Text style={styles.label}>Data final</Text>
 
-            <TouchableOpacity
-                style={styles.input}
-                onPress={() => setMostrarPicker(true)}
-            >
-                <Text style={styles.inputText}>
-                {dataFinal.toLocaleDateString()}{" "}
-                {dataFinal.toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                })}
-                </Text>
-            </TouchableOpacity>
-            </View>
+                    <TouchableOpacity
+                        style={styles.input}
+                        onPress={() => setMostrarPicker(true)}
+                    >
+                        <Text style={styles.inputText}>
+                        {dataFinal.toLocaleDateString()}{" "}
+                        {dataFinal.toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                        })}
+                        </Text>
+                    </TouchableOpacity>
+                    </View>
 
-            {mostrarPicker && (
-            <DateTimePicker
-                value={dataFinal}
-                mode="datetime"
-                display="default"
-                onChange={(event, selectedDate) => {
-                setMostrarPicker(false);
-                if (selectedDate) setDataFinal(selectedDate);
-                }}
-            />
-        )}
+                    {mostrarPicker && (
+                    <DateTimePicker
+                        value={dataFinal}
+                        mode="datetime"
+                        display="default"
+                        onChange={(event, selectedDate) => {
+                        setMostrarPicker(false);
+                        if (selectedDate) setDataFinal(selectedDate);
+                        }}
+                    />
+                )}
 
-        </ScrollView>
-
+                </ScrollView>
+            </KeyboardAvoidingView>
         <Menu
             tabs={categories}
             activeTabId="2" // "2" = Desafios
@@ -213,7 +223,7 @@ export default function CriarGrupo() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F3FBFF",
+    backgroundColor: colors.cinza[400],
   },
 
   header: {
@@ -221,7 +231,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     padding: 16,
-    backgroundColor: "#F3FBFF",
+    backgroundColor: colors.cinza[400],
   },
 
 
@@ -233,7 +243,7 @@ const styles = StyleSheet.create({
   },
 
   publish: {
-    color: "#01415B",
+    color: colors.azul[300],
     fontWeight: "700",
   },
 
@@ -254,7 +264,7 @@ const styles = StyleSheet.create({
 
   photoText: {
     marginTop: 8,
-    color: "#01415B",
+    color: colors.azul[300],
   },
 
   sectionTitle: {

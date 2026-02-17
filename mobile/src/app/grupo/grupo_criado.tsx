@@ -1,9 +1,10 @@
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Image } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
 import { StackParams } from '@/utils/routesStack'; 
 import { Menu } from "@/components/Menu";
 import { categories } from "@/utils/categories";
+import { colors } from "@/styles/colors";
 
 export default function GrupoCriado() {
   const navigation = useNavigation<NavigationProp<StackParams>>();
@@ -18,6 +19,30 @@ export default function GrupoCriado() {
   const handleEditar = () => {
     navigation.navigate('CriarGrupo', { grupo: dados } as any);
   };
+
+  const handleExcluir = () => {
+    Alert.alert(
+      "Excluir desafio",
+      "Tem certeza que deseja excluir este desafio?",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel"
+        },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: () => {
+            // Aqui você coloca a lógica de exclusão
+            console.log("Desafio excluído:", dados.id);
+
+            navigation.goBack(); // volta após excluir
+          }
+        }
+      ]
+    );
+  };
+
 
   return (
     <View style={styles.container}>
@@ -76,6 +101,15 @@ export default function GrupoCriado() {
           <Text style={styles.texto}>{dados.regras}</Text>
 
         </View>
+      
+        <TouchableOpacity 
+          style={styles.deleteButton}
+          onPress={handleExcluir}
+        >
+          <Text style={styles.deleteButtonText}>
+            Excluir Desafio
+          </Text>
+        </TouchableOpacity>
 
       </ScrollView>
 
@@ -159,7 +193,22 @@ divider: {
   marginVertical: 12,
 },
 editButton: {
-  color: "#01415B",
+  color: colors.azul[300],
   fontWeight: "700",
+},
+deleteButton: {
+  backgroundColor: colors.azul[300],
+  padding: 15,
+  marginHorizontal: 20,
+  borderRadius: 12,
+  alignItems: "center",
+  marginBottom: 10,
+  marginTop: 15
+},
+
+deleteButtonText: {
+  color: "#FFF",
+  fontSize: 16,
+  fontWeight: "bold"
 }
 });
