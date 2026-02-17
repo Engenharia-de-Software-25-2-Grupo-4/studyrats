@@ -45,7 +45,7 @@ export default function Login(){
     }
 
     function redirectHome(){
-        navigation.replace("Index")
+        navigation.replace("Home")
     }
 
     async function createStudent() {
