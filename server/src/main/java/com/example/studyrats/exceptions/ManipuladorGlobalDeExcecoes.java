@@ -71,6 +71,12 @@ public class ManipuladorGlobalDeExcecoes {
         return baseReturn(httpStatus, ex);
     }
 
+    @ExceptionHandler(UsuarioNaoFazParteDoGrupoException.class)
+    public ResponseEntity<?> manipularUsuarioNaoFazParteDoGrupo(UsuarioNaoFazParteDoGrupoException ex) {
+        HttpStatus httpStatus = HttpStatus.FORBIDDEN;
+        return baseReturn(httpStatus, ex);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> manipularValidacao(MethodArgumentNotValidException ex) {
         HttpStatus httpStatus = HttpStatus.BAD_REQUEST;

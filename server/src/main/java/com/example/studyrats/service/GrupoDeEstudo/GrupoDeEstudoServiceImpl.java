@@ -180,9 +180,12 @@ public class GrupoDeEstudoServiceImpl implements GrupoDeEstudoService {
         GrupoDeEstudo grupo = grupoRepo.findById(idGrupo).orElseThrow(GrupoNaoEncontrado::new);
         var sessao = sessaoRepo.findById(idSessao).orElseThrow(SessaoDeEstudoNaoEncontrado::new);
         
-        if (!idGrupo.equals(sessao.getIdGrupo())) {
+        if (!idGrupo.equals(sessao.getGrupoDeEstudo().getId())) {
             throw new SessaoDeEstudoNaoEncontrado();
         }
+        // if (!idGrupo.equals(sessao.getGrupo().getId())) {
+        //     throw new SessaoDeEstudoNaoEncontrado();
+        // }
         
         boolean isAdmin = grupo.getAdmin() != null && grupo.getAdmin().getFirebaseUid().equals(uid);
         boolean isCriador = sessao.getCriador() != null && sessao.getCriador().getFirebaseUid().equals(uid);

@@ -28,10 +28,10 @@ public class SessaoDeEstudo {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id_sessao;
 
-    // @ManyToOne
-    // @JoinColumn(name = "study_group_id", nullable = false)
-    // @JsonProperty("study_group")
-    // private StudyGroup studyGroup; ainda nao tem grupo de estudo feito 
+    @ManyToOne
+    @JoinColumn(name = "id_grupo", nullable = false)
+    @JsonProperty("grupo_de_estudo")
+    private GrupoDeEstudo grupoDeEstudo;
     
     @ManyToOne
     @JoinColumn(name = "firebaseUid", nullable = false)
@@ -39,8 +39,8 @@ public class SessaoDeEstudo {
     private Estudante criador;
     
     // adicionei aqui, lembrar de ajustar os outros arquivos
-    @JsonProperty("id_grupo")
-    private UUID idGrupo;
+    // @JsonProperty("id_grupo")
+    // private UUID idGrupo;
 
     @JsonProperty("titulo")
     private String titulo;
@@ -58,9 +58,9 @@ public class SessaoDeEstudo {
     private String urlFoto;
 
     @JsonProperty("disciplina")
-    private String disciplina; //disciplina
+    private String disciplina;
 
     @JsonProperty("topico")
-    private String topico; //conteudo
+    private String topico;
 
 }

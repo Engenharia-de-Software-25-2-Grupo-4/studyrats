@@ -6,6 +6,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 @ResponseStatus(HttpStatus.NOT_FOUND)
 public class StudySessionNotFoundException extends RuntimeException {
     public StudySessionNotFoundException() {
-        super("Study session not found");
+        super("Sessão de estudo não encontrada.");
     }
 }

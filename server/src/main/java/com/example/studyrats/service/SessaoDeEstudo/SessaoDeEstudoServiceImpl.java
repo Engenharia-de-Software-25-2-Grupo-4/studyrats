@@ -1,12 +1,16 @@
 package com.example.studyrats.service.SessaoDeEstudo;
 
 import com.example.studyrats.exceptions.EstudanteNaoEncontrado;
+import com.example.studyrats.exceptions.GrupoNaoEncontrado;
 import org.springframework.stereotype.Service;
 
 import com.example.studyrats.dto.SessaoDeEstudo.*;
 import com.example.studyrats.model.Estudante;
+import com.example.studyrats.model.GrupoDeEstudo;
 import com.example.studyrats.model.SessaoDeEstudo;
 import com.example.studyrats.repository.EstudanteRepository;
+import com.example.studyrats.repository.GrupoDeEstudoRepository;
+import com.example.studyrats.repository.MembroGrupoRepository;
 import com.example.studyrats.repository.SessaoDeEstudoRepository; 
 
 import jakarta.transaction.Transactional;
@@ -17,6 +21,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.example.studyrats.exceptions.SessaoDeEstudoNaoEncontrado;
+import com.example.studyrats.exceptions.UsuarioNaoFazParteDoGrupoException;
 
 import org.modelmapper.ModelMapper;
 
@@ -29,19 +34,25 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
     
     @Autowired
     public EstudanteRepository studentRepository;
-    // @Autowired 
-    // public StudyGroupRepository studyGroupRepository;
+    @Autowired 
+    public GrupoDeEstudoRepository grupoDeEstudoRepository;
+    @Autowired
+    public MembroGrupoRepository membroGrupoRepository;
     @Autowired
     public ModelMapper modelMapper; 
 
     @Override
     public SessaoDeEstudoResponseDTO criarSessaoDeEstudos(UUID idGrupo, String idUsuario, SessaoDeEstudoPostPutRequestDTO sessaoDeEstudoPostPutRequestDTO) {
         Estudante student = studentRepository.findById(idUsuario).orElseThrow(EstudanteNaoEncontrado::new);
-        // TODO: quando tiver crud de grupo, validar se o grupo existe e se o usuário faz parte dele
+        GrupoDeEstudo grupo = grupoDeEstudoRepository.findById(idGrupo).orElseThrow(GrupoNaoEncontrado::new);
+        boolean usuarioMembroDoGrupo = membroGrupoRepository.existsByGrupo_IdAndEstudante_FirebaseUid(idGrupo, idUsuario);
 
+        if (!usuarioMembroDoGrupo) {
+            throw new UsuarioNaoFazParteDoGrupoException(); 
+        }
         SessaoDeEstudo sessaoDeEstudo = modelMapper.map(sessaoDeEstudoPostPutRequestDTO, SessaoDeEstudo.class);
         sessaoDeEstudo.setCriador(student);
-        sessaoDeEstudo.setIdGrupo(idGrupo);
+        sessaoDeEstudo.setGrupoDeEstudo(grupo);
 
         sessaoDeEstudo = sessaoDeEstudoRepository.save(sessaoDeEstudo);
         return modelMapper.map(sessaoDeEstudo, SessaoDeEstudoResponseDTO.class);
@@ -50,8 +61,6 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
     @Override
     public SessaoDeEstudoResponseDTO visualizarSessaoDeEstudosPorId(UUID idSessao, String idUsuario) {
         SessaoDeEstudo sessaoDeEstudo = sessaoDeEstudoRepository.findById(idSessao).orElseThrow(SessaoDeEstudoNaoEncontrado::new);
-        // TODO: quando tiver crud de grupo, validar se o grupo existe e se o usuário faz parte dele
-        // NOTA: Não sei se precisa, a lógica de criação obriga a condição acima
         validarCriador(sessaoDeEstudo, idUsuario); 
 
         return modelMapper.map(sessaoDeEstudo, SessaoDeEstudoResponseDTO.class);
@@ -85,8 +94,12 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
 
     @Override
     public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosPorUsuarioEmGrupo(String idUsuario, UUID idGrupo) {
-        // verificar se usuário é do grupo quando tiver crud de grupo
-        List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByIdGrupoAndCriador_FirebaseUid(idGrupo, idUsuario)
+        boolean usuarioMembroDoGrupo = membroGrupoRepository.existsByGrupo_IdAndEstudante_FirebaseUid(idGrupo, idUsuario);
+        
+        if (!usuarioMembroDoGrupo) {
+            throw new UsuarioNaoFazParteDoGrupoException(); 
+        }
+        List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByGrupoDeEstudo_IdAndCriador_FirebaseUid(idGrupo, idUsuario)
             .stream()
             .map(session -> modelMapper.map(session, SessaoDeEstudoResponseDTO.class))
             .toList();
@@ -95,8 +108,12 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
 
     @Override
     public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosPorDisciplinaEmGrupo(String disciplina, UUID idGrupo, String idUsuario) {
-        // verificar se usuário é do grupo quando tiver crud de grupo
-        List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByIdGrupoAndDisciplina(idGrupo, disciplina)
+        boolean usuarioMembroDoGrupo = membroGrupoRepository.existsByGrupo_IdAndEstudante_FirebaseUid(idGrupo, idUsuario);
+        
+        if (!usuarioMembroDoGrupo) {
+            throw new UsuarioNaoFazParteDoGrupoException(); 
+        }
+        List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByGrupoDeEstudo_IdAndDisciplina(idGrupo, disciplina)
             .stream()
             .map(session -> modelMapper.map(session, SessaoDeEstudoResponseDTO.class))
             .toList();
@@ -105,8 +122,12 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
 
     @Override
     public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosPorTopicoEmGrupo(String topico, UUID idGrupo, String idUsuario) {
-        // verificar se usuário é do grupo quando tiver crud de grupo
-        List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByIdGrupoAndTopico(idGrupo, topico)
+        boolean usuarioMembroDoGrupo = membroGrupoRepository.existsByGrupo_IdAndEstudante_FirebaseUid(idGrupo, idUsuario);
+        
+        if (!usuarioMembroDoGrupo) {
+            throw new UsuarioNaoFazParteDoGrupoException(); 
+        }
+        List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByGrupoDeEstudo_IdAndTopico(idGrupo, topico)
             .stream()
             .map(session -> modelMapper.map(session, SessaoDeEstudoResponseDTO.class))
             .toList();
@@ -115,22 +136,17 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
 
     @Override
     public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosPorGrupo(UUID idGrupo, String idUsuario) { 
-        // verificar se usuário é do grupo quando tiver crud de grupo
-        List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByIdGrupo(idGrupo)
+        boolean usuarioMembroDoGrupo = membroGrupoRepository.existsByGrupo_IdAndEstudante_FirebaseUid(idGrupo, idUsuario);
+        
+        if (!usuarioMembroDoGrupo) {
+            throw new UsuarioNaoFazParteDoGrupoException(); 
+        }
+        List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByGrupoDeEstudo_Id(idGrupo)
             .stream()
             .map(session -> modelMapper.map(session, SessaoDeEstudoResponseDTO.class))
             .toList();
-        return sessions;
+        return sessions; 
     } 
-
-    // private StudySessionResponseDTO toDTO(StudySession session) {
-    // return StudySessionResponseDTO.builder()
-    //     .sessionId(session.getSessionId())
-    //     .creatorId(session.getCreator().getId())  
-    //     .creatorName(session.getCreator().getName())
-    //     .title(session.getTitle())
-    //     .build();
-    // }
 
     @Override
     public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosDeUsuarioPorDisciplina(String idUsuario, String disciplina) { 
