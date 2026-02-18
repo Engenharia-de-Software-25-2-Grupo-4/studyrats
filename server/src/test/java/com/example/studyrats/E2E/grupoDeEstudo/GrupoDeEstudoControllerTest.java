@@ -30,7 +30,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.*;
 
-import static org.assertj.core.api.Fail.fail;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
@@ -605,7 +604,7 @@ public class GrupoDeEstudoControllerTest {
                         fail("Houve uma falha ao tentar recuperar dados de um grupo via convite - "+e.getMessage());
                     }
 
-                    assertFalse(dadosDoGrupoViaConvite.isJaMembro(), "O estudante apenas validou e não entrou no grupo mas já está marcado como membro");
+                    assertTrue(dadosDoGrupoViaConvite.isJaMembro(), "O admin do grupo não está definido como membro do grupo");
                     assertEquals(dadosDoGrupoViaConvite.getIdGrupo(), grupoTarget.getId(), "O id do grupo recuperado é diferente do esperado");
                     assertEquals(dadosDoGrupoViaConvite.getNomeGrupo(), grupoTarget.getNome(), "O nome do grupo é diferente do esperado");
                     assertEquals(dadosDoGrupoViaConvite.getDescricaoGrupo(), grupoTarget.getDescricao(), "A descrição do grupo é diferente do esperado");
@@ -638,6 +637,7 @@ public class GrupoDeEstudoControllerTest {
             Random rd = new Random();
             List<String> convitesDoAdmin;
             List<GrupoDeEstudoResponseDTO> gruposDoAdmin;
+            ConviteResponseDTO dadosDoGrupoViaConvite=null;
             String conviteAlvo;
             GrupoDeEstudoResponseDTO grupoAlvo;
             for (int adminIdx = 0; adminIdx < convites.size(); adminIdx++) {
@@ -650,11 +650,18 @@ public class GrupoDeEstudoControllerTest {
                     for (EstudanteResponseDTO estudante : escolhidos) {
                         String token = estudante.getFirebaseUid();
                         setarToken(token);
+                        dadosDoGrupoViaConvite = requisitor.performGetOK(ConviteResponseDTO.class, "convites/"+conviteAlvo, token);
+                        assertFalse(dadosDoGrupoViaConvite.isJaMembro(), "O estudante não entrou no grupo mas já está como membro");
+                        dadosDoGrupoViaConvite = requisitor.performGetOK(ConviteResponseDTO.class, "convites/"+conviteAlvo, token);
+                        assertFalse(dadosDoGrupoViaConvite.isJaMembro(), "O estudante apenas validou o convite mas já está como membro");
                         try {
                             requisitor.performPostOk("convites/"+conviteAlvo+"/entrar", token);
                         } catch (AssertionError e) {
                             fail("Falha ao tentar entrar no grupo via convite"+e.getMessage());
                         }
+                        dadosDoGrupoViaConvite = requisitor.performGetOK(ConviteResponseDTO.class, "convites/"+conviteAlvo, token);
+                        assertTrue(dadosDoGrupoViaConvite.isJaMembro(), "O estudante deveria ter sido setado como membro");
+
                         List<GrupoDeEstudoResponseDTO> gruposDoGet = requisitor.performGetOK(new TypeReference<List<GrupoDeEstudoResponseDTO>>() {}, token);
                         assertGruposContemGrupo(gruposDoGet, grupoAlvo);
                     }

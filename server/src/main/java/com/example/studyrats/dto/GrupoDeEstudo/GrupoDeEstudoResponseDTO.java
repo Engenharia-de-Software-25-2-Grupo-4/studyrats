@@ -27,4 +27,18 @@ public class GrupoDeEstudoResponseDTO {
 
     @JsonProperty("admin")
     private Estudante admin;
+
+    @Override
+    public boolean equals(Object  o) {
+        if (o == null || getClass() != o.getClass()) return false;
+
+        GrupoDeEstudoResponseDTO outroGrupo = (GrupoDeEstudoResponseDTO) o;
+
+        boolean idIgual = this.id.equals(outroGrupo.getId());
+        boolean nomeIgual = this.nome.equals(outroGrupo.getNome());
+        boolean descricaoIgual = this.descricao.equals(outroGrupo.getDescricao());
+        boolean idAdminIgual = this.admin.getFirebaseUid().equals(outroGrupo.getAdmin().getFirebaseUid());
+
+        return idIgual && nomeIgual && descricaoIgual && idAdminIgual;
+    }
 }
