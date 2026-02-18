@@ -17,6 +17,7 @@ import jakarta.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -84,6 +85,7 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
         return modelMapper.map(sessaoDeEstudo, SessaoDeEstudoResponseDTO.class);
     }
 
+    ////// SÓ FAZ SENTIDO SE HOUVER, NO PRÓPRIO PERFIL DO USUARIO, VIZUALIZAÇÃO DAS PRÓPRIAS SESSÕES. O ACESSO A SESSÕES É FEITO ATRAVÉS DO GRUPO!
     @Override
     public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosPorUsuario(String idUsuario) {
         return sessaoDeEstudoRepository.findByCriador_FirebaseUid(idUsuario)
@@ -92,13 +94,10 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
             .toList();
     }
 
+    // filtra sessões do grupo por usuario
     @Override
     public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosPorUsuarioEmGrupo(String idUsuario, UUID idGrupo) {
-        boolean usuarioMembroDoGrupo = membroGrupoRepository.existsByGrupo_IdAndEstudante_FirebaseUid(idGrupo, idUsuario);
-        
-        if (!usuarioMembroDoGrupo) {
-            throw new UsuarioNaoFazParteDoGrupoException(); 
-        }
+        validaMembro(idGrupo, idUsuario);
         List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByGrupoDeEstudo_IdAndCriador_FirebaseUid(idGrupo, idUsuario)
             .stream()
             .map(session -> modelMapper.map(session, SessaoDeEstudoResponseDTO.class))
@@ -106,13 +105,10 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
         return sessions;
     }
 
+    // filtra sessões do grupo por disciplina
     @Override
     public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosPorDisciplinaEmGrupo(String disciplina, UUID idGrupo, String idUsuario) {
-        boolean usuarioMembroDoGrupo = membroGrupoRepository.existsByGrupo_IdAndEstudante_FirebaseUid(idGrupo, idUsuario);
-        
-        if (!usuarioMembroDoGrupo) {
-            throw new UsuarioNaoFazParteDoGrupoException(); 
-        }
+        validaMembro(idGrupo, idUsuario);
         List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByGrupoDeEstudo_IdAndDisciplina(idGrupo, disciplina)
             .stream()
             .map(session -> modelMapper.map(session, SessaoDeEstudoResponseDTO.class))
@@ -120,13 +116,10 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
         return sessions; 
     }
 
+    // filtra sessões do grupo por topico
     @Override
     public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosPorTopicoEmGrupo(String topico, UUID idGrupo, String idUsuario) {
-        boolean usuarioMembroDoGrupo = membroGrupoRepository.existsByGrupo_IdAndEstudante_FirebaseUid(idGrupo, idUsuario);
-        
-        if (!usuarioMembroDoGrupo) {
-            throw new UsuarioNaoFazParteDoGrupoException(); 
-        }
+        validaMembro(idGrupo, idUsuario);
         List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByGrupoDeEstudo_IdAndTopico(idGrupo, topico)
             .stream()
             .map(session -> modelMapper.map(session, SessaoDeEstudoResponseDTO.class))
@@ -134,13 +127,10 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
         return sessions;
     }
 
+    // retorna todas as sessões de um grupo. questionamento, os grupos são todos públicos? se sim, não há porque validar
     @Override
     public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosPorGrupo(UUID idGrupo, String idUsuario) { 
-        boolean usuarioMembroDoGrupo = membroGrupoRepository.existsByGrupo_IdAndEstudante_FirebaseUid(idGrupo, idUsuario);
-        
-        if (!usuarioMembroDoGrupo) {
-            throw new UsuarioNaoFazParteDoGrupoException(); 
-        }
+        validaMembro(idGrupo, idUsuario);
         List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByGrupoDeEstudo_Id(idGrupo)
             .stream()
             .map(session -> modelMapper.map(session, SessaoDeEstudoResponseDTO.class))
@@ -148,6 +138,19 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
         return sessions; 
     } 
 
+    // retorna todas as sessões de um grupo ordenadas em ordem cronológica para o feed
+    @Override
+    public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosPorGrupoCronologicamente(UUID idGrupo, String idUsuario) { 
+        validaMembro(idGrupo, idUsuario);
+        List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByGrupoDeEstudo_Id(idGrupo)
+            .stream()
+            .sorted(Comparator.comparing(SessaoDeEstudo::getHorarioInicio))
+            .map(session -> modelMapper.map(session, SessaoDeEstudoResponseDTO.class))
+            .toList();
+        return sessions;
+    }     
+
+////// OS DOIS MÉTODOS A SEGUIR SÓ FAZEM SENTIDO SE HOUVER, NO PRÓPRIO PERFIL DO USUARIO, FILTRAGEM DAS PRÓPRIAS SESSÕES. O ACESSO A SESSÃO É FEITO ATRAVÉS DO GRUPO!
     @Override
     public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosDeUsuarioPorDisciplina(String idUsuario, String disciplina) { 
         List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByCriador_FirebaseUidAndDisciplina(idUsuario, disciplina)
@@ -165,10 +168,17 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
             .toList();
         return sessions;
     }
-    
+
     private void validarCriador(SessaoDeEstudo sessaoDeEstudo, String idUsuario) {
         if (sessaoDeEstudo.getCriador() == null || !sessaoDeEstudo.getCriador().getFirebaseUid().equals(idUsuario)) {
             throw new SessaoDeEstudoNaoEncontrado();
         }
+    }
+
+    private void validaMembro(UUID idGrupo, String idUsuario){
+        if (!membroGrupoRepository.existsByGrupo_IdAndEstudante_FirebaseUid(idGrupo, idUsuario)) {
+            throw new UsuarioNaoFazParteDoGrupoException(); 
+        }
+        return;
     }
 }

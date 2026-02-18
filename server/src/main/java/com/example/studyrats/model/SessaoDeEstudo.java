@@ -37,10 +37,6 @@ public class SessaoDeEstudo {
     @JoinColumn(name = "firebaseUid", nullable = false)
     @JsonProperty("criador")
     private Estudante criador;
-    
-    // adicionei aqui, lembrar de ajustar os outros arquivos
-    // @JsonProperty("id_grupo")
-    // private UUID idGrupo;
 
     @JsonProperty("titulo")
     private String titulo;

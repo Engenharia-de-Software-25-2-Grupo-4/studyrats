@@ -48,26 +48,23 @@ public class SessaoDeEstudoController implements SessaoDeEstudoControllerInterfa
         return sessaoDeEstudoService.listarSessaoDeEstudosPorUsuario(idUsuario);
     }
 
-//    @Override
-//    public List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosByGrupo(UUID idGrupo, HttpServletRequest request) {
-//
-//        String idUsuario = getAuthenticatedUserId(request);
-//        return sessaoDeEstudoService.listarSessaoDeEstudosPorGrupo(idGrupo, idUsuario);
-//    }
-//
-//    @Override
-//    public List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosBySubject(String disciplina, UUID idGrupo, HttpServletRequest request) {
-//
-//        String idUsuario = getAuthenticatedUserId(request);
-//        return sessaoDeEstudoService.listarSessaoDeEstudosPorDisciplinaEmGrupo(disciplina, idGrupo, idUsuario);
-//    }
-//
-//    @Override
-//    public List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosByTopic(String topico, UUID idGrupo, HttpServletRequest request) {
-//
-//        String idUsuario = getAuthenticatedUserId(request);
-//        return sessaoDeEstudoService.listarSessaoDeEstudosPorTopicoEmGrupo(topico, idGrupo, idUsuario);
-//    }
+   @Override
+   public List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosByGrupo(UUID idGrupo, HttpServletRequest request) {
+       String idUsuario = getAuthenticatedUserId(request);
+       return sessaoDeEstudoService.listarSessaoDeEstudosPorGrupo(idGrupo, idUsuario);
+   }
+
+   @Override
+   public List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosBySubject(String disciplina, UUID idGrupo, HttpServletRequest request) {
+       String idUsuario = getAuthenticatedUserId(request);
+       return sessaoDeEstudoService.listarSessaoDeEstudosPorDisciplinaEmGrupo(disciplina, idGrupo, idUsuario);
+   }
+
+   @Override
+   public List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosByTopic(String topico, UUID idGrupo, HttpServletRequest request) {
+       String idUsuario = getAuthenticatedUserId(request);
+       return sessaoDeEstudoService.listarSessaoDeEstudosPorTopicoEmGrupo(topico, idGrupo, idUsuario);
+   }
 
     @Override
     public List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosByUserAndSubject(String disciplina, HttpServletRequest request) {
@@ -77,10 +74,15 @@ public class SessaoDeEstudoController implements SessaoDeEstudoControllerInterfa
 
     @Override
     public List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosByUserAndTopic(String topico, HttpServletRequest request) {
-
         String idUsuario = getAuthenticatedUserId(request);
         return sessaoDeEstudoService.listarSessaoDeEstudosDeUsuarioPorTopico(idUsuario, topico);
     } 
+
+    @Override
+    public List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosByGroupInOrder(UUID idGrupo, HttpServletRequest request) {
+        String idUsuario = getAuthenticatedUserId(request);
+        return sessaoDeEstudoService.listarSessaoDeEstudosPorGrupoCronologicamente(idGrupo, idUsuario);
+    }
 
     private String getAuthenticatedUserId(HttpServletRequest request) {
         Object firebaseUser = request.getAttribute("firebaseUser");

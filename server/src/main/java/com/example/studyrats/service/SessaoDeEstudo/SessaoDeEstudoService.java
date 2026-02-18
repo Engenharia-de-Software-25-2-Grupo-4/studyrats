@@ -25,6 +25,8 @@ public interface SessaoDeEstudoService {
     List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosPorTopicoEmGrupo(String topico, UUID idGrupo, String idUsuario);
 
     List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosPorGrupo(UUID idGrupo, String idUsuario);
+    
+    List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosPorGrupoCronologicamente(UUID idGrupo, String idUsuario);
 
     List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosDeUsuarioPorDisciplina(String idUsuario, String disciplina);
 

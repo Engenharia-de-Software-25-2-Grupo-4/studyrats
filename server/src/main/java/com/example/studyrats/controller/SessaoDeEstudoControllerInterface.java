@@ -97,48 +97,48 @@ public interface SessaoDeEstudoControllerInterface {
     @GetMapping
     List<SessaoDeEstudoResponseDTO> listSessaoDeEstudos(HttpServletRequest request);
 
-//    @Operation(summary = "Listar sessoes por grupo")
-//    @ApiResponses({
-//        @ApiResponse(responseCode = "200", description = "Lista retornada"),
-//        @ApiResponse(responseCode = "401", description = "Nao autenticado"),
-//        @ApiResponse(responseCode = "404", description = "Grupo nao encontrado")
-//    })
-//    @GetMapping("/byGrupo/{idGrupo}")
-//    List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosByGrupo(
-//        @Parameter(description = "ID do grupo", required = true)
-//        @PathVariable UUID idGrupo,
-//        HttpServletRequest request
-//    );
+   @Operation(summary = "Listar sessoes por grupo")
+   @ApiResponses({
+       @ApiResponse(responseCode = "200", description = "Lista retornada"),
+       @ApiResponse(responseCode = "401", description = "Nao autenticado"),
+       @ApiResponse(responseCode = "404", description = "Grupo nao encontrado")
+   })
+   @GetMapping("/byGrupo/{idGrupo}")
+   List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosByGrupo(
+       @Parameter(description = "ID do grupo", required = true)
+       @PathVariable UUID idGrupo,
+       HttpServletRequest request
+   );
 
-//    @Operation(summary = "Listar sessoes por disciplina em um grupo")
-//    @ApiResponses({
-//        @ApiResponse(responseCode = "200", description = "Lista retornada"),
-//        @ApiResponse(responseCode = "401", description = "Nao autenticado"),
-//        @ApiResponse(responseCode = "404", description = "Grupo nao encontrado")
-//    })
-//    @GetMapping("/bySubject/{disciplina}/grupo/{idGrupo}")
-//    List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosBySubject(
-//        @Parameter(description = "Disciplina", required = true)
-//        @PathVariable String disciplina,
-//        @Parameter(description = "ID do grupo", required = true)
-//        @PathVariable UUID idGrupo,
-//        HttpServletRequest request
-//    );
+   @Operation(summary = "Listar sessoes por disciplina em um grupo")
+   @ApiResponses({
+       @ApiResponse(responseCode = "200", description = "Lista retornada"),
+       @ApiResponse(responseCode = "401", description = "Nao autenticado"),
+       @ApiResponse(responseCode = "404", description = "Grupo nao encontrado")
+   })
+   @GetMapping("/bySubject/{disciplina}/grupo/{idGrupo}")
+   List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosBySubject(
+       @Parameter(description = "Disciplina", required = true)
+       @PathVariable String disciplina,
+       @Parameter(description = "ID do grupo", required = true)
+       @PathVariable UUID idGrupo,
+       HttpServletRequest request
+   );
 
-//    @Operation(summary = "Listar sessoes por topico em um grupo")
-//    @ApiResponses({
-//        @ApiResponse(responseCode = "200", description = "Lista retornada"),
-//        @ApiResponse(responseCode = "401", description = "Nao autenticado"),
-//        @ApiResponse(responseCode = "404", description = "Grupo nao encontrado")
-//    })
-//    @GetMapping("/byTopic/{topico}/grupo/{idGrupo}")
-//    List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosByTopic(
-//        @Parameter(description = "Topico", required = true)
-//        @PathVariable String topico,
-//        @Parameter(description = "ID do grupo", required = true)
-//        @PathVariable UUID idGrupo,
-//        HttpServletRequest request
-//    );
+   @Operation(summary = "Listar sessoes por topico em um grupo")
+   @ApiResponses({
+       @ApiResponse(responseCode = "200", description = "Lista retornada"),
+       @ApiResponse(responseCode = "401", description = "Nao autenticado"),
+       @ApiResponse(responseCode = "404", description = "Grupo nao encontrado")
+   })
+   @GetMapping("/byTopic/{topico}/grupo/{idGrupo}")
+   List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosByTopic(
+       @Parameter(description = "Topico", required = true)
+       @PathVariable String topico,
+       @Parameter(description = "ID do grupo", required = true)
+       @PathVariable UUID idGrupo,
+       HttpServletRequest request
+   );
 
     @Operation(summary = "Listar sessoes por disciplina de um usuario")
     @ApiResponses({
@@ -161,6 +161,19 @@ public interface SessaoDeEstudoControllerInterface {
     List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosByUserAndTopic(
         @Parameter(description = "Topico", required = true)
         @PathVariable String topico,
+        HttpServletRequest request
+    );
+
+    @Operation(summary = "Listar sessoes por grupo em ordem cronológica de postagem")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Lista retornada"),
+        @ApiResponse(responseCode = "401", description = "Nao autenticado"),
+        @ApiResponse(responseCode = "404", description = "Grupo nao encontrado")
+    })
+    @GetMapping("/byGrupo/{idGrupo}")
+    List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosByGroupInOrder(
+        @Parameter(description = "ID do grupo", required = true)
+        @PathVariable UUID idGrupo,
         HttpServletRequest request
     );
 }
