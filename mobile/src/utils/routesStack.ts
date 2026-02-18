@@ -7,7 +7,9 @@ type StackParams = {
   StudyGroupScreen: undefined;
   Feed: undefined;
   CriarGrupo: undefined; 
-  GrupoCriado: { desafio: any } // colocar tipo dps
+  GrupoCriado: { desafio: any }; // colocar tipo dps
+  CriarSessao: undefined;
+  Publicacao: { sessao: any }
 };
 
 export { StackParams }

@@ -8,6 +8,8 @@ import FeedScreen from '@/app/groupStudy/FeedScreen';
 import Home from '@/app/Home';
 import GrupoCriado from '@/app/grupo/grupo_criado';
 import CriarGrupo from '@/app/grupo/criar_grupo';
+import CriarSessao from '@/app/sessaoEstudo/sessao_estudo'
+import Publicacao from '@/app/sessaoEstudo/publicacao'
 import { StackParams } from '@/utils/routesStack';
 import Disciplinas from '@/app/disciplinas';
 
@@ -29,6 +31,8 @@ export default function App() {
         <Stack.Screen name="Disciplinas" component={Disciplinas} />
         <Stack.Screen name="CriarGrupo" component={CriarGrupo} /> 
         <Stack.Screen name="GrupoCriado" component={GrupoCriado} />
+        <Stack.Screen name="CriarSessao" component={CriarSessao} /> 
+        <Stack.Screen name="Publicacao" component={Publicacao} />
         
       </Stack.Navigator>
     </NavigationContainer>

@@ -17,6 +17,9 @@ export function GroupOverviewCard() {
             console.log("Error @clearOnboarding: ", error);
         }
     };
+    const handleNavigateToCheckIn = () =>{
+        navigation.navigate("CriarSessao")
+    }
     return (
         <View style={styles.container}>
             <View style={styles.contentLeft}>
@@ -29,7 +32,7 @@ export function GroupOverviewCard() {
                     <Text style={styles.description}>Fim: 26 de janeiro</Text>
                 </View>
 
-                <TouchableOpacity style={styles.buttonStyle} onPress={clearOnboarding}>
+                <TouchableOpacity style={styles.buttonStyle} onPress={handleNavigateToCheckIn}>
                     <Text style={styles.buttonText}>FAZER CHECK-IN</Text>
                 </TouchableOpacity>
             </View>
