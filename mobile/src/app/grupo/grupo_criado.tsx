@@ -33,7 +33,7 @@ export default function GrupoCriado() {
           text: "Excluir",
           style: "destructive",
           onPress: () => {
-            // Aqui você coloca a lógica de exclusão
+            // lógica de exclusão
             console.log("Desafio excluído:", dados.id);
 
             navigation.goBack(); // volta após excluir

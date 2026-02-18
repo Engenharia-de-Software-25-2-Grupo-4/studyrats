@@ -4,12 +4,17 @@ import { colors } from "@/styles/colors";
 import { categories } from "@/utils/categories";
 import { posts } from "@/utils/posts";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-import { useState } from "react";
+import { useNavigation  } from "@react-navigation/native";
+import type { NavigationProp } from '@react-navigation/native';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StackParams } from "@/utils/routesStack";
 
 export default function FeedScreen() {
-    const navigation = useNavigation();
+    const navigation = useNavigation<NavigationProp<StackParams>>();
+
+    const handleNavigateToCheckIn = () =>{
+        navigation.navigate("CriarSessao")
+    }
     
     return (
         <View style={styles.container}>
@@ -18,7 +23,7 @@ export default function FeedScreen() {
                     <Ionicons name="arrow-back" size={24} />
                 </TouchableOpacity>
                 {/* <Text style={styles.headerTitle}>Grupo de Estudos</Text> */}
-                <TouchableOpacity style={styles.addIcon}>
+                <TouchableOpacity style={styles.addIcon} onPress={handleNavigateToCheckIn}>
                     <MaterialIcons
                         name="add"
                         color={colors.cinza[100]}

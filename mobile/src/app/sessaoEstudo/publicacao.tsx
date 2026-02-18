@@ -4,8 +4,7 @@ import { StackParams } from '@/utils/routesStack';
 import { Menu } from "@/components/Menu";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import "../styles/colors"
-import "../assets/image-4.png"
+import "@/styles/colors"
 import { colors } from "@/styles/colors";
 
 
@@ -13,7 +12,7 @@ import { colors } from "@/styles/colors";
 export default function Publicacao() {
     const navigation = useNavigation<NavigationProp<StackParams>>();
     const route = useRoute();
-    const dados = (route.params as any)?.desafio;
+    const dados = (route.params as any)?.sessao;
 
     type Usuario = {
         id: string;
@@ -129,7 +128,7 @@ export default function Publicacao() {
                 source={
                     publicacao.usuario.foto
                     ? { uri: publicacao.usuario.foto }
-                    : require("../assets/image-4.png")
+                    : require("@/assets/image-4.png")
     }
                 style={styles.avatar}
                 />
@@ -202,7 +201,7 @@ export default function Publicacao() {
                         source={
                         item.usuario.foto
                             ? { uri: item.usuario.foto }
-                            : require("../assets/image-4.png")
+                            : require("@/assets/image-4.png")
                         }
                         style={styles.avatarSmall}
                     />

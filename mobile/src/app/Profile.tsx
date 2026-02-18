@@ -12,6 +12,10 @@ type HomeNavProp = StackNavigationProp<StackParams, "Profile">;
 export default function Profile(){
     const navigation = useNavigation<HomeNavProp>();
 
+    const handleNavigateToCheckIn = () =>{
+        navigation.navigate("CriarSessao")
+    }
+
     return (
         <View style={styles.container}>
             <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
