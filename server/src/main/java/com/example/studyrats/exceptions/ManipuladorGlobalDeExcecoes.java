@@ -41,6 +41,7 @@ public class ManipuladorGlobalDeExcecoes {
     @ExceptionHandler({
             EstudanteNaoEncontrado.class,
             SessaoDeEstudoNaoEncontrado.class,
+            ComentarioNaoEncontradoException.class,
             GrupoNaoEncontrado.class,
             ConviteNaoEncontrado.class,
             ConviteExpirado.class,
@@ -71,8 +72,11 @@ public class ManipuladorGlobalDeExcecoes {
         return baseReturn(httpStatus, ex);
     }
 
-    @ExceptionHandler(UsuarioNaoFazParteDoGrupoException.class)
-    public ResponseEntity<?> manipularUsuarioNaoFazParteDoGrupo(UsuarioNaoFazParteDoGrupoException ex) {
+    @ExceptionHandler({
+            UsuarioNaoFazParteDoGrupoException.class,
+            UsuarioNaoTemPermissaoParaDeletarComentarioSessaoException.class
+    })
+    public ResponseEntity<?> manipularUsuarioNaoFazParteDoGrupo(RuntimeException ex) {
         HttpStatus httpStatus = HttpStatus.FORBIDDEN;
         return baseReturn(httpStatus, ex);
     }

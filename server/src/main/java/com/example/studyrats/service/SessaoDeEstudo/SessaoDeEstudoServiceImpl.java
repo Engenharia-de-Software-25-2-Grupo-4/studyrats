@@ -11,6 +11,8 @@ import com.example.studyrats.model.SessaoDeEstudo;
 import com.example.studyrats.repository.EstudanteRepository;
 import com.example.studyrats.repository.GrupoDeEstudoRepository;
 import com.example.studyrats.repository.MembroGrupoRepository;
+import com.example.studyrats.repository.ComentarioSessaoRepository;
+import com.example.studyrats.repository.ReacaoSessaoRepository;
 import com.example.studyrats.repository.SessaoDeEstudoRepository; 
 
 import jakarta.transaction.Transactional;
@@ -32,13 +34,16 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
 
     @Autowired
     public SessaoDeEstudoRepository sessaoDeEstudoRepository; 
-    
     @Autowired
     public EstudanteRepository studentRepository;
     @Autowired 
     public GrupoDeEstudoRepository grupoDeEstudoRepository;
     @Autowired
     public MembroGrupoRepository membroGrupoRepository;
+    @Autowired
+    public ComentarioSessaoRepository comentarioSessaoRepository;
+    @Autowired
+    public ReacaoSessaoRepository reacaoSessaoRepository;
     @Autowired
     public ModelMapper modelMapper; 
 
@@ -56,15 +61,15 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
         sessaoDeEstudo.setGrupoDeEstudo(grupo);
 
         sessaoDeEstudo = sessaoDeEstudoRepository.save(sessaoDeEstudo);
-        return modelMapper.map(sessaoDeEstudo, SessaoDeEstudoResponseDTO.class);
+        return toResponseDTO(sessaoDeEstudo, idUsuario);
     }
 
     @Override
     public SessaoDeEstudoResponseDTO visualizarSessaoDeEstudosPorId(UUID idSessao, String idUsuario) {
         SessaoDeEstudo sessaoDeEstudo = sessaoDeEstudoRepository.findById(idSessao).orElseThrow(SessaoDeEstudoNaoEncontrado::new);
-        validarCriador(sessaoDeEstudo, idUsuario); 
-
-        return modelMapper.map(sessaoDeEstudo, SessaoDeEstudoResponseDTO.class);
+        //validarCriador(sessaoDeEstudo, idUsuario);
+        validaMembro(sessaoDeEstudo.getGrupoDeEstudo().getId(), idUsuario);
+        return toResponseDTO(sessaoDeEstudo, idUsuario);
     }
 
     @Override
@@ -82,7 +87,7 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
 
         modelMapper.map(sessaoDeEstudoPostPutRequestDTO, sessaoDeEstudo);
         sessaoDeEstudo = sessaoDeEstudoRepository.save(sessaoDeEstudo);
-        return modelMapper.map(sessaoDeEstudo, SessaoDeEstudoResponseDTO.class);
+        return toResponseDTO(sessaoDeEstudo, idUsuario);
     }
 
     ////// SÓ FAZ SENTIDO SE HOUVER, NO PRÓPRIO PERFIL DO USUARIO, VIZUALIZAÇÃO DAS PRÓPRIAS SESSÕES. O ACESSO A SESSÕES É FEITO ATRAVÉS DO GRUPO!
@@ -90,7 +95,7 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
     public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosPorUsuario(String idUsuario) {
         return sessaoDeEstudoRepository.findByCriador_FirebaseUid(idUsuario)
             .stream()
-            .map(session -> modelMapper.map(session, SessaoDeEstudoResponseDTO.class))
+            .map(session -> toResponseDTO(session, idUsuario))
             .toList();
     }
 
@@ -100,7 +105,7 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
         validaMembro(idGrupo, idUsuario);
         List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByGrupoDeEstudo_IdAndCriador_FirebaseUid(idGrupo, idUsuario)
             .stream()
-            .map(session -> modelMapper.map(session, SessaoDeEstudoResponseDTO.class))
+            .map(session -> toResponseDTO(session, idUsuario))
             .toList();
         return sessions;
     }
@@ -111,7 +116,7 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
         validaMembro(idGrupo, idUsuario);
         List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByGrupoDeEstudo_IdAndDisciplina(idGrupo, disciplina)
             .stream()
-            .map(session -> modelMapper.map(session, SessaoDeEstudoResponseDTO.class))
+            .map(session -> toResponseDTO(session, idUsuario))
             .toList();
         return sessions; 
     }
@@ -122,7 +127,7 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
         validaMembro(idGrupo, idUsuario);
         List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByGrupoDeEstudo_IdAndTopico(idGrupo, topico)
             .stream()
-            .map(session -> modelMapper.map(session, SessaoDeEstudoResponseDTO.class))
+            .map(session -> toResponseDTO(session, idUsuario))
             .toList();
         return sessions;
     }
@@ -133,7 +138,7 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
         validaMembro(idGrupo, idUsuario);
         List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByGrupoDeEstudo_Id(idGrupo)
             .stream()
-            .map(session -> modelMapper.map(session, SessaoDeEstudoResponseDTO.class))
+            .map(session -> toResponseDTO(session, idUsuario))
             .toList();
         return sessions; 
     } 
@@ -145,7 +150,7 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
         List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByGrupoDeEstudo_Id(idGrupo)
             .stream()
             .sorted(Comparator.comparing(SessaoDeEstudo::getHorarioInicio))
-            .map(session -> modelMapper.map(session, SessaoDeEstudoResponseDTO.class))
+            .map(session -> toResponseDTO(session, idUsuario))
             .toList();
         return sessions;
     }     
@@ -155,7 +160,7 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
     public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosDeUsuarioPorDisciplina(String idUsuario, String disciplina) { 
         List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByCriador_FirebaseUidAndDisciplina(idUsuario, disciplina)
             .stream()
-            .map(session -> modelMapper.map(session, SessaoDeEstudoResponseDTO.class))
+            .map(session -> toResponseDTO(session, idUsuario))
             .toList();
         return sessions;
     }
@@ -164,9 +169,32 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
     public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosDeUsuarioPorTopico(String idUsuario, String topico) { 
         List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByCriador_FirebaseUidAndTopico(idUsuario, topico)
             .stream()
-            .map(session -> modelMapper.map(session, SessaoDeEstudoResponseDTO.class))
+            .map(session -> toResponseDTO(session, idUsuario))
             .toList();
         return sessions;
+    }
+
+    private SessaoDeEstudoResponseDTO toResponseDTO(SessaoDeEstudo sessao, String idUsuario) {
+        UUID idSessao = sessao.getId_sessao();
+        Long totalComentarios = comentarioSessaoRepository.countBySessaoDeEstudo_Id_sessao(idSessao);
+        Long totalReacoes = reacaoSessaoRepository.countBySessaoDeEstudo_Id_sessao(idSessao);
+        boolean reagiu = reacaoSessaoRepository.existsBySessaoDeEstudo_Id_sessaoAndAutor_FirebaseUid(idSessao, idUsuario);
+
+        return SessaoDeEstudoResponseDTO.builder()
+            .idSessao(idSessao)
+            .idCriador(sessao.getCriador().getFirebaseUid())
+            .nomeCriador(sessao.getCriador().getNome())
+            .titulo(sessao.getTitulo())
+            .descricao(sessao.getDescricao())
+            .horarioInicio(sessao.getHorarioInicio())
+            .duracaoMinutos(sessao.getDuracaoMinutos())
+            .urlFoto(sessao.getUrlFoto())
+            .disciplina(sessao.getDisciplina())
+            .topico(sessao.getTopico())
+            .totalComentarios(totalComentarios)
+            .totalReacoes(totalReacoes)
+            .reagiu(reagiu)
+            .build();
     }
 
     private void validarCriador(SessaoDeEstudo sessaoDeEstudo, String idUsuario) {
