@@ -4,6 +4,8 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -112,6 +114,7 @@ public class ManipuladorGlobalDeExcecoes {
 // Ex: Frontend mandou dados errados para a criação de usuário, criamos uma classe de resposta que
 // contém uma lista de variáveis incorretas e o motivo de estarem incorretas.
 // :)
+@Getter
 class RespostaDeErro {
 
     private int status;
@@ -126,6 +129,8 @@ class RespostaDeErro {
 
 }
 
+@Getter
+@AllArgsConstructor
 class RespostaDeErroComCampos {
 
     private int status;

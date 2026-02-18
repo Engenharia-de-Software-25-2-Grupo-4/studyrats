@@ -170,7 +170,7 @@ public interface SessaoDeEstudoControllerInterface {
         @ApiResponse(responseCode = "401", description = "Nao autenticado"),
         @ApiResponse(responseCode = "404", description = "Grupo nao encontrado")
     })
-    @GetMapping("/byGrupo/{idGrupo}")
+    @GetMapping("/byGrupo/{idGrupo}/sorted")
     List<SessaoDeEstudoResponseDTO> listSessaoDeEstudosByGroupInOrder(
         @Parameter(description = "ID do grupo", required = true)
         @PathVariable UUID idGrupo,

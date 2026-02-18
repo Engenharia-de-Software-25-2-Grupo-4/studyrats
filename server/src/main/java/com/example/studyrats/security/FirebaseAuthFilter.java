@@ -21,25 +21,20 @@ public class FirebaseAuthFilter extends OncePerRequestFilter {
     }
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+
+        return path.startsWith("/public/")
+                || path.startsWith("/swagger-ui/")
+                || path.startsWith("/v3/api-docs");
+    }
+
+    @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException {
         try {
             String authHeader = request.getHeader("Authorization");
 
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.setContentType("application/json");
-                response.setCharacterEncoding("UTF-8");
-                String json = """
-                {
-                    "error": "Firebase incomplete",
-                    "message": "%s"
-                }
-                """.formatted("authHeader: "+authHeader);
-
-                response.getWriter().write(json);
-                response.getWriter().flush();
-                return;
-            } else {
+            if (authHeader != null && authHeader.startsWith("Bearer "))  {
                 String token = authHeader.substring(7);
                 FirebaseToken decodedToken = firebaseService.verifyToken(token);
                 request.setAttribute("firebaseUser", decodedToken);

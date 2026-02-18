@@ -19,8 +19,6 @@ public class RequisicoesMock {
     private ObjectMapper objectMapper;
     private String getUrl, putUrl, deleteUrl, postUrl;
 
-    private String tokenFake = "tokenValido";
-
     public RequisicoesMock(MockMvc driver) {
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
@@ -179,6 +177,24 @@ public class RequisicoesMock {
                 .andExpect(status().isUnauthorized());
     }
 
+    public void performPostUnauthorized(Object body, String complementoDoPath, String userToken) throws Exception {
+        String jsonBody = objectMapper.writeValueAsString(body);
+        driver.perform(post(postUrl+"/"+complementoDoPath)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonBody)
+                        .header("Authorization", "Bearer "+userToken))
+                .andExpect(status().isUnauthorized());
+    }
+
+    public void performPostNotFound(Object body, String complementoDoPath, String userToken) throws Exception {
+        String jsonBody = objectMapper.writeValueAsString(body);
+        driver.perform(post(postUrl+"/"+complementoDoPath)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonBody)
+                        .header("Authorization", "Bearer "+userToken))
+                .andExpect(status().isNotFound());
+    }
+
     public void performPostOk(Object body, String complementoDoPath, String userToken) throws Exception {
         String jsonBody = objectMapper.writeValueAsString(body);
         driver.perform(post(postUrl+"/"+complementoDoPath)
@@ -198,6 +214,18 @@ public class RequisicoesMock {
     public <T> T performPostCreated(Class<T> expectedTypeResponse, Object body, String userToken) throws Exception {
         String jsonBody = objectMapper.writeValueAsString(body);
         String response = driver.perform(post(postUrl)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonBody)
+                        .header("Authorization", "Bearer "+userToken))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        return objectMapper.readValue(response, expectedTypeResponse);
+    }
+
+    public <T> T performPostCreated(Class<T> expectedTypeResponse, Object body, String complementoDoPath, String userToken) throws Exception {
+        String jsonBody = objectMapper.writeValueAsString(body);
+        String response = driver.perform(post(postUrl+"/"+complementoDoPath)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonBody)
                         .header("Authorization", "Bearer "+userToken))
@@ -242,9 +270,9 @@ public class RequisicoesMock {
                 .andExpect(status().isConflict());
     }
 
-    public void performPostBadRequest(Object body, String userToken) throws Exception {
+    public void performPostBadRequest(Object body, String complementoDoPath, String userToken) throws Exception {
         String jsonBody = objectMapper.writeValueAsString(body);
-        driver.perform(post(postUrl)
+        driver.perform(post(postUrl+"/"+complementoDoPath)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonBody)
                         .header("Authorization", "Bearer " + userToken))

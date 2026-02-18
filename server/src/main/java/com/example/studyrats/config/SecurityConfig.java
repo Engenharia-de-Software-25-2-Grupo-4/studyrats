@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Bean;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, FirebaseService firebaseService) {
+    public SecurityFilterChain filterChain(HttpSecurity http, FirebaseService firebaseService) throws Exception {
 
         FirebaseAuthFilter firebaseFilter =
                 new FirebaseAuthFilter(firebaseService);
@@ -19,7 +19,11 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/public/**").permitAll()
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(
