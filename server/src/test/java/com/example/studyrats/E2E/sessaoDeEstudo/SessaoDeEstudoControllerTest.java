@@ -2,12 +2,16 @@ package com.example.studyrats.E2E.sessaoDeEstudo;
 
 import com.example.studyrats.E2E.RequisicoesMock;
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoPostPutRequestDTO;
+import com.example.studyrats.dto.SessaoDeEstudo.SessaoDeEstudoPostPutRequestDTO;
+import com.example.studyrats.dto.SessaoDeEstudo.SessaoDeEstudoResponseDTO;
 import com.example.studyrats.dto.estudante.EstudantePostPutRequestDTO;
+import com.example.studyrats.model.SessaoDeEstudo;
 import com.example.studyrats.repository.EstudanteRepository;
 import com.example.studyrats.repository.GrupoDeEstudoRepository;
 import com.example.studyrats.repository.SessaoDeEstudoRepository;
 import com.example.studyrats.service.firebase.FirebaseService;
 import com.example.studyrats.util.Mensagens;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
 import org.junit.jupiter.api.*;
@@ -19,6 +23,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -91,10 +97,10 @@ public class SessaoDeEstudoControllerTest {
         baseUrl = "sessaoDeEstudo";
         requisitor = new RequisicoesMock(driver, baseUrl);
     }
-
+/*
     @Nested
     @DisplayName("Testes de criacao")
-    class TestesDeCriacao {
+    class TestesDeCriacaoo {
 
         @Test @Transactional
         @DisplayName("Falha prevista sem permissão")
@@ -113,4 +119,528 @@ public class SessaoDeEstudoControllerTest {
             setup2Estudantes1Grupo();
         }
     }
+*/
+    @Nested
+    @DisplayName("Testes de Autenticação")
+    class TestesDeAutenticacao {
+
+        @Test
+        @DisplayName("POST - Sem token deve retornar 401")
+        void postSemToken() throws Exception {
+            try {
+                requisitor.performPostUnauthorized(idQualquer);
+            } catch (AssertionError e) {
+                fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED + e.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("POST - Token inválido deve retornar 401")
+        void postTokenInvalido() throws Exception {
+            try {
+                requisitor.performPostUnauthorized(idQualquer, "tokenInvalido");
+            } catch (AssertionError e) {
+                fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED + e.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("GET por ID - Sem token deve retornar 401")
+        void getPorIdSemToken() throws Exception {
+            try {
+                requisitor.performGetUnauthorized(idQualquer);
+            } catch (AssertionError e) {
+                fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED + e.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("GET por ID - Token inválido deve retornar 401")
+        void getPorIdTokenInvalido() throws Exception {
+            try {
+                requisitor.performGetUnauthorized(idQualquer, "tokenInvalido");
+            } catch (AssertionError e) {
+                fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED + e.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("GET lista - Sem token deve retornar 401")
+        void getListaSemToken() throws Exception {
+            try {
+                requisitor.performGetUnauthorized();
+            } catch (AssertionError e) {
+                fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED + e.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("GET lista - Token inválido deve retornar 401")
+        void getListaTokenInvalido() throws Exception {
+            try {
+                requisitor.performGetUnauthorized("tokenInvalido");
+            } catch (AssertionError e) {
+                fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED + e.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("PUT - Sem token deve retornar 401")
+        void putSemToken() throws Exception {
+            try {
+                requisitor.performPutUnauthorized(idQualquer);
+            } catch (AssertionError e) {
+                fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED + e.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("PUT - Token inválido deve retornar 401")
+        void putTokenInvalido() throws Exception {
+            try {
+                requisitor.performPutUnauthorized(idQualquer, "tokenInvalido");
+            } catch (AssertionError e) {
+                fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED + e.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("DELETE - Sem token deve retornar 401")
+        void deleteSemToken() throws Exception {
+            try {
+                requisitor.performDeleteUnauthorized(idQualquer);
+            } catch (AssertionError e) {
+                fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED + e.getMessage());
+            }
+        }
+
+        @Test
+        @DisplayName("DELETE - Token inválido deve retornar 401")
+        void deleteTokenInvalido() throws Exception {
+            try {
+                requisitor.performDeleteUnauthorized(idQualquer, "tokenInvalido");
+            } catch (AssertionError e) {
+                fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED + e.getMessage());
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("Testes de criação")
+    class TestesDeCriacao {
+
+        private SessaoDeEstudoPostPutRequestDTO criarBodyValido() {
+            SessaoDeEstudoPostPutRequestDTO body = new SessaoDeEstudoPostPutRequestDTO();
+            body.setTitulo("Sessao Teste");
+            body.setDescricao("Descricao Teste");
+            body.setHorarioInicio(LocalDateTime.now().plusDays(1));
+            body.setDuracaoMinutos(120);
+            body.setUrlFoto("http://teste.com/foto.png");
+            body.setDisciplina("Matemática");
+            body.setTopico("Derivadas");
+            return body;
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Sucesso - Criar sessão válida")
+        void criarComSucesso() throws Exception {
+
+            setup2Estudantes1Grupo();
+            setarToken(tokenEstudante1);
+
+            SessaoDeEstudoPostPutRequestDTO body = criarBodyValido();
+
+            requisitor.performPostCreated(body, tokenEstudante1);
+
+            assertEquals(1, sessaoDeEstudoRepository.count());
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Falha - Título nulo")
+        void criarTituloNulo() throws Exception {
+
+            setup2Estudantes1Grupo();
+            setarToken(tokenEstudante1);
+
+            SessaoDeEstudoPostPutRequestDTO body = criarBodyValido();
+            body.setTitulo(null);
+
+            requisitor.performPostBadRequest(body, tokenEstudante1);
+
+            assertEquals(0, sessaoDeEstudoRepository.count());
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Falha - Título em branco")
+        void criarTituloEmBranco() throws Exception {
+
+            setup2Estudantes1Grupo();
+            setarToken(tokenEstudante1);
+
+            SessaoDeEstudoPostPutRequestDTO body = criarBodyValido();
+            body.setTitulo("");
+
+            requisitor.performPostBadRequest(body, tokenEstudante1);
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Falha - Horário início nulo")
+        void criarHorarioInicioNulo() throws Exception {
+
+            setup2Estudantes1Grupo();
+            setarToken(tokenEstudante1);
+
+            SessaoDeEstudoPostPutRequestDTO body = criarBodyValido();
+            body.setHorarioInicio(null);
+
+            requisitor.performPostBadRequest(body, tokenEstudante1);
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Falha - Duração nula")
+        void criarDuracaoNula() throws Exception {
+
+            setup2Estudantes1Grupo();
+            setarToken(tokenEstudante1);
+
+            SessaoDeEstudoPostPutRequestDTO body = criarBodyValido();
+            body.setDuracaoMinutos(null);
+
+            requisitor.performPostBadRequest(body, tokenEstudante1);
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Falha - Duração menor que 1")
+        void criarDuracaoInvalida() throws Exception {
+
+            setup2Estudantes1Grupo();
+            setarToken(tokenEstudante1);
+
+            SessaoDeEstudoPostPutRequestDTO body = criarBodyValido();
+            body.setDuracaoMinutos(0);
+
+            requisitor.performPostBadRequest(body, tokenEstudante1);
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Falha - Disciplina nula")
+        void criarDisciplinaNula() throws Exception {
+
+            setup2Estudantes1Grupo();
+            setarToken(tokenEstudante1);
+
+            SessaoDeEstudoPostPutRequestDTO body = criarBodyValido();
+            body.setDisciplina(null);
+
+            requisitor.performPostBadRequest(body, tokenEstudante1);
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Falha - Disciplina em branco")
+        void criarDisciplinaEmBranco() throws Exception {
+
+            setup2Estudantes1Grupo();
+            setarToken(tokenEstudante1);
+
+            SessaoDeEstudoPostPutRequestDTO body = criarBodyValido();
+            body.setDisciplina("");
+
+            requisitor.performPostBadRequest(body, tokenEstudante1);
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Falha - Tópico nulo")
+        void criarTopicoNulo() throws Exception {
+
+            setup2Estudantes1Grupo();
+            setarToken(tokenEstudante1);
+
+            SessaoDeEstudoPostPutRequestDTO body = criarBodyValido();
+            body.setTopico(null);
+
+            requisitor.performPostBadRequest(body, tokenEstudante1);
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Falha - Tópico em branco")
+        void criarTopicoEmBranco() throws Exception {
+
+            setup2Estudantes1Grupo();
+            setarToken(tokenEstudante1);
+
+            SessaoDeEstudoPostPutRequestDTO body = criarBodyValido();
+            body.setTopico("");
+
+            requisitor.performPostBadRequest(body, tokenEstudante1);
+        }
+    }
+
+    @Nested
+    @DisplayName("Testes de Privacidade")
+    class TestesDePrivacidade {
+
+        private SessaoDeEstudoPostPutRequestDTO criarBodyValido() {
+            SessaoDeEstudoPostPutRequestDTO body = new SessaoDeEstudoPostPutRequestDTO();
+            body.setTitulo("Sessao Privada");
+            body.setDescricao("Apenas eu posso ver");
+            body.setHorarioInicio(LocalDateTime.now().plusDays(1));
+            body.setDuracaoMinutos(60);
+            body.setDisciplina("Segurança");
+            body.setTopico("Privacidade");
+            return body;
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Falha - Estudante não pode visualizar sessão de outro")
+        void visualizarSessaoAlheia() throws Exception {
+            setup2Estudantes1Grupo();
+            
+            setarToken(tokenEstudante1);
+            SessaoDeEstudoResponseDTO sessaoDono = requisitor.performPostCreated(
+                SessaoDeEstudoResponseDTO.class, criarBodyValido(), tokenEstudante1
+            );
+
+            setarToken(tokenEstudante2);
+            try {
+                requisitor.performGetNotFound(sessaoDono.getIdSessao().toString(), tokenEstudante2);
+            } catch (AssertionError e) {
+                fail("A rota permitiu que um estudante visse a sessão de outro ou não retornou 404");
+            }
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Falha - Estudante não pode atualizar sessão de outro")
+        void atualizarSessaoAlheia() throws Exception {
+            setup2Estudantes1Grupo();
+            
+            setarToken(tokenEstudante1);
+            SessaoDeEstudoResponseDTO sessaoDono = requisitor.performPostCreated(
+                SessaoDeEstudoResponseDTO.class, criarBodyValido(), tokenEstudante1
+            );
+
+            setarToken(tokenEstudante2);
+            SessaoDeEstudoPostPutRequestDTO bodyUpdate = criarBodyValido();
+            bodyUpdate.setTitulo("Título Malicioso");
+
+            try {
+                requisitor.performPutNotFound(bodyUpdate, tokenEstudante2, sessaoDono.getIdSessao().toString());
+            } catch (AssertionError e) {
+                fail("A rota permitiu que um estudante atualizasse a sessão de outro");
+            }
+
+            setarToken(tokenEstudante1);
+            SessaoDeEstudoResponseDTO sessaoOriginal = requisitor.performGetOK(
+                SessaoDeEstudoResponseDTO.class, sessaoDono.getIdSessao().toString(), tokenEstudante1
+            );
+            assertEquals("Sessao Privada", sessaoOriginal.getTitulo());
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Falha - Estudante não pode deletar sessão de outro")
+        void deletarSessaoAlheia() throws Exception {
+            setup2Estudantes1Grupo();
+            
+            setarToken(tokenEstudante1);
+            SessaoDeEstudoResponseDTO sessaoDono = requisitor.performPostCreated(
+                SessaoDeEstudoResponseDTO.class, criarBodyValido(), tokenEstudante1
+            );
+
+            // Estudante 2 tenta deletar
+            setarToken(tokenEstudante2);
+            try {
+                requisitor.performDeleteNotFound(tokenEstudante2, sessaoDono.getIdSessao().toString());
+            } catch (AssertionError e) {
+                fail("A rota permitiu que um estudante deletasse a sessão de outro");
+            }
+
+            assertEquals(1, sessaoDeEstudoRepository.count());
+        }
+    }
+
+    @Nested
+    @DisplayName("Testes de Listagens e Filtros")
+    class TestesDeListagem {
+
+        private SessaoDeEstudoPostPutRequestDTO criarBody(String titulo, String disciplina, String topico) {
+            SessaoDeEstudoPostPutRequestDTO body = new SessaoDeEstudoPostPutRequestDTO();
+            body.setTitulo(titulo);
+            body.setDescricao("Descrição do teste");
+            body.setHorarioInicio(LocalDateTime.now().plusDays(1));
+            body.setDuracaoMinutos(60);
+            body.setDisciplina(disciplina);
+            body.setTopico(topico);
+            return body;
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Sucesso - Listar todas as sessões apenas do utilizador autenticado")
+        void listarSessoesDoUtilizador() throws Exception {
+            setup2Estudantes1Grupo();
+
+            setarToken(tokenEstudante1);
+            requisitor.performPostCreated(criarBody("Sessão 1", "Matemática", "Cálculo"), tokenEstudante1);
+            requisitor.performPostCreated(criarBody("Sessão 2", "Física", "Mecânica"), tokenEstudante1);
+
+            setarToken(tokenEstudante2);
+            requisitor.performPostCreated(criarBody("Sessão Alheia", "Química", "Orgânica"), tokenEstudante2);
+
+            setarToken(tokenEstudante1);
+            List<SessaoDeEstudoResponseDTO> lista = requisitor.performGetOK(
+                new TypeReference<List<SessaoDeEstudoResponseDTO>>() {}, tokenEstudante1
+            );
+
+            assertEquals(2, lista.size(), "O utilizador deveria ver apenas as suas 2 sessões");
+            assertTrue(lista.stream().anyMatch(s -> s.getTitulo().equals("Sessão 1")));
+            assertTrue(lista.stream().anyMatch(s -> s.getTitulo().equals("Sessão 2")));
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Sucesso - Filtrar sessões por Disciplina")
+        void filtrarPorDisciplina() throws Exception {
+            setup2Estudantes1Grupo();
+            setarToken(tokenEstudante1);
+
+            requisitor.performPostCreated(criarBody("Sessão A", "Java", "Streams"), tokenEstudante1);
+            requisitor.performPostCreated(criarBody("Sessão B", "Java", "Optional"), tokenEstudante1);
+            requisitor.performPostCreated(criarBody("Sessão C", "Python", "Flask"), tokenEstudante1);
+
+            List<SessaoDeEstudoResponseDTO> resultado = requisitor.performGetOK(
+                new TypeReference<List<SessaoDeEstudoResponseDTO>>() {}, "disciplina/Java", tokenEstudante1
+            );
+
+            assertEquals(2, resultado.size());
+            assertTrue(resultado.stream().allMatch(s -> s.getDisciplina().equals("Java")));
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Sucesso - Filtrar sessões por Tópico")
+        void filtrarPorTopico() throws Exception {
+            setup2Estudantes1Grupo();
+            setarToken(tokenEstudante1);
+
+            requisitor.performPostCreated(criarBody("Aula 1", "História", "Brasil"), tokenEstudante1);
+            requisitor.performPostCreated(criarBody("Aula 2", "Geografia", "Brasil"), tokenEstudante1);
+            requisitor.performPostCreated(criarBody("Aula 3", "História", "Europa"), tokenEstudante1);
+
+            List<SessaoDeEstudoResponseDTO> resultado = requisitor.performGetOK(
+                new TypeReference<List<SessaoDeEstudoResponseDTO>>() {}, "topico/Brasil", tokenEstudante1
+            );
+
+            assertEquals(2, resultado.size());
+            assertTrue(resultado.stream().allMatch(s -> s.getTopico().equals("Brasil")));
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Sucesso - Retornar lista vazia se não houver sessões")
+        void retornarListaVazia() throws Exception {
+            setup2Estudantes1Grupo();
+            setarToken(tokenEstudante1);
+
+            List<SessaoDeEstudoResponseDTO> lista = requisitor.performGetOK(
+                new TypeReference<List<SessaoDeEstudoResponseDTO>>() {}, tokenEstudante1
+            );
+
+            assertNotNull(lista);
+            assertEquals(0, lista.size(), "Deveria retornar uma lista vazia e não erro");
+        }
+    }
+
+    @Nested
+    @DisplayName("Testes de sucesso")
+    class TestesCaminhosFelizes {
+
+        private SessaoDeEstudoPostPutRequestDTO criarPayloadValido() {
+            SessaoDeEstudoPostPutRequestDTO body = new SessaoDeEstudoPostPutRequestDTO();
+            body.setTitulo("Revisão de PSoft");
+            body.setDescricao("Estudando para a prova de Design Patterns");
+            body.setHorarioInicio(LocalDateTime.now().plusDays(2));
+            body.setDuracaoMinutos(120);
+            body.setDisciplina("Projeto de Software");
+            body.setTopico("Decorator Pattern");
+            return body;
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Sucesso - Buscar sessão por ID")
+        void visualizarSessaoSucesso() throws Exception {
+            setup2Estudantes1Grupo();
+            setarToken(tokenEstudante1);
+            
+            SessaoDeEstudoResponseDTO criada = requisitor.performPostCreated(
+                SessaoDeEstudoResponseDTO.class, criarPayloadValido(), tokenEstudante1
+            );
+
+            SessaoDeEstudoResponseDTO buscada = requisitor.performGetOK(
+                SessaoDeEstudoResponseDTO.class, criada.getIdSessao().toString(), tokenEstudante1
+            );
+
+            assertNotNull(buscada);
+            assertEquals(criada.getIdSessao(), buscada.getIdSessao());
+            assertEquals("Revisão de PSoft", buscada.getTitulo());
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Sucesso - Atualizar dados da própria sessão")
+        void atualizarSessaoSucesso() throws Exception {
+            setup2Estudantes1Grupo();
+            setarToken(tokenEstudante1);
+            
+            SessaoDeEstudoResponseDTO criada = requisitor.performPostCreated(
+                SessaoDeEstudoResponseDTO.class, criarPayloadValido(), tokenEstudante1
+            );
+
+            SessaoDeEstudoPostPutRequestDTO bodyUpdate = criarPayloadValido();
+            bodyUpdate.setTitulo("Título Atualizado");
+            bodyUpdate.setDuracaoMinutos(180);
+
+            SessaoDeEstudoResponseDTO atualizada = requisitor.performPutOk(
+                SessaoDeEstudoResponseDTO.class, bodyUpdate, criada.getIdSessao().toString(), tokenEstudante1
+            );
+
+            assertEquals("Título Atualizado", atualizada.getTitulo());
+            assertEquals(180, atualizada.getDuracaoMinutos());
+            
+            SessaoDeEstudo noBanco = sessaoDeEstudoRepository.findById(criada.getIdSessao()).get();
+            assertEquals("Título Atualizado", noBanco.getTitulo());
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Sucesso - Remover a própria sessão")
+        void removerSessaoSucesso() throws Exception {
+            setup2Estudantes1Grupo();
+            setarToken(tokenEstudante1);
+            
+            SessaoDeEstudoResponseDTO criada = requisitor.performPostCreated(
+                SessaoDeEstudoResponseDTO.class, criarPayloadValido(), tokenEstudante1
+            );
+
+            assertEquals(1, sessaoDeEstudoRepository.count());
+
+            requisitor.performDeleteNoContent(tokenEstudante1, criada.getIdSessao().toString());
+
+            assertEquals(0, sessaoDeEstudoRepository.count());
+            requisitor.performGetNotFound(criada.getIdSessao().toString(), tokenEstudante1);
+        }
+    }
+
 }

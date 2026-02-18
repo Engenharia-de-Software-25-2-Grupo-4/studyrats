@@ -1,10 +1,14 @@
 package com.example.studyrats.E2E;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
+
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.MediaType;
@@ -95,6 +99,17 @@ public class RequisicoesMock {
         return objectMapper.readValue(response, expectedTypeResponse);
     }
 
+    public <T> T performPutOk(Class<T> expectedTypeResponse, Object body, String path, String userToken) throws Exception {
+        String jsonBody = objectMapper.writeValueAsString(body);
+        String response = driver.perform(put(putUrl + "/" + path)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonBody)
+                .header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        return objectMapper.readValue(response, expectedTypeResponse);
+    }
+
     public void performGetNotFound(String complementoDoPath, String userToken) throws Exception {
         driver.perform(get(getUrl+"/"+complementoDoPath)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -125,6 +140,16 @@ public class RequisicoesMock {
     public void performGetUnauthorized() throws Exception {
         driver.perform(get(getUrl).contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized());
+    }
+
+    public <T> T performGetOK(TypeReference<T> expectedTypeResponse, String complementoDoPath, String userToken) throws Exception {
+        String response = driver.perform(get(getUrl + "/" + complementoDoPath)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        return objectMapper.readValue(response, expectedTypeResponse);
     }
 
     public void performPostUnauthorized(Object body) throws Exception {
@@ -217,6 +242,15 @@ public class RequisicoesMock {
                 .andExpect(status().isConflict());
     }
 
+    public void performPostBadRequest(Object body, String userToken) throws Exception {
+        String jsonBody = objectMapper.writeValueAsString(body);
+        driver.perform(post(postUrl)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonBody)
+                        .header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isBadRequest());
+    }
+
     public void performPutUnauthorized(String complementoDoPath) throws Exception {
         driver.perform(put(putUrl+"/"+complementoDoPath)
                         .contentType(MediaType.APPLICATION_JSON))
@@ -250,6 +284,15 @@ public class RequisicoesMock {
                         .header("Authorization", "Bearer "+userToken))
                 .andExpect(status().isOk());
 
+    }
+
+    public void performPutNotFound(Object body, String userToken, String complementoDoPath) throws Exception {
+        String jsonBody = objectMapper.writeValueAsString(body);
+        driver.perform(put(putUrl + "/" + complementoDoPath)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonBody)
+                        .header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isNotFound());
     }
 
     public void performDeleteUnauthorized() throws Exception {
