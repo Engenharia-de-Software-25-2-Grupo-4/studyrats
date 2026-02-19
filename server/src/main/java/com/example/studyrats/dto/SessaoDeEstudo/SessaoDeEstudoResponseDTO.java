@@ -45,4 +45,14 @@ public class SessaoDeEstudoResponseDTO {
 
     @JsonProperty("topico")
     private String topico; 
+
+    @JsonProperty("total_comentarios")
+    private Long totalComentarios;
+
+    @JsonProperty("total_reacoes")
+    private Long totalReacoes;
+
+    @JsonProperty("reagiu")
+    private Boolean reagiu;
+
 }
