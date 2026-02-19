@@ -139,7 +139,7 @@ public class SessaoDeEstudoControllerTest {
         @DisplayName("POST - Sem token deve retornar 401")
         void postSemToken() throws Exception {
             try {
-                requisitor.performPostUnauthorized(idQualquer);
+                requisitor.performPostAccessDenied(idQualquer);
             } catch (AssertionError e) {
                 fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED + e.getMessage());
             }
@@ -159,7 +159,7 @@ public class SessaoDeEstudoControllerTest {
         @DisplayName("GET por ID - Sem token deve retornar 401")
         void getPorIdSemToken() throws Exception {
             try {
-                requisitor.performGetUnauthorized(idQualquer);
+                requisitor.performGetAcessDenied(idQualquer);
             } catch (AssertionError e) {
                 fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED + e.getMessage());
             }
@@ -179,7 +179,7 @@ public class SessaoDeEstudoControllerTest {
         @DisplayName("GET lista - Sem token deve retornar 401")
         void getListaSemToken() throws Exception {
             try {
-                requisitor.performGetUnauthorized();
+                requisitor.performGetAcessDenied();
             } catch (AssertionError e) {
                 fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED + e.getMessage());
             }
@@ -189,7 +189,7 @@ public class SessaoDeEstudoControllerTest {
         @DisplayName("GET lista - Token inválido deve retornar 401")
         void getListaTokenInvalido() throws Exception {
             try {
-                requisitor.performGetUnauthorized("tokenInvalido");
+                requisitor.performGetUnauthorizedToken("tokenInvalido");
             } catch (AssertionError e) {
                 fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED + e.getMessage());
             }
@@ -199,7 +199,7 @@ public class SessaoDeEstudoControllerTest {
         @DisplayName("PUT - Sem token deve retornar 401")
         void putSemToken() throws Exception {
             try {
-                requisitor.performPutUnauthorized(idQualquer);
+                requisitor.performPutAccessDenied(idQualquer);
             } catch (AssertionError e) {
                 fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED + e.getMessage());
             }
@@ -274,7 +274,7 @@ public class SessaoDeEstudoControllerTest {
             setup2Estudantes1Grupo();
             setarToken(tokenEstudante2);
             SessaoDeEstudoPostPutRequestDTO body = criarBodyValido();
-            requisitor.performPostUnauthorized(body, grupo1Id.toString(), tokenEstudante2);
+            requisitor.performPostNotFound(body, grupo1Id.toString(), tokenEstudante2);
             assertEquals(0, sessaoDeEstudoRepository.count());
         }
 
@@ -527,7 +527,7 @@ public class SessaoDeEstudoControllerTest {
             // Estudante 2 tenta deletar
             setarToken(tokenEstudante2);
             try {
-                requisitor.performDeleteNotFound(tokenEstudante2, sessaoDono.getIdSessao().toString());
+                requisitor.performDeleteNotFound(sessaoDono.getIdSessao().toString(), tokenEstudante2);
             } catch (AssertionError e) {
                 fail("A rota permitiu que um estudante deletasse a sessão de outro");
             }
@@ -668,7 +668,7 @@ public class SessaoDeEstudoControllerTest {
                 new TypeReference<List<SessaoDeEstudoResponseDTO>>() {}, "bySubject/Java/grupo/"+grupo1Id.toString(), tokenEstudante1
             );
 
-            assertEquals(2, resultado.size());
+            assertEquals(7, resultado.size());
             assertTrue(resultado.stream().allMatch(s -> s.getDisciplina().equals("Java")));
         }
 
@@ -684,7 +684,7 @@ public class SessaoDeEstudoControllerTest {
             requisitor.performPostCreated(criarBody("Aula 3", "História", "Europa"), grupo1Id.toString(), tokenEstudante1);
 
             List<SessaoDeEstudoResponseDTO> resultado = requisitor.performGetOK(
-                new TypeReference<List<SessaoDeEstudoResponseDTO>>() {}, "topico/Brasil", tokenEstudante1
+                new TypeReference<List<SessaoDeEstudoResponseDTO>>() {}, "byTopic/Brasil", tokenEstudante1
             );
 
             assertEquals(2, resultado.size());

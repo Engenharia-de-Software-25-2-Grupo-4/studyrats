@@ -106,9 +106,9 @@ public class EstudanteControllerTest {
         void falhaCriarSemAutenticacao() throws Exception {
             EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO("Test", "test@test");
             try {
-                requisitor.performPostUnauthorized(body);
+                requisitor.performPostAccessDenied(body);
             } catch (AssertionError e) {
-                fail("A rota não retornou 401 unauthorized - "+e.getMessage());
+                fail("A rota não retornou 403 Access Denied / Forbidden - "+e.getMessage());
             }
 
             List<Estudante> todosOsEstudantes = repoDoEstudante.findAll();
@@ -141,7 +141,6 @@ public class EstudanteControllerTest {
             Estudante estudante = null;
             try {
                 novoEstudante = requisitor.performPostCreated(EstudanteResponseDTO.class, body, randomToken);
-                System.out.println(novoEstudante.getFirebaseUid());
                 estudante = repoDoEstudante.findByEmail("test@test").orElse(null);
                 assertNotNull(estudante, "O estudante não foi encontrado no repositorio (por email) após criacão");
                 assertNotNull(novoEstudante, "O estudante não foi retornado na requisição");
@@ -177,9 +176,9 @@ public class EstudanteControllerTest {
         @DisplayName("Falha prevista ao tentar sem autenticação")
         void falhaGetAllSemAuth() throws Exception {
             try {
-                requisitor.performGetUnauthorized();
+                requisitor.performPostAccessDenied();
             } catch (AssertionError e) {
-                fail("O endpoint nõa lançou 401 unauthorized - "+e.getMessage());
+                fail("A rota não retornou 403 Access Denied / Forbidden - "+e.getMessage());
             }
         }
 
@@ -187,7 +186,7 @@ public class EstudanteControllerTest {
         @DisplayName("Falha prevista ao tentar autenticação inválida")
         void falhaGetAllTokenInvalido() throws Exception {
             try {
-                requisitor.performGetUnauthorized("invalidToken");
+                requisitor.performGetUnauthorizedToken("invalidToken");
             } catch (AssertionError e) {
                 fail("O endpoint nõa lançou 401 unauthorized - "+e.getMessage());
             }
@@ -250,7 +249,6 @@ public class EstudanteControllerTest {
             for (EstudanteResponseDTO estudanteDoGetall : listaDeEstudantesDoGetall) {
                 boolean encontrado = false;
                 for (EstudantePostPutRequestDTO estudanteDTO : estudantes) {
-                    System.out.println(estudanteDoGetall.getFirebaseUid());
                     boolean nomeIgual = estudanteDoGetall.getNome().equals(estudanteDTO.getNome());
                     boolean emailIgual = estudanteDoGetall.getEmail().equals(estudanteDTO.getEmail());
                     if (nomeIgual && emailIgual) {
@@ -273,9 +271,9 @@ public class EstudanteControllerTest {
         @DisplayName("Falha prevista ao tentar sem autenticação e banco vazio")
         void falhaSemAuth() throws Exception {
             try {
-                requisitor.performGetUnauthorized("idQualquer");
+                requisitor.performPostAccessDenied("idQualquer");
             } catch (AssertionError e) {
-                fail("O endpoint não lançou 401 unauthorized - "+e.getMessage());
+                fail("A rota não retornou 403 Access Denied / Forbidden - "+e.getMessage());
             }
         }
 
@@ -284,9 +282,9 @@ public class EstudanteControllerTest {
         void falhaSemAuthPovoado() throws Exception {
             generateRandoms(100);
             try {
-                requisitor.performGetUnauthorized("idQualquer");
+                requisitor.performPostAccessDenied("idQualquer");
             } catch (AssertionError e) {
-                fail("O endpoint não lançou 401 unauthorized - "+e.getMessage());
+                fail("A rota não retornou 403 Access Denied / Forbidden - "+e.getMessage());
             }
         }
 
@@ -362,10 +360,9 @@ public class EstudanteControllerTest {
         @DisplayName("Falha prevista ao tentar sem autenticacao e banco vazio")
         void falhaSemAuth() throws Exception {
             try {
-                String token = "invalidToken";
-                requisitor.performPutUnauthorized(token);
+                requisitor.performPutAccessDenied("idQualquer");
             } catch (AssertionError e) {
-                fail("O endpoint não lançou 401 unauthorized - "+e.getMessage());
+                fail("A rota não retornou 403 Access Denied / Forbidden - "+e.getMessage());
             }
         }
 
@@ -374,10 +371,9 @@ public class EstudanteControllerTest {
         void falhaSemAuthBancoPovoado() throws Exception {
             generateRandoms(10);
             try {
-                String token = "invalidToken";
-                requisitor.performPutUnauthorized(token);
+                requisitor.performPutAccessDenied("idQualquer");
             } catch (AssertionError e) {
-                fail("O endpoint não lançou 401 unauthorized - "+e.getMessage());
+                fail("A rota não retornou 403 Access Denied / Forbidden - "+e.getMessage());
             }
         }
 
@@ -481,9 +477,9 @@ public class EstudanteControllerTest {
         @DisplayName("Falha prevista ao tentar sem autenticação banco vazio")
         void falhaGetAllSemAuth() throws Exception {
             try {
-                requisitor.performDeleteUnauthorized();
+                requisitor.performDeleteAccessDenied();
             } catch (AssertionError e) {
-                fail("O endpoint nõa lançou 401 unauthorized - "+e.getMessage());
+                fail("A rota não retornou 403 Access Denied / Forbidden - "+e.getMessage());
             }
         }
 
@@ -492,9 +488,9 @@ public class EstudanteControllerTest {
         void falhaGetAllSemAuthComBanco() throws Exception {
             generateRandoms(100);
             try {
-                requisitor.performDeleteUnauthorized();
+                requisitor.performDeleteAccessDenied();
             } catch (AssertionError e) {
-                fail("O endpoint nõa lançou 401 unauthorized - "+e.getMessage());
+                fail("A rota não retornou 403 Access Denied / Forbidden - "+e.getMessage());
             }
         }
 

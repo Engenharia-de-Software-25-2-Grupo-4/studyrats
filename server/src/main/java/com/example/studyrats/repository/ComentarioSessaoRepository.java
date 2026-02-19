@@ -8,9 +8,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.example.studyrats.model.ComentarioSessao; 
 public interface ComentarioSessaoRepository extends JpaRepository<ComentarioSessao, UUID> {
     
-    List<ComentarioSessao> findBySessaoDeEstudoId_sessaoOrderByHorarioComentarioAsc(UUID idSessao);
+    List<ComentarioSessao> findBySessaoDeEstudoIdSessaoOrderByHorarioComentarioAsc(UUID idSessao);
 
-    long countBySessaoDeEstudoId_sessao(UUID idSessao);
+    long countBySessaoDeEstudoIdSessao(UUID idSessao);
 
-    List<ComentarioSessao> findAllBySessaoDeEstudoId_sessaoAndAutorFirebaseUid(UUID idSessao, String firebaseUid);
+    List<ComentarioSessao> findAllBySessaoDeEstudoIdSessaoAndAutorFirebaseUid(UUID idSessao, String firebaseUid);
 }

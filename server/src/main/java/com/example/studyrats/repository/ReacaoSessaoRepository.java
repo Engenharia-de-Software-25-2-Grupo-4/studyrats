@@ -9,12 +9,12 @@ import java.util.Optional;
 
 public interface ReacaoSessaoRepository extends JpaRepository<ReacaoSessao, UUID> {
     
-    Optional<ReacaoSessao> findBySessaoDeEstudoId_sessaoAndAutorFirebaseUid(UUID idSessao, String firebaseUid);
+    Optional<ReacaoSessao> findBySessaoDeEstudoIdSessaoAndAutorFirebaseUid(UUID idSessao, String firebaseUid);
 
-    long countBySessaoDeEstudoId_sessao(UUID idSessao);
+    long countBySessaoDeEstudoIdSessao(UUID idSessao);
 
-    boolean existsBySessaoDeEstudoId_sessaoAndAutorFirebaseUid(UUID idSessao, String firebaseUid);
+    boolean existsBySessaoDeEstudoIdSessaoAndAutorFirebaseUid(UUID idSessao, String firebaseUid);
 
-    void deleteBySessaoDeEstudoId_sessaoAndAutorFirebaseUid(UUID idSessao, String firebaseUid);
-    
+    void deleteBySessaoDeEstudoIdSessaoAndAutorFirebaseUid(UUID idSessao, String firebaseUid);
+
 }

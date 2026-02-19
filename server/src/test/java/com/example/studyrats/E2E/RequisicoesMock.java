@@ -140,6 +140,18 @@ public class RequisicoesMock {
                 .andExpect(status().isUnauthorized());
     }
 
+    public void performGetAcessDenied(String complementoDoPath) throws Exception {
+        driver.perform(get(getUrl+"/"+complementoDoPath)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden());
+    }
+
+    public void performGetAcessDenied() throws Exception {
+        driver.perform(get(getUrl)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden());
+    }
+
     public <T> T performGetOK(TypeReference<T> expectedTypeResponse, String complementoDoPath, String userToken) throws Exception {
         String response = driver.perform(get(getUrl + "/" + complementoDoPath)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -184,6 +196,26 @@ public class RequisicoesMock {
                         .content(jsonBody)
                         .header("Authorization", "Bearer "+userToken))
                 .andExpect(status().isUnauthorized());
+    }
+
+    public void performPostAccessDenied() throws Exception {
+        driver.perform(post(postUrl)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden());
+    }
+
+    public void performPostAccessDenied(String complementoDoPath) throws Exception {
+        driver.perform(post(postUrl+"/"+complementoDoPath)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden());
+    }
+
+    public void performPostAccessDenied(Object body) throws Exception {
+        String jsonBody = objectMapper.writeValueAsString(body);
+        driver.perform(post(postUrl)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonBody))
+                .andExpect(status().isForbidden());
     }
 
     public void performPostNotFound(Object body, String complementoDoPath, String userToken) throws Exception {
@@ -279,6 +311,12 @@ public class RequisicoesMock {
                 .andExpect(status().isBadRequest());
     }
 
+    public void performPutAccessDenied(String complementoDoPath) throws Exception {
+        driver.perform(put(putUrl+"/"+complementoDoPath)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden());
+    }
+
     public void performPutUnauthorized(String complementoDoPath) throws Exception {
         driver.perform(put(putUrl+"/"+complementoDoPath)
                         .contentType(MediaType.APPLICATION_JSON))
@@ -321,6 +359,12 @@ public class RequisicoesMock {
                         .content(jsonBody)
                         .header("Authorization", "Bearer " + userToken))
                 .andExpect(status().isNotFound());
+    }
+
+    public void performDeleteAccessDenied() throws Exception {
+        driver.perform(put(putUrl)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden());
     }
 
     public void performDeleteUnauthorized() throws Exception {

@@ -22,6 +22,9 @@ public class Mensagens {
     public static final String GRUPO_JA_EXISTE = "Grupo com mesmo nome já existe para este estudante";
     public static final String ESTUDANTE_NAO_ADMIN = "O estudante não é um administrador";
 
+    // Mensagens de exceções de Sessão de estudo
+    public static final String ESTUDANTE_NAO_FAZ_PARTE_DO_GRUPO = "O estudante não faz parte o grupo de estudo informado";
+
     // Mensagens de exceções de convite
     public static final String CONVITE_NAO_ENCONTRADO = "O convite solicitado não foi encontrado.";
     public static final String CONVITE_EXPIRADO = "O convite solicitado EXPIROU.";

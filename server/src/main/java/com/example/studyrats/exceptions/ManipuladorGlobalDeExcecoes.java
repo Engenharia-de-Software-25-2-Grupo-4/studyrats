@@ -47,6 +47,7 @@ public class ManipuladorGlobalDeExcecoes {
             GrupoNaoEncontrado.class,
             ConviteNaoEncontrado.class,
             ConviteExpirado.class,
+            UsuarioNaoFazParteDoGrupoException.class,
     })
     public ResponseEntity<?> manipularEstudanteNaoEncontrado(RuntimeException ex) {
         HttpStatus httpStatus = HttpStatus.NOT_FOUND;
@@ -68,14 +69,12 @@ public class ManipuladorGlobalDeExcecoes {
             EstudanteNaoAutenticado.class,
             UsuarioNaoAdmin.class
     })
-
     public ResponseEntity<?> manipularEstudanteNaoAutenticado(EstudanteNaoAutenticado ex) {
         HttpStatus httpStatus = HttpStatus.UNAUTHORIZED;
         return baseReturn(httpStatus, ex);
     }
 
     @ExceptionHandler({
-            UsuarioNaoFazParteDoGrupoException.class,
             UsuarioNaoTemPermissaoParaDeletarComentarioSessaoException.class
     })
     public ResponseEntity<?> manipularUsuarioNaoFazParteDoGrupo(RuntimeException ex) {

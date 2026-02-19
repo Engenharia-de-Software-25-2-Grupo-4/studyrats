@@ -1,11 +1,11 @@
 package com.example.studyrats.exceptions;
 
+import com.example.studyrats.util.Mensagens;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-@ResponseStatus(HttpStatus.FORBIDDEN)
 public class UsuarioNaoFazParteDoGrupoException extends RuntimeException {
     public UsuarioNaoFazParteDoGrupoException() {
-        super("O usuário não faz parte do grupo de estudo.");
+        super(Mensagens.ESTUDANTE_NAO_FAZ_PARTE_DO_GRUPO);
     }
 }

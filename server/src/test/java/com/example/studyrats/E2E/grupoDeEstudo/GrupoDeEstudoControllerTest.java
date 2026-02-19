@@ -119,9 +119,9 @@ public class GrupoDeEstudoControllerTest {
         void falhaCriarSemAutenticacao() throws Exception {
             GrupoDeEstudoPostPutRequestDTO body = new GrupoDeEstudoPostPutRequestDTO("grupo legal", "coisas legais");
             try {
-                requisitor.performPostUnauthorized(body);
+                requisitor.performPostAccessDenied(body);
             } catch (AssertionError e) {
-                fail("A rota não retornou 401 unauthorized - " + e.getMessage());
+                fail("A rota não retornou 403 Access Denied / Forbidden - "+e.getMessage());
             }
         }
 
@@ -223,7 +223,7 @@ public class GrupoDeEstudoControllerTest {
         @DisplayName("Falha prevista ao tentar sem autenticação e banco vazio")
         void falhaSemAuth() throws Exception {
             try {
-                requisitor.performGetUnauthorized(idQualquer);
+                requisitor.performGetAcessDenied(idQualquer);
             } catch (AssertionError e) {
                 fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED);
             }
@@ -234,7 +234,7 @@ public class GrupoDeEstudoControllerTest {
         void falhaSemAuthBancoPovoado() throws Exception {
             gerarRandomsGruposEstudantes(100, 20);
             try {
-                requisitor.performGetUnauthorized(idQualquer);
+                requisitor.performGetAcessDenied(idQualquer);
             } catch (AssertionError e) {
                 fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED);
             }
@@ -325,7 +325,7 @@ public class GrupoDeEstudoControllerTest {
         @DisplayName("Falha prevista ao tentar sem autenticacao banco vazio")
         void falhaDeleteSemAuth() throws Exception {
             try {
-                requisitor.performDeleteUnauthorized();
+                requisitor.performDeleteAccessDenied();
             } catch (AssertionError e) {
                 fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED);
             }
@@ -336,7 +336,7 @@ public class GrupoDeEstudoControllerTest {
         void falhaDeleteSemAuthBancoPovoado() throws Exception {
             gerarRandomsGruposEstudantes(100, 10);
             try {
-                requisitor.performDeleteUnauthorized();
+                requisitor.performDeleteAccessDenied();
             } catch (AssertionError e) {
                 fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED);
             }
@@ -468,7 +468,7 @@ public class GrupoDeEstudoControllerTest {
         @DisplayName("Falha prevista ao tentar sem autenticação banco vazio")
         void falhaGetAllSemAuth() throws Exception {
             try {
-                requisitor.performGetUnauthorized();
+                requisitor.performGetAcessDenied();
             } catch (AssertionError e) {
                 fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED+e.getMessage());
             }
@@ -479,7 +479,7 @@ public class GrupoDeEstudoControllerTest {
         void falhaGetAllSemAuthBancoPovoado() throws Exception {
             gerarRandomsGruposEstudantes(100, 10);
             try {
-                requisitor.performGetUnauthorized();
+                requisitor.performGetAcessDenied();
             } catch (AssertionError e) {
                 fail(Mensagens.NAO_RETORNOU_UNAUTHORIZED+e.getMessage());
             }
