@@ -1,6 +1,6 @@
 package com.example.studyrats.E2E.sessaoDeEstudo;
 
-import com.example.studyrats.E2E.RequisicoesMock;
+import com.example.studyrats.RequisicoesMock;
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoPostPutRequestDTO;
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoResponseDTO;
 import com.example.studyrats.dto.SessaoDeEstudo.SessaoDeEstudoPostPutRequestDTO;

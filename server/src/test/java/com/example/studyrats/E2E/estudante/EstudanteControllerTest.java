@@ -1,6 +1,6 @@
 package com.example.studyrats.E2E.estudante;
 
-import com.example.studyrats.E2E.RequisicoesMock;
+import com.example.studyrats.RequisicoesMock;
 import com.example.studyrats.controller.EstudanteController;
 import com.example.studyrats.dto.estudante.EstudantePostPutRequestDTO;
 import com.example.studyrats.dto.estudante.EstudanteResponseDTO;

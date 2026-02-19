@@ -1,13 +1,11 @@
 package com.example.studyrats.E2E.grupoDeEstudo;
 
-import com.example.studyrats.E2E.RequisicoesMock;
-import com.example.studyrats.dto.ConviteGrupo.ConvitePostRequestDTO;
+import com.example.studyrats.RequisicoesMock;
 import com.example.studyrats.dto.ConviteGrupo.ConviteResponseDTO;
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoPostPutRequestDTO;
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoResponseDTO;
 import com.example.studyrats.dto.estudante.EstudantePostPutRequestDTO;
 import com.example.studyrats.dto.estudante.EstudanteResponseDTO;
-import com.example.studyrats.model.ConviteGrupo;
 import com.example.studyrats.model.GrupoDeEstudo;
 import com.example.studyrats.repository.ConviteGrupoRepository;
 import com.example.studyrats.repository.EstudanteRepository;
@@ -16,7 +14,6 @@ import com.example.studyrats.repository.MembroGrupoRepository;
 import com.example.studyrats.service.firebase.FirebaseService;
 import com.example.studyrats.util.Mensagens;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
 import org.junit.jupiter.api.*;
@@ -26,7 +23,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.*;
 
