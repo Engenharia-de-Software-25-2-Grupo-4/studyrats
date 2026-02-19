@@ -100,7 +100,7 @@ export default function Profile(){
 
             <Menu
                 tabs={categories}
-                activeTabId="1"
+                activeTabId="3"
             />  
         </View>
     )
