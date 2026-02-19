@@ -6,11 +6,11 @@ import {
     Image,
     Keyboard,
     Animated,
+    StyleSheet
   } from "react-native";
   import { SafeAreaView } from "react-native-safe-area-context";
   import { useEffect, useRef, useState } from "react";
   import { Ionicons } from "@expo/vector-icons";
-  import { styles } from "./recuperar_senha.styles";
   
   type Step = "EMAIL" | "CODIGO" | "NOVA_SENHA" | "SUCESSO";
   
@@ -128,7 +128,7 @@ import {
       <SafeAreaView style={styles.container}>
         {/* TOPO */}
         <View style={styles.header}>
-          <Image source={require("../../assets/logo.png")} style={styles.logo} />
+          <Image source={require("../../../assets/logo.png")} style={styles.logo} />
           <Text style={styles.logoText}>StudyRats</Text>
         </View>
   
@@ -262,3 +262,108 @@ import {
       </SafeAreaView>
     );
   }
+
+  const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#01415B",
+    justifyContent: "space-between",
+  },
+
+  header: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  logo: {
+    width: 140,
+    height: 140,
+    resizeMode: "contain",
+  },
+
+  logoText: {
+    marginTop: 8,
+    fontSize: 30,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+
+  card: {
+    backgroundColor: "#EAF9FF",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    minHeight: 360,
+  },
+
+  title: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 12,
+    color: "#01415B",
+  },
+
+  error: {
+    color: "#C62828",
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+
+  info: {
+    color: "#01415B",
+    fontWeight: "500",
+    marginBottom: 8,
+  },
+
+  success: {
+    color: "#2E7D32",
+    fontWeight: "700",
+    marginBottom: 12,
+  },
+
+  input: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    padding: 14,
+    marginBottom: 12,
+    color: "#01415B",
+  },
+
+  passwordContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    marginBottom: 12,
+  },
+
+  passwordInput: {
+    flex: 1,
+    paddingVertical: 14,
+    color: "#01415B",
+  },
+
+  buttonPrimary: {
+    backgroundColor: "#01415B",
+    padding: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 8,
+  },
+
+  buttonPrimaryText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 14,
+  },
+
+  linkText: {
+    marginTop: 16,
+    textAlign: "center",
+    color: "#01415B",
+    fontWeight: "700",
+    textDecorationLine: "underline",
+  },
+});
