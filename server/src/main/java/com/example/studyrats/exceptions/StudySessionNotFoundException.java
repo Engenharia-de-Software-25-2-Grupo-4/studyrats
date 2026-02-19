@@ -1,0 +1,11 @@
+package com.example.studyrats.exceptions;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ResponseStatus(HttpStatus.NOT_FOUND)
+public class StudySessionNotFoundException extends RuntimeException {
+    public StudySessionNotFoundException() {
+        super("Sessão de estudo não encontrada.");
+    }
+}
