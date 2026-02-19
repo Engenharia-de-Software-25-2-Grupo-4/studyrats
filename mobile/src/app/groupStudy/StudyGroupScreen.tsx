@@ -80,6 +80,7 @@ export default function StudyGroupScreen() {
                                 title={post.title}
                                 user={post.user}
                                 subject={post.subject}
+                                image={post.image}
                             />
                         </TouchableOpacity>
                     </View>
