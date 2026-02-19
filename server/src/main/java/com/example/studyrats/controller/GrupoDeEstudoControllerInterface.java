@@ -7,6 +7,8 @@ import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoPostPutRequestDTO;
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoResponseDTO;
 import com.example.studyrats.dto.ConviteGrupo.ConviteResponseDTO;
 
+import com.example.studyrats.dto.SessaoDeEstudo.SessaoDeEstudoResponseDTO;
+import com.example.studyrats.dto.GrupoDeEstudo.RankingGrupoResponseDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -88,6 +90,29 @@ public interface GrupoDeEstudoControllerInterface {
     })
     @GetMapping
     List<GrupoDeEstudoResponseDTO> listGrupoDeEstudosByUser(HttpServletRequest request);
+
+    @Operation(summary = "Ranking do grupo")
+    @GetMapping("/{idGrupo}/ranking")
+    List<RankingGrupoResponseDTO> getRanking(
+            @PathVariable UUID idGrupo,
+            HttpServletRequest request
+    );
+
+
+
+    @Operation(summary = "Listar todas as sessões (check-ins) de um grupo")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado"),
+            @ApiResponse(responseCode = "403", description = "Usuário não faz parte do grupo"),
+            @ApiResponse(responseCode = "404", description = "Grupo não encontrado")
+    })
+    @GetMapping("/{idGrupo}/sessoes")
+    List<SessaoDeEstudoResponseDTO> listarSessoesDoGrupo(
+            @Parameter(description = "ID do grupo", required = true)
+            @PathVariable UUID idGrupo,
+            HttpServletRequest request
+    );
 
     @Operation(summary = "Gerar link de convite (Admin)")
     @ApiResponses({

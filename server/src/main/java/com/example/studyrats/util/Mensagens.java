@@ -21,6 +21,7 @@ public class Mensagens {
     public static final String GRUPO_NAO_ENCONTRADO = "O grupo de estudo solicitado não foi encontrado.";
     public static final String GRUPO_JA_EXISTE = "Grupo com mesmo nome já existe para este estudante";
     public static final String ESTUDANTE_NAO_ADMIN = "O estudante não é um administrador";
+    public static final String DATA_INVALIDA = "A data é inválida";
 
     // Mensagens de exceções de convite
     public static final String CONVITE_NAO_ENCONTRADO = "O convite solicitado não foi encontrado.";

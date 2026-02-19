@@ -30,6 +30,9 @@ public class MembroGrupo {
     @JoinColumn(name = "estudante_id", nullable = false)
     private Estudante estudante;
 
+    @Column(name = "quantidade_checkins", nullable = false)
+    private Integer quantidadeCheckins = 0;
+
     @Column(nullable = false)
     private String role; // ver isso dps pra questão de monitores e professores
 }

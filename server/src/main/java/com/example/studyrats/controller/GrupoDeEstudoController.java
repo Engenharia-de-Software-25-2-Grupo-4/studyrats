@@ -3,9 +3,11 @@ package com.example.studyrats.controller;
 import java.util.List;
 import java.util.UUID;
 
+import com.example.studyrats.dto.GrupoDeEstudo.RankingGrupoResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.studyrats.dto.SessaoDeEstudo.SessaoDeEstudoResponseDTO;
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoPostPutRequestDTO;
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoResponseDTO;
 import com.example.studyrats.dto.ConviteGrupo.ConviteResponseDTO;
@@ -54,6 +56,20 @@ public class GrupoDeEstudoController implements GrupoDeEstudoControllerInterface
     public List<GrupoDeEstudoResponseDTO> listGrupoDeEstudosByUser(HttpServletRequest request) {
         String uid = getAuthenticatedUserId(request);
         return grupoService.listarPorUsuario(uid);
+    }
+
+    @Override
+    public List<RankingGrupoResponseDTO> getRanking(UUID idGrupo, HttpServletRequest request) {
+
+        getAuthenticatedUserId(request);
+
+        return grupoService.obterRanking(idGrupo);
+    }
+
+    @Override
+    public List<SessaoDeEstudoResponseDTO> listarSessoesDoGrupo(UUID idGrupo, HttpServletRequest request) {
+        String uid = getAuthenticatedUserId(request);
+        return grupoService.listarSessoesDoGrupo(idGrupo, uid);
     }
 
     @Override

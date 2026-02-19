@@ -79,7 +79,11 @@ public class ManipuladorGlobalDeExcecoes {
         return baseReturn(httpStatus, ex);
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ExceptionHandler({
+            MethodArgumentNotValidException.class,
+            DataInvalida.class
+            }
+    )
     public ResponseEntity<?> manipularValidacao(MethodArgumentNotValidException ex) {
         HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
         Map<String, String> campos = new HashMap<>();

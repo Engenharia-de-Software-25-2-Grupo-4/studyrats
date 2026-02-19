@@ -1,10 +1,14 @@
 package com.example.studyrats.service.GrupoDeEstudo;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.time.LocalDateTime;
 import java.util.UUID;
-
+import java.util.Comparator;
+import com.example.studyrats.dto.GrupoDeEstudo.RankingGrupoResponseDTO;
+import com.example.studyrats.dto.SessaoDeEstudo.SessaoDeEstudoResponseDTO;
 import com.example.studyrats.exceptions.*;
+import com.example.studyrats.model.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,15 +17,12 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.studyrats.dto.ConviteGrupo.ConviteResponseDTO;
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoPostPutRequestDTO;
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoResponseDTO;
-import com.example.studyrats.model.ConviteGrupo;
-import com.example.studyrats.model.GrupoDeEstudo;
-import com.example.studyrats.model.MembroGrupo;
-import com.example.studyrats.model.Estudante;
 import com.example.studyrats.repository.ConviteGrupoRepository;
 import com.example.studyrats.repository.GrupoDeEstudoRepository;
 import com.example.studyrats.repository.MembroGrupoRepository;
 import com.example.studyrats.repository.EstudanteRepository;
 import com.example.studyrats.repository.SessaoDeEstudoRepository;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 @Service
 @Transactional
@@ -52,7 +53,11 @@ public class GrupoDeEstudoServiceImpl implements GrupoDeEstudoService {
         if (grupoRepo.existsByNomeAndAdmin_FirebaseUid(dto.getNome(), uid)) {
             throw new GrupoJaExisteException();
         }
-        
+
+        if (dto.getDataInicio().isAfter(dto.getDataFim())) {
+            throw new DataInvalida();
+        }
+
         GrupoDeEstudo grupo = modelMapper.map(dto, GrupoDeEstudo.class);
         grupo.setAdmin(estudante);
         grupo = grupoRepo.save(grupo);
@@ -98,11 +103,45 @@ public class GrupoDeEstudoServiceImpl implements GrupoDeEstudoService {
     }
 
     @Override
+    public List<RankingGrupoResponseDTO> obterRanking(UUID idGrupo) {
+
+        grupoRepo.findById(idGrupo)
+                .orElseThrow(GrupoNaoEncontrado::new);
+
+        List<MembroGrupo> membros =
+                membroRepo.findByGrupo_IdOrderByQuantidadeCheckinsDesc(idGrupo);
+
+        return membros.stream()
+                .map(m -> new RankingGrupoResponseDTO(
+                        m.getEstudante().getNome(),
+                        m.getEstudante().getFirebaseUid(),
+                        m.getQuantidadeCheckins()
+                ))
+                .toList();
+    }
+
+
+
+    @Override
     public List<GrupoDeEstudoResponseDTO> listarPorUsuario(String uid) {
         return grupoRepo.findByMembros_Estudante_FirebaseUid(uid)
             .stream()
             .map(g -> modelMapper.map(g, GrupoDeEstudoResponseDTO.class))
             .toList();
+    }
+
+    @Override
+    public List<SessaoDeEstudoResponseDTO> listarSessoesDoGrupo(UUID idGrupo, String uidUsuario) {
+        GrupoDeEstudo grupo = grupoRepo.findById(idGrupo).orElseThrow(GrupoNaoEncontrado::new);
+
+        if (!membroRepo.existsByGrupo_IdAndEstudante_FirebaseUid(idGrupo, uidUsuario)) {
+            throw new UsuarioNaoFazParteDoGrupoException();
+        }
+
+        return grupo.getSessoes().stream()
+                .sorted(Comparator.comparing(SessaoDeEstudo::getHorarioInicio).reversed())
+                .map(sessao -> modelMapper.map(sessao, SessaoDeEstudoResponseDTO.class))
+                .toList();
     }
 
     @Override
@@ -193,6 +232,16 @@ public class GrupoDeEstudoServiceImpl implements GrupoDeEstudoService {
         if (!isAdmin && !isCriador) {
             throw new GrupoNaoEncontrado();
         }
+
+        String uidCriadorSessao = sessao.getCriador().getFirebaseUid();
+
+        membroRepo.findByGrupo_IdAndEstudante_FirebaseUid(idGrupo, uidCriadorSessao)
+                .ifPresent(membro -> {
+                    if (membro.getQuantidadeCheckins() > 0) {
+                        membro.setQuantidadeCheckins(membro.getQuantidadeCheckins() - 1);
+                        membroRepo.save(membro);
+                    }
+                });
         
         sessaoRepo.delete(sessao);
     }

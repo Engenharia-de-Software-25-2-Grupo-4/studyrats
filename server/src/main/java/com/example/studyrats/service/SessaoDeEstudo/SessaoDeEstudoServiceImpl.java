@@ -2,6 +2,7 @@ package com.example.studyrats.service.SessaoDeEstudo;
 
 import com.example.studyrats.exceptions.EstudanteNaoEncontrado;
 import com.example.studyrats.exceptions.GrupoNaoEncontrado;
+import com.example.studyrats.model.MembroGrupo;
 import org.springframework.stereotype.Service;
 
 import com.example.studyrats.dto.SessaoDeEstudo.*;
@@ -46,23 +47,35 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
     public SessaoDeEstudoResponseDTO criarSessaoDeEstudos(UUID idGrupo, String idUsuario, SessaoDeEstudoPostPutRequestDTO sessaoDeEstudoPostPutRequestDTO) {
         Estudante student = studentRepository.findById(idUsuario).orElseThrow(EstudanteNaoEncontrado::new);
         GrupoDeEstudo grupo = grupoDeEstudoRepository.findById(idGrupo).orElseThrow(GrupoNaoEncontrado::new);
-        boolean usuarioMembroDoGrupo = membroGrupoRepository.existsByGrupo_IdAndEstudante_FirebaseUid(idGrupo, idUsuario);
 
-        if (!usuarioMembroDoGrupo) {
-            throw new UsuarioNaoFazParteDoGrupoException(); 
-        }
+        MembroGrupo membro = membroGrupoRepository.findByGrupo_IdAndEstudante_FirebaseUid(idGrupo, idUsuario)
+                .orElseThrow(UsuarioNaoFazParteDoGrupoException::new);
+
         SessaoDeEstudo sessaoDeEstudo = modelMapper.map(sessaoDeEstudoPostPutRequestDTO, SessaoDeEstudo.class);
         sessaoDeEstudo.setCriador(student);
         sessaoDeEstudo.setGrupoDeEstudo(grupo);
 
         sessaoDeEstudo = sessaoDeEstudoRepository.save(sessaoDeEstudo);
+
+        membro.setQuantidadeCheckins(membro.getQuantidadeCheckins() + 1);
+        membroGrupoRepository.save(membro);
+
         return modelMapper.map(sessaoDeEstudo, SessaoDeEstudoResponseDTO.class);
     }
 
     @Override
     public SessaoDeEstudoResponseDTO visualizarSessaoDeEstudosPorId(UUID idSessao, String idUsuario) {
         SessaoDeEstudo sessaoDeEstudo = sessaoDeEstudoRepository.findById(idSessao).orElseThrow(SessaoDeEstudoNaoEncontrado::new);
-        validarCriador(sessaoDeEstudo, idUsuario); 
+        validarCriador(sessaoDeEstudo, idUsuario);
+
+        MembroGrupo membro = membroGrupoRepository.findByGrupo_IdAndEstudante_FirebaseUid(
+                        sessaoDeEstudo.getGrupoDeEstudo().getId(), idUsuario)
+                .orElseThrow(UsuarioNaoFazParteDoGrupoException::new);
+
+        if (membro.getQuantidadeCheckins() > 0) {
+            membro.setQuantidadeCheckins(membro.getQuantidadeCheckins() - 1);
+            membroGrupoRepository.save(membro);
+        }
 
         return modelMapper.map(sessaoDeEstudo, SessaoDeEstudoResponseDTO.class);
     }
