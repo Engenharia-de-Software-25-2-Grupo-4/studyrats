@@ -78,7 +78,7 @@ public class InteracaoServiceImpl implements InteracaoService {
         SessaoDeEstudo sessao = sessaoDeEstudoRepository.findById(idSessao).orElseThrow(SessaoDeEstudoNaoEncontrado::new);
         validarMembroDoGrupo(sessao, firebaseUid);
 
-        List<ComentarioSessao> comentarios = comentarioSessaoRepository.findBySessaoDeEstudo_Id_sessaoOrderByHorarioComentarioAsc(idSessao);
+        List<ComentarioSessao> comentarios = comentarioSessaoRepository.findBySessaoDeEstudoId_sessaoOrderByHorarioComentarioAsc(idSessao);
 
         return comentarios.stream().map(comentario -> ComentarioSessaoResponseDTO.builder()
                 .id_comentario(comentario.getId_comentario())
@@ -115,10 +115,10 @@ public class InteracaoServiceImpl implements InteracaoService {
         SessaoDeEstudo sessao = sessaoDeEstudoRepository.findById(idSessao).orElseThrow(SessaoDeEstudoNaoEncontrado::new);
         validarMembroDoGrupo(sessao, firebaseUid);
 
-        boolean reagiu = reacaoSessaoRepository.existsBySessaoDeEstudo_Id_sessaoAndAutor_FirebaseUid(idSessao, firebaseUid);
+        boolean reagiu = reacaoSessaoRepository.existsBySessaoDeEstudoId_sessaoAndAutorFirebaseUid(idSessao, firebaseUid);
 
         if (reagiu) {
-            reacaoSessaoRepository.deleteBySessaoDeEstudo_Id_sessaoAndAutor_FirebaseUid(idSessao, firebaseUid);
+            reacaoSessaoRepository.deleteBySessaoDeEstudoId_sessaoAndAutorFirebaseUid(idSessao, firebaseUid);
             reagiu = false;
         } else {
             ReacaoSessao reacao = ReacaoSessao.builder()
@@ -130,7 +130,7 @@ public class InteracaoServiceImpl implements InteracaoService {
             reagiu = true;
         }
 
-        long totalReacoes = reacaoSessaoRepository.countBySessaoDeEstudo_Id_sessao(idSessao);
+        long totalReacoes = reacaoSessaoRepository.countBySessaoDeEstudoId_sessao(idSessao);
 
         return ReacaoSessaoResponseDTO.builder()
                 .reagiu(reagiu)
@@ -144,8 +144,8 @@ public class InteracaoServiceImpl implements InteracaoService {
         SessaoDeEstudo sessao = sessaoDeEstudoRepository.findById(idSessao).orElseThrow(SessaoDeEstudoNaoEncontrado::new);
         validarMembroDoGrupo(sessao, firebaseUid);
 
-        boolean reagiu = reacaoSessaoRepository.existsBySessaoDeEstudo_Id_sessaoAndAutor_FirebaseUid(idSessao, firebaseUid);
-        long totalReacoes = reacaoSessaoRepository.countBySessaoDeEstudo_Id_sessao(idSessao);
+        boolean reagiu = reacaoSessaoRepository.existsBySessaoDeEstudoId_sessaoAndAutorFirebaseUid(idSessao, firebaseUid);
+        long totalReacoes = reacaoSessaoRepository.countBySessaoDeEstudoId_sessao(idSessao);
 
         return ReacaoSessaoResponseDTO.builder()
                 .reagiu(reagiu)

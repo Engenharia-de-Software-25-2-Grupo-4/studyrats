@@ -176,9 +176,9 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
 
     private SessaoDeEstudoResponseDTO toResponseDTO(SessaoDeEstudo sessao, String idUsuario) {
         UUID idSessao = sessao.getId_sessao();
-        Long totalComentarios = comentarioSessaoRepository.countBySessaoDeEstudo_Id_sessao(idSessao);
-        Long totalReacoes = reacaoSessaoRepository.countBySessaoDeEstudo_Id_sessao(idSessao);
-        boolean reagiu = reacaoSessaoRepository.existsBySessaoDeEstudo_Id_sessaoAndAutor_FirebaseUid(idSessao, idUsuario);
+        Long totalComentarios = comentarioSessaoRepository.countBySessaoDeEstudoId_sessao(idSessao);
+        Long totalReacoes = reacaoSessaoRepository.countBySessaoDeEstudoId_sessao(idSessao);
+        boolean reagiu = reacaoSessaoRepository.existsBySessaoDeEstudoId_sessaoAndAutorFirebaseUid(idSessao, idUsuario);
 
         return SessaoDeEstudoResponseDTO.builder()
             .idSessao(idSessao)
