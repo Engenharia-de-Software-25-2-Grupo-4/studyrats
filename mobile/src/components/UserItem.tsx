@@ -6,9 +6,10 @@ type Props = {
   user: User
   showMedal?: boolean
   medal?: "gold" | "silver" | "bronze"
+  mode?: "stats" | "participants"
 }
 
-export function UserItem({ user, showMedal, medal }: Props) {
+export function UserItem({ user, showMedal, medal, mode = "stats" }: Props) {
     const medalImages = {
       gold: require("@/assets/medalha-de-ouro.png"),
       silver: require("@/assets/medalha-de-prata.png"),
@@ -34,7 +35,10 @@ export function UserItem({ user, showMedal, medal }: Props) {
         <View style={styles.info}>
           <Text style={styles.name}>{user.name}</Text>
           <Text style={styles.subtitle}>
-            {user.daysActive} dias ativos · {user.groups} grupos
+            {mode === "stats" 
+              ? `${user.daysActive} dias ativos`
+              : `${user.groups} ${user.groups === 1 ? 'grupo' : 'grupos'}`
+            }
           </Text>
         </View>
 
