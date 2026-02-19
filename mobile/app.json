@@ -5,7 +5,8 @@
     "slug": "studyrats",
     "version": "1.0.0",
     "plugins": [
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-secure-store"
     ],
     "scheme": "studyrats"
   }

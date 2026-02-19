@@ -6,7 +6,6 @@ import FeedScreen from "./groupStudy/FeedScreen";
 import StudyGroupScreen from "./groupStudy/StudyGroupScreen";
 import CriarGrupo from "./grupo/criar_grupo";
 import GrupoCriado from "./grupo/grupo_criado";
-import Login from "./login";
 
 const Loading = () => {
     return (
