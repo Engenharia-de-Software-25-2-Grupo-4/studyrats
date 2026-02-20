@@ -73,3 +73,8 @@ export async function firebaseRefreshIdToken(refreshToken: string) {
     localId: data.user_id as string,
   };
 }
+
+export async function firebaseDeleteAccount(idToken: string) {
+  const url = `https://identitytoolkit.googleapis.com/v1/accounts:delete?key=${FIREBASE_API_KEY}`;
+  return firebasePost<{ kind: string }>(url, { idToken });
+}
