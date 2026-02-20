@@ -106,6 +106,10 @@ public class SessaoDeEstudosTest {
         bodyGrupo = GrupoDeEstudoPostPutRequestDTO.builder()
                 .nome(randomChars())
                 .descricao(randomChars())
+                .fotoPerfil("foto.png")
+                .regras("Sem spam e respeitar horários")
+                .dataInicio(LocalDateTime.of(2026, 5, 19, 14, 0))
+                .dataFim(LocalDateTime.of(2026, 10, 19, 16, 0))
                 .build();
         grupo = requisitorGrupo.performPostCreated(GrupoDeEstudoResponseDTO.class, bodyGrupo, tokenEstudantePrincipal);
         idGrupo = grupo.getId();
@@ -139,17 +143,22 @@ public class SessaoDeEstudosTest {
         Estudante estudante;
         for (SessaoDeEstudoResponseDTO sessao : sessoes) {
             setarToken(sessao.getIdCriador());
-            assertTrue(sessaoDeEstudoRepository
-                    .findAll()
+            assertTrue(sessaoDeEstudoRepository.findAll()
                     .stream()
                     .anyMatch(s -> sessao.getIdSessao().equals(s.getIdSessao())),
                     "Não foi possível recuperar a sessão direto do repositório antes da remoção");
+
             requisitorSessao.performDeleteNoContent(sessao.getIdCriador(), sessao.getIdSessao().toString());
-            assertEquals(11, estudanteRepository.count());
+
+            assertEquals(11, estudanteRepository.count(), "O total de estudantes recuperados não é igual ao total esperado");
+            assertNotNull(estudanteRepository.findById(sessao.getIdCriador()), "Não foi possível encontrar o estudante criador da sessão deletada");
+            estudanteRepository.findAll()
+                            .forEach(e -> e.getStudySessions().forEach(s -> assertNotEquals(sessao.getIdSessao(), s.getIdSessao(), "A sessão deletada foi encontrada na lista de sessões do usuário")));
             assertEquals(1, grupoDeEstudoRepository.count());
-            sessaoDeEstudoRepository
-                    .findAll()
-                    .forEach(s -> assertNotEquals(sessao.getIdSessao(), s.getIdSessao()));
+            grupoDeEstudoRepository.findAll()
+                            .forEach(gde -> gde.getSessoes().forEach(s -> assertNotEquals(sessao.getIdSessao(), s.getIdSessao(), "A sessão deletada foi encontrada na lista de sessões de algum grupo de estudo")));
+            sessaoDeEstudoRepository.findAll()
+                            .forEach(s -> assertNotEquals(sessao.getIdSessao(), s.getIdSessao(), "A sessão deletada foi recuperada via repositório."));
         }
     }
 }
