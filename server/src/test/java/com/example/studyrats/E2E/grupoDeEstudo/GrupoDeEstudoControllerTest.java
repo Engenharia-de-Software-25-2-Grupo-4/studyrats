@@ -24,6 +24,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -85,7 +86,14 @@ public class GrupoDeEstudoControllerTest {
             } catch (Exception ignored) {}
 
             for (int j = 0; j < totGruposPorEstudante; j++) {
-                GrupoDeEstudoPostPutRequestDTO bodyGrupo = new GrupoDeEstudoPostPutRequestDTO(randomChars(), randomChars());
+                GrupoDeEstudoPostPutRequestDTO bodyGrupo = GrupoDeEstudoPostPutRequestDTO.builder()
+                        .nome(randomChars())
+                        .descricao(randomChars())
+                        .fotoPerfil("foto.png")
+                        .regras("Sem spam e respeitar horários")
+                        .dataInicio(LocalDateTime.of(2026, 5, 19, 14, 0))
+                        .dataFim(LocalDateTime.of(2026, 10, 19, 16, 0))
+                        .build();
                 try {
                     requisicoesMock.performPostCreated(bodyGrupo, token);
                 } catch (Exception ignored) {}
@@ -113,7 +121,10 @@ public class GrupoDeEstudoControllerTest {
         @Test
         @DisplayName("Falha prevista ao criar sem autenticação")
         void falhaCriarSemAutenticacao() throws Exception {
-            GrupoDeEstudoPostPutRequestDTO body = new GrupoDeEstudoPostPutRequestDTO("grupo legal", "coisas legais");
+            GrupoDeEstudoPostPutRequestDTO body = GrupoDeEstudoPostPutRequestDTO.builder()
+                    .nome("grupo legal")
+                    .descricao("coisas legais")
+                    .build();
             try {
                 requisitor.performPostAccessDenied(body);
             } catch (AssertionError e) {
@@ -124,7 +135,10 @@ public class GrupoDeEstudoControllerTest {
         @Test
         @DisplayName("Falha prevista ao criar com token invalido")
         void falhaCriarTokenInvalido() throws Exception {
-            GrupoDeEstudoPostPutRequestDTO body = new GrupoDeEstudoPostPutRequestDTO("grupo legal", "coisas legais");
+            GrupoDeEstudoPostPutRequestDTO body = GrupoDeEstudoPostPutRequestDTO.builder()
+                    .nome("grupo legal")
+                    .descricao("coisas legais")
+                    .build();
             try {
                 requisitor.performPostUnauthorized(body, "tokenInvalido");
             } catch (AssertionError e) {
@@ -139,7 +153,14 @@ public class GrupoDeEstudoControllerTest {
             EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO("dono do grupo", "dono@grupo");
             requisitorEstudante.performPostCreated(body, tokenEstudante1);
 
-            GrupoDeEstudoPostPutRequestDTO bodyGrupo = new GrupoDeEstudoPostPutRequestDTO("grupo legal", "coisas legais");
+            GrupoDeEstudoPostPutRequestDTO bodyGrupo =GrupoDeEstudoPostPutRequestDTO.builder()
+                    .nome("Grupo Legal")
+                    .descricao("Coisas legais")
+                    .fotoPerfil("foto.png")
+                    .regras("Sem spam e respeitar horários")
+                    .dataInicio(LocalDateTime.of(2026, 2, 19, 14, 0))
+                    .dataFim(LocalDateTime.of(2026, 2, 19, 16, 0))
+                    .build();
             GrupoDeEstudoResponseDTO grupoResponse = requisitor.performPostCreated(GrupoDeEstudoResponseDTO.class, bodyGrupo, tokenEstudante1);
             assertEquals(1, grupoDeEstudoRepository.findAll().size());
             GrupoDeEstudo grupoDoRepo = grupoDeEstudoRepository.findById(grupoResponse.getId()).orElse(null);
@@ -163,11 +184,25 @@ public class GrupoDeEstudoControllerTest {
             EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO("dono do grupo", "dono@grupo");
             requisitorEstudante.performPostCreated(body, tokenEstudante1);
 
-            GrupoDeEstudoPostPutRequestDTO bodyGrupo = new GrupoDeEstudoPostPutRequestDTO("grupo legal", "coisas legais");
+            GrupoDeEstudoPostPutRequestDTO bodyGrupo = GrupoDeEstudoPostPutRequestDTO.builder()
+                    .nome("Grupo Legal")
+                    .descricao("Coisas legais")
+                    .fotoPerfil("foto.png")
+                    .regras("Sem spam e respeitar horários")
+                    .dataInicio(LocalDateTime.of(2026, 2, 19, 14, 0))
+                    .dataFim(LocalDateTime.of(2026, 2, 19, 16, 0))
+                    .build();
             requisitor.performPostCreated(bodyGrupo, tokenEstudante1);
             assertEquals(1, grupoDeEstudoRepository.findAll().size());
 
-            bodyGrupo = new GrupoDeEstudoPostPutRequestDTO("grupo legal", "coisas legais de novo");
+            bodyGrupo = GrupoDeEstudoPostPutRequestDTO.builder()
+                    .nome("Grupo Legal")
+                    .descricao("Coisas legais de novo")
+                    .fotoPerfil("foto.png")
+                    .regras("Sem spam e respeitar horários")
+                    .dataInicio(LocalDateTime.of(2026, 2, 19, 14, 0))
+                    .dataFim(LocalDateTime.of(2026, 2, 19, 16, 0))
+                    .build();
             try{
                 requisitor.performPostConflict(bodyGrupo, tokenEstudante1);
             } catch (AssertionError e) {
@@ -183,7 +218,14 @@ public class GrupoDeEstudoControllerTest {
             EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO("dono do grupo", "dono@grupo");
             requisitorEstudante.performPostCreated(body, tokenEstudante1);
 
-            GrupoDeEstudoPostPutRequestDTO bodyGrupo = new GrupoDeEstudoPostPutRequestDTO("grupo legal", "coisas legais");
+            GrupoDeEstudoPostPutRequestDTO bodyGrupo = GrupoDeEstudoPostPutRequestDTO.builder()
+                    .nome("Grupo Legal")
+                    .descricao("Coisas legais")
+                    .fotoPerfil("foto.png")
+                    .regras("Sem spam e respeitar horários")
+                    .dataInicio(LocalDateTime.of(2026, 2, 19, 14, 0))
+                    .dataFim(LocalDateTime.of(2026, 2, 19, 16, 0))
+                    .build();
             requisitor.performPostCreated(bodyGrupo, tokenEstudante1);
             assertEquals(1, grupoDeEstudoRepository.findAll().size());
 
@@ -191,7 +233,14 @@ public class GrupoDeEstudoControllerTest {
             body = new EstudantePostPutRequestDTO("dono do grupo 2", "dono@grupo2");
             requisitorEstudante.performPostCreated(body, tokenEstudante2);
 
-            bodyGrupo = new GrupoDeEstudoPostPutRequestDTO("grupo legal", "coisas legais");
+            bodyGrupo = GrupoDeEstudoPostPutRequestDTO.builder()
+                    .nome("Grupo Legal")
+                    .descricao("Coisas legais")
+                    .fotoPerfil("foto.png")
+                    .regras("Sem spam e respeitar horários")
+                    .dataInicio(LocalDateTime.of(2026, 2, 19, 14, 0))
+                    .dataFim(LocalDateTime.of(2026, 2, 19, 16, 0))
+                    .build();
             GrupoDeEstudoResponseDTO grupoResponse = requisitor.performPostCreated(GrupoDeEstudoResponseDTO.class, bodyGrupo, tokenEstudante2);
             assertEquals(2, grupoDeEstudoRepository.findAll().size());
 
@@ -295,7 +344,14 @@ public class GrupoDeEstudoControllerTest {
             EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO(randomChars(), randomChars());
             requisitorEstudante.performPostCreated(body, token);
 
-            GrupoDeEstudoPostPutRequestDTO bodyGrupo = new GrupoDeEstudoPostPutRequestDTO(randomChars(), randomChars());
+            GrupoDeEstudoPostPutRequestDTO bodyGrupo = GrupoDeEstudoPostPutRequestDTO.builder()
+                    .nome(randomChars())
+                    .descricao(randomChars())
+                    .fotoPerfil("foto.png")
+                    .regras("Sem spam e respeitar horários")
+                    .dataInicio(LocalDateTime.of(2026, 2, 19, 14, 0))
+                    .dataFim(LocalDateTime.of(2026, 2, 19, 16, 0))
+                    .build();
             GrupoDeEstudoResponseDTO grupoTarget = requisitor.performPostCreated(GrupoDeEstudoResponseDTO.class, bodyGrupo, token);
 
             GrupoDeEstudoResponseDTO grupoResponse = null;
@@ -367,7 +423,14 @@ public class GrupoDeEstudoControllerTest {
             EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO("Test", "test@test");
             EstudanteResponseDTO estudante = requisitorEstudante.performPostCreated(EstudanteResponseDTO.class, body, token);
 
-            GrupoDeEstudoPostPutRequestDTO bodyGrupo = new GrupoDeEstudoPostPutRequestDTO(randomChars(), randomChars());
+            GrupoDeEstudoPostPutRequestDTO bodyGrupo = GrupoDeEstudoPostPutRequestDTO.builder()
+                    .nome(randomChars())
+                    .descricao(randomChars())
+                    .fotoPerfil("foto.png")
+                    .regras("Sem spam e respeitar horários")
+                    .dataInicio(LocalDateTime.of(2026, 2, 19, 14, 0))
+                    .dataFim(LocalDateTime.of(2026, 2, 19, 16, 0))
+                    .build();
             GrupoDeEstudoResponseDTO grupoTarget = requisitor.performPostCreated(GrupoDeEstudoResponseDTO.class, bodyGrupo, token);
 
             try {
@@ -393,7 +456,14 @@ public class GrupoDeEstudoControllerTest {
             EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO("Test", "test@test");
             EstudanteResponseDTO estudante = requisitorEstudante.performPostCreated(EstudanteResponseDTO.class, body, token);
 
-            GrupoDeEstudoPostPutRequestDTO bodyGrupo = new GrupoDeEstudoPostPutRequestDTO(randomChars(), randomChars());
+            GrupoDeEstudoPostPutRequestDTO bodyGrupo = GrupoDeEstudoPostPutRequestDTO.builder()
+                    .nome(randomChars())
+                    .descricao(randomChars())
+                    .fotoPerfil("foto.png")
+                    .regras("Sem spam e respeitar horários")
+                    .dataInicio(LocalDateTime.of(2026, 2, 2, 14, 0))
+                    .dataFim(LocalDateTime.of(2026, 2, 19, 16, 0))
+                    .build();
             GrupoDeEstudoResponseDTO grupoTarget = requisitor.performPostCreated(GrupoDeEstudoResponseDTO.class, bodyGrupo, token);
 
             List<GrupoDeEstudo> grupos = grupoDeEstudoRepository.findAll();
@@ -425,14 +495,28 @@ public class GrupoDeEstudoControllerTest {
             EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO("Test", "test@test");
             EstudanteResponseDTO estudante1 = requisitorEstudante.performPostCreated(EstudanteResponseDTO.class, body, tokenEstudante1);
 
-            GrupoDeEstudoPostPutRequestDTO bodyGrupo = new GrupoDeEstudoPostPutRequestDTO(randomChars(), randomChars());
+            GrupoDeEstudoPostPutRequestDTO bodyGrupo = GrupoDeEstudoPostPutRequestDTO.builder()
+                    .nome(randomChars())
+                    .descricao(randomChars())
+                    .fotoPerfil("foto.png")
+                    .regras("Sem spam e respeitar horários")
+                    .dataInicio(LocalDateTime.of(2026, 2, 2, 14, 0))
+                    .dataFim(LocalDateTime.of(2026, 2, 19, 16, 0))
+                    .build();
             GrupoDeEstudoResponseDTO grupoTarget1 = requisitor.performPostCreated(GrupoDeEstudoResponseDTO.class, bodyGrupo, tokenEstudante1);
 
             setarToken(tokenEstudante2);
             body = new EstudantePostPutRequestDTO("Test", "teswt@test");
             EstudanteResponseDTO estudante2 = requisitorEstudante.performPostCreated(EstudanteResponseDTO.class, body, tokenEstudante2);
 
-            bodyGrupo = new GrupoDeEstudoPostPutRequestDTO(randomChars(), randomChars());
+            bodyGrupo = GrupoDeEstudoPostPutRequestDTO.builder()
+                    .nome(randomChars())
+                    .descricao(randomChars())
+                    .fotoPerfil("foto.png")
+                    .regras("Sem spam e respeitar horários")
+                    .dataInicio(LocalDateTime.of(2026, 1, 2, 14, 0))
+                    .dataFim(LocalDateTime.of(2026, 2, 19, 16, 0))
+                    .build();
             GrupoDeEstudoResponseDTO grupoTarget2 = requisitor.performPostCreated(GrupoDeEstudoResponseDTO.class, bodyGrupo, tokenEstudante2);
 
             setarToken(tokenEstudante1);
@@ -512,9 +596,24 @@ public class GrupoDeEstudoControllerTest {
             EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO("dono do grupo", "dono@grupo");
             requisitorEstudante.performPostCreated(body, tokenEstudante1);
 
-            GrupoDeEstudoPostPutRequestDTO bodyGrupo = new GrupoDeEstudoPostPutRequestDTO("grupo legal", "coisas legais");
+            GrupoDeEstudoPostPutRequestDTO bodyGrupo =
+                    GrupoDeEstudoPostPutRequestDTO.builder()
+                            .nome("grupo legal")
+                            .descricao("coisas legais")
+                            .fotoPerfil("foto.png")
+                            .regras("Sem spam e respeitar horários")
+                            .dataInicio(LocalDateTime.of(2026, 2, 2, 14, 0))
+                            .dataFim(LocalDateTime.of(2026, 2, 19, 16, 0))
+                            .build();
             GrupoDeEstudoResponseDTO grupoResponse1 = requisitor.performPostCreated(GrupoDeEstudoResponseDTO.class, bodyGrupo, tokenEstudante1);
-            bodyGrupo = new GrupoDeEstudoPostPutRequestDTO("grupo legal 2", "coisas legais");
+            bodyGrupo = GrupoDeEstudoPostPutRequestDTO.builder()
+                    .nome("grupo legal 2")
+                    .descricao("coisas legais")
+                    .fotoPerfil("foto.png")
+                    .regras("Sem spam e respeitar horários")
+                    .dataInicio(LocalDateTime.of(2026, 2, 2, 14, 0))
+                    .dataFim(LocalDateTime.of(2026, 2, 19, 16, 0))
+                    .build();
             GrupoDeEstudoResponseDTO grupoResponse2 = requisitor.performPostCreated(GrupoDeEstudoResponseDTO.class, bodyGrupo, tokenEstudante1);
 
             List<GrupoDeEstudoResponseDTO> grupos = requisitor.performGetOK(new TypeReference<List<GrupoDeEstudoResponseDTO>>() {}, tokenEstudante1);
@@ -556,7 +655,14 @@ public class GrupoDeEstudoControllerTest {
                 List<GrupoDeEstudoResponseDTO> gruposDesseAdmin = new ArrayList<>();
                 int totalDeGrupos = rd.nextInt(1, maxGrupos);
                 for (int j = 0; j < totalDeGrupos; j++) {
-                    GrupoDeEstudoPostPutRequestDTO bodyGrupo = new GrupoDeEstudoPostPutRequestDTO(randomChars(), randomChars());
+                    GrupoDeEstudoPostPutRequestDTO bodyGrupo = GrupoDeEstudoPostPutRequestDTO.builder()
+                            .nome(randomChars())
+                            .descricao(randomChars())
+                            .fotoPerfil("foto.png")
+                            .regras("Sem spam e respeitar horários")
+                            .dataInicio(LocalDateTime.of(2026, 1, 6, 14, 0))
+                            .dataFim(LocalDateTime.of(2026, 2, 19, 16, 0))
+                            .build();
                     gruposDesseAdmin.add(requisitor.performPostCreated(GrupoDeEstudoResponseDTO.class, bodyGrupo, token));
                 }
                 gruposPorAdmin.add(gruposDesseAdmin);

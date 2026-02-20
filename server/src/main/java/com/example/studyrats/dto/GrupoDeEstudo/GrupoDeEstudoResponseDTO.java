@@ -28,6 +28,12 @@ public class GrupoDeEstudoResponseDTO {
     @JsonProperty("admin")
     private Estudante admin;
 
+    @JsonProperty("foto_perfil")
+    private String fotoPerfil;
+
+    @JsonProperty("regras")
+    private String regras;
+
     @Override
     public boolean equals(Object  o) {
         if (o == null || getClass() != o.getClass()) return false;

@@ -8,6 +8,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -22,4 +24,17 @@ public class GrupoDeEstudoPostPutRequestDTO {
     @JsonProperty("descricao")
     @Size(max = 1000)
     private String descricao;
+
+    @JsonProperty("foto_perfil")
+    private String fotoPerfil;
+
+    @JsonProperty("regras")
+    @Size(max = 2000, message = "As regras não podem ultrapassar 2000 caracteres")
+    private String regras;
+
+    @JsonProperty("data_inicio")
+    private LocalDateTime dataInicio;
+
+    @JsonProperty("data_fim")
+    private LocalDateTime dataFim;
 }

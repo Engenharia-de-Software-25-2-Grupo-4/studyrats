@@ -2,6 +2,7 @@ package com.example.studyrats.service.SessaoDeEstudo;
 
 import com.example.studyrats.exceptions.EstudanteNaoEncontrado;
 import com.example.studyrats.exceptions.GrupoNaoEncontrado;
+import com.example.studyrats.model.MembroGrupo;
 import org.springframework.stereotype.Service;
 
 import com.example.studyrats.dto.SessaoDeEstudo.*;
@@ -13,7 +14,7 @@ import com.example.studyrats.repository.GrupoDeEstudoRepository;
 import com.example.studyrats.repository.MembroGrupoRepository;
 import com.example.studyrats.repository.ComentarioSessaoRepository;
 import com.example.studyrats.repository.ReacaoSessaoRepository;
-import com.example.studyrats.repository.SessaoDeEstudoRepository; 
+import com.example.studyrats.repository.SessaoDeEstudoRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -33,7 +34,7 @@ import org.modelmapper.ModelMapper;
 public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
 
     @Autowired
-    public SessaoDeEstudoRepository sessaoDeEstudoRepository; 
+    public SessaoDeEstudoRepository sessaoDeEstudoRepository;
     @Autowired
     public EstudanteRepository studentRepository;
     @Autowired 
@@ -45,22 +46,25 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
     @Autowired
     public ReacaoSessaoRepository reacaoSessaoRepository;
     @Autowired
-    public ModelMapper modelMapper; 
+    public ModelMapper modelMapper;
 
     @Override
     public SessaoDeEstudoResponseDTO criarSessaoDeEstudos(UUID idGrupo, String idUsuario, SessaoDeEstudoPostPutRequestDTO sessaoDeEstudoPostPutRequestDTO) {
         Estudante student = studentRepository.findById(idUsuario).orElseThrow(EstudanteNaoEncontrado::new);
         GrupoDeEstudo grupo = grupoDeEstudoRepository.findById(idGrupo).orElseThrow(GrupoNaoEncontrado::new);
-        boolean usuarioMembroDoGrupo = membroGrupoRepository.existsByGrupo_IdAndEstudante_FirebaseUid(idGrupo, idUsuario);
 
-        if (!usuarioMembroDoGrupo) {
-            throw new UsuarioNaoFazParteDoGrupoException(); 
-        }
+        MembroGrupo membro = membroGrupoRepository.findByGrupo_IdAndEstudante_FirebaseUid(idGrupo, idUsuario)
+                .orElseThrow(UsuarioNaoFazParteDoGrupoException::new);
+
         SessaoDeEstudo sessaoDeEstudo = modelMapper.map(sessaoDeEstudoPostPutRequestDTO, SessaoDeEstudo.class);
         sessaoDeEstudo.setCriador(student);
         sessaoDeEstudo.setGrupoDeEstudo(grupo);
 
         sessaoDeEstudo = sessaoDeEstudoRepository.save(sessaoDeEstudo);
+
+        membro.setQuantidadeCheckins(membro.getQuantidadeCheckins() + 1);
+        membroGrupoRepository.save(membro);
+
         return toResponseDTO(sessaoDeEstudo, idUsuario);
     }
 
@@ -76,7 +80,16 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
     public void removerSessaoDeEstudosPorId(UUID idSessao, String idUsuario) {
         SessaoDeEstudo sessaoDeEstudo = sessaoDeEstudoRepository.findById(idSessao).orElseThrow(SessaoDeEstudoNaoEncontrado::new);
         validarCriador(sessaoDeEstudo, idUsuario);
+        validarCriador(sessaoDeEstudo, idUsuario);
 
+        MembroGrupo membro = membroGrupoRepository.findByGrupo_IdAndEstudante_FirebaseUid(
+                        sessaoDeEstudo.getGrupoDeEstudo().getId(), idUsuario)
+                .orElseThrow(UsuarioNaoFazParteDoGrupoException::new);
+
+        if (membro.getQuantidadeCheckins() > 0) {
+            membro.setQuantidadeCheckins(membro.getQuantidadeCheckins() - 1);
+            membroGrupoRepository.save(membro);
+        }
         sessaoDeEstudoRepository.delete(sessaoDeEstudo); 
     }
 

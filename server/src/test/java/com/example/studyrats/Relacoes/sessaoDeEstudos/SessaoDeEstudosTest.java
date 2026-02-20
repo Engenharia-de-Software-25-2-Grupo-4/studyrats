@@ -103,7 +103,10 @@ public class SessaoDeEstudosTest {
         setarToken(tokenEstudantePrincipal);
         body = new EstudantePostPutRequestDTO(randomChars(), randomChars());
         requisitorEstudante.performPostCreated(body, tokenEstudantePrincipal);
-        bodyGrupo = new GrupoDeEstudoPostPutRequestDTO(randomChars(), randomChars());
+        bodyGrupo = GrupoDeEstudoPostPutRequestDTO.builder()
+                .nome(randomChars())
+                .descricao(randomChars())
+                .build();
         grupo = requisitorGrupo.performPostCreated(GrupoDeEstudoResponseDTO.class, bodyGrupo, tokenEstudantePrincipal);
         idGrupo = grupo.getId();
         String convite = requisitorGrupo.performPostCreatedStringReturn(grupo.getId().toString()+"/convites/gerar", tokenEstudantePrincipal);

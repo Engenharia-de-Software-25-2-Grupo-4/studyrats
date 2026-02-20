@@ -81,7 +81,14 @@ public class SessaoDeEstudoControllerTest {
         EstudantePostPutRequestDTO body = new EstudantePostPutRequestDTO(randomChars(), randomChars());
         requisitorEstudante.performPostCreated(body, tokenEstudante1);
 
-        GrupoDeEstudoPostPutRequestDTO bodyGrupo = new GrupoDeEstudoPostPutRequestDTO(randomChars(), randomChars());
+        GrupoDeEstudoPostPutRequestDTO bodyGrupo =  GrupoDeEstudoPostPutRequestDTO.builder()
+                .nome(randomChars())
+                .descricao(randomChars())
+                .fotoPerfil("foto.png")
+                .regras("Sem spam e respeitar horários")
+                .dataInicio(LocalDateTime.of(2026, 2, 19, 14, 0))
+                .dataFim(LocalDateTime.of(2026, 12, 19, 16, 0))
+                .build();
         GrupoDeEstudoResponseDTO grupo = requisitorGrupo.performPostCreated(GrupoDeEstudoResponseDTO.class, bodyGrupo, tokenEstudante1);
         grupo1Id = grupo.getId();
 
