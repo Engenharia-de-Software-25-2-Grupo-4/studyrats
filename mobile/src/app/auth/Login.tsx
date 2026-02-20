@@ -46,7 +46,7 @@ import {
       <SafeAreaView style={styles.container}>
         {/* TOPO */}
         <View style={styles.header}>
-          <Image source={require("../../../assets/logo.png")} style={styles.logo} />
+          <Image source={require("../../assets/logo.png")} style={styles.logo} />
           <Text style={styles.logoText}>StudyRats</Text>
         </View>
   
