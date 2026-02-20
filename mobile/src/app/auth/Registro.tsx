@@ -15,7 +15,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { firebaseSignUp, firebaseDeleteAccount } from "../../services/firebaseAuth";
 import { createEstudante } from "../../services/backendApi";
 import { saveSession } from "../../services/authStorage";
-import { Link } from "expo-router";
+
+import type { StackScreenProps } from "@react-navigation/stack";
+import type { StackParams } from "@/utils/routesStack"; // ajuste o caminho se necessário
+
+type Props = StackScreenProps<StackParams, "Registro">;
 
 function mapFirebaseError(msg: string) {
   if (msg.includes("EMAIL_EXISTS")) return "Esse email já está cadastrado.";
@@ -25,7 +29,7 @@ function mapFirebaseError(msg: string) {
   return msg;
 }
 
-export default function Registro() {
+export default function Registro({ navigation }: any) {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -202,11 +206,9 @@ export default function Registro() {
           </Text>
         </TouchableOpacity>
 
-        <Link href="/auth/Login" asChild>
-          <TouchableOpacity activeOpacity={0.6}>
-            <Text style={styles.linkLogin}>ENTRAR COM EMAIL</Text>
-          </TouchableOpacity>
-        </Link>
+      <TouchableOpacity activeOpacity={0.6} onPress={() => navigation.navigate("Login")}>
+        <Text style={styles.linkLogin}>ENTRAR COM EMAIL</Text>
+      </TouchableOpacity>
 
       </Animated.View>
     </SafeAreaView>
