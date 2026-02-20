@@ -1,6 +1,8 @@
 type StackParams = {
   Index: undefined;
   Login: undefined;
+  Registro: undefined;
+  RecuperarSenha: undefined;
   Home: undefined;
   Profile: undefined;
   Disciplinas: undefined;
