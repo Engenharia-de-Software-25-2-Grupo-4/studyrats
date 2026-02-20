@@ -12,9 +12,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useRef, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 
-import { firebaseSignUp, firebaseSignIn } from "../../services/firebaseAuth";
+import { firebaseSignUp, firebaseDeleteAccount } from "../../services/firebaseAuth";
 import { createEstudante } from "../../services/backendApi";
 import { saveSession } from "../../services/authStorage";
+import { Link } from "expo-router";
 
 function mapFirebaseError(msg: string) {
   if (msg.includes("EMAIL_EXISTS")) return "Esse email já está cadastrado.";
@@ -72,54 +73,45 @@ export default function Registro() {
       setErro("Preencha todos os campos.");
       return;
     }
-
     if (senha !== confirmarSenha) {
       setErro("As senhas não coincidem.");
       return;
     }
 
     setLoading(true);
+
     try {
-      // 1) Cria conta no Firebase
+      const auth = await firebaseSignUp(emailNorm, senha);
+      const expiresAt = Date.now() + Number(auth.expiresIn) * 1000;
+
       try {
-        await firebaseSignUp(emailNorm, senha);
-      } catch (e: any) {
-        const msg = String(e?.message || "");
+        await createEstudante({ nome, email: auth.email }, auth.idToken);
 
-        if (msg.includes("EMAIL_EXISTS")) {
-          setErro("Esse email já está cadastrado.");
-          return;
-        }
+        await saveSession({
+          idToken: auth.idToken,
+          refreshToken: auth.refreshToken,
+          expiresAt,
+          localId: auth.localId,
+          email: auth.email,
+        });
 
-        throw e;
+        setSucesso("Cadastro realizado com sucesso!");
+      } catch (err) {
+        await firebaseDeleteAccount(auth.idToken).catch(() => {});
+        throw err;
       }
-
-      const login = await firebaseSignIn(emailNorm, senha);
-      const expiresAt = Date.now() + Number(login.expiresIn) * 1000;
-
-      await createEstudante({ nome, email: login.email }, login.idToken);
-
-      await saveSession({
-        idToken: login.idToken,
-        refreshToken: login.refreshToken,
-        expiresAt,
-        localId: login.localId,
-        email: login.email,
-      });
-
-      setSucesso("Cadastro realizado com sucesso!");
     } catch (e: any) {
       setErro(mapFirebaseError(String(e?.message ?? "Erro inesperado")));
     } finally {
       setLoading(false);
     }
-    };
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       {/* TOPO */}
       <View style={styles.header}>
-        <Image source={require("../../../assets/logo.png")} style={styles.logo} />
+        <Image source={require("../../assets/logo.png")} style={styles.logo} />
         <Text style={styles.logoText}>StudyRats</Text>
       </View>
 
@@ -210,14 +202,11 @@ export default function Registro() {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          activeOpacity={0.6}
-          onPress={() => {
-            console.log("Ir para tela de login");
-          }}
-        >
-          <Text style={styles.linkLogin}>ENTRAR COM EMAIL</Text>
-        </TouchableOpacity>
+        <Link href="/auth/Login" asChild>
+          <TouchableOpacity activeOpacity={0.6}>
+            <Text style={styles.linkLogin}>ENTRAR COM EMAIL</Text>
+          </TouchableOpacity>
+        </Link>
 
       </Animated.View>
     </SafeAreaView>
