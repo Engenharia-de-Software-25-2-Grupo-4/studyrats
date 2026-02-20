@@ -12,6 +12,18 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useRef, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 
+import { firebaseSignUp, firebaseSignIn } from "../../services/firebaseAuth";
+import { createEstudante } from "../../services/backendApi";
+import { saveSession } from "../../services/authStorage";
+
+function mapFirebaseError(msg: string) {
+  if (msg.includes("EMAIL_EXISTS")) return "Esse email já está cadastrado.";
+  if (msg.includes("WEAK_PASSWORD")) return "Senha fraca (mín. 6 caracteres).";
+  if (msg.includes("INVALID_EMAIL")) return "Email inválido.";
+  if (msg.includes("INVALID_LOGIN_CREDENTIALS")) return "Email ou senha inválidos.";
+  return msg;
+}
+
 export default function Registro() {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
@@ -23,6 +35,7 @@ export default function Registro() {
 
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const translateY = useRef(new Animated.Value(0)).current;
 
@@ -49,11 +62,13 @@ export default function Registro() {
     };
   }, []);
 
-  const handleCadastro = () => {
+  const handleCadastro = async () => {
     setErro("");
     setSucesso("");
 
-    if (!nome || !email || !senha || !confirmarSenha) {
+    const emailNorm = email.trim().toLowerCase();
+
+    if (!nome || !emailNorm || !senha || !confirmarSenha) {
       setErro("Preencha todos os campos.");
       return;
     }
@@ -63,9 +78,42 @@ export default function Registro() {
       return;
     }
 
-    // aqui depois entra backend
-    setSucesso("Cadastro realizado com sucesso!");
-  };
+    setLoading(true);
+    try {
+      // 1) Cria conta no Firebase
+      try {
+        await firebaseSignUp(emailNorm, senha);
+      } catch (e: any) {
+        const msg = String(e?.message || "");
+
+        if (msg.includes("EMAIL_EXISTS")) {
+          setErro("Esse email já está cadastrado.");
+          return;
+        }
+
+        throw e;
+      }
+
+      const login = await firebaseSignIn(emailNorm, senha);
+      const expiresAt = Date.now() + Number(login.expiresIn) * 1000;
+
+      await createEstudante({ nome, email: login.email }, login.idToken);
+
+      await saveSession({
+        idToken: login.idToken,
+        refreshToken: login.refreshToken,
+        expiresAt,
+        localId: login.localId,
+        email: login.email,
+      });
+
+      setSucesso("Cadastro realizado com sucesso!");
+    } catch (e: any) {
+      setErro(mapFirebaseError(String(e?.message ?? "Erro inesperado")));
+    } finally {
+      setLoading(false);
+    }
+    };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -100,6 +148,8 @@ export default function Registro() {
           style={styles.input}
           value={email}
           onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
         />
 
         {/* SENHA */}
@@ -150,8 +200,14 @@ export default function Registro() {
         {erro ? <Text style={styles.error}>{erro}</Text> : null}
         {sucesso ? <Text style={styles.success}>{sucesso}</Text> : null}
 
-        <TouchableOpacity style={styles.button} onPress={handleCadastro}>
-          <Text style={styles.buttonText}>CRIAR CONTA</Text>
+        <TouchableOpacity
+          style={[styles.button, loading && { opacity: 0.7 }]}
+          onPress={handleCadastro}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>
+            {loading ? "CRIANDO..." : "CRIAR CONTA"}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
