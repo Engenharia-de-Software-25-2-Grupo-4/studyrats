@@ -35,6 +35,12 @@ public class ManipuladorGlobalDeExcecoes {
         return baseReturn(httpStatus, ex);
     }
 
+    @ExceptionHandler(ArquivoNaoEhImagem.class)
+    public ResponseEntity<?> manipularNaoEhImagem(ArquivoNaoEhImagem ex) {
+        HttpStatus httpStatus = HttpStatus.UNSUPPORTED_MEDIA_TYPE;
+        return baseReturn(httpStatus, ex);
+    }
+
     @ExceptionHandler(FirebaseIO.class)
     public ResponseEntity<?> manipularFirebaseIO(FirebaseIO ex) {
         HttpStatus httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -82,11 +88,17 @@ public class ManipuladorGlobalDeExcecoes {
         return baseReturn(httpStatus, ex);
     }
 
+    @ExceptionHandler(ImagemVazia.class)
+    public ResponseEntity<?> manipularImagemVazia(ImagemVazia ex) {
+        HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
+        return baseReturn(httpStatus, ex);
+    }
+
     @ExceptionHandler({
             MethodArgumentNotValidException.class,
-            DataInvalida.class
-            }
-    )
+            DataInvalida.class,
+
+    })
     public ResponseEntity<?> manipularValidacao(MethodArgumentNotValidException ex) {
         HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
         Map<String, String> campos = new HashMap<>();
