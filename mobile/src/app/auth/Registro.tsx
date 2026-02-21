@@ -17,7 +17,7 @@ import { createEstudante } from "../../services/backendApi";
 import { saveSession } from "../../services/authStorage";
 
 import type { StackScreenProps } from "@react-navigation/stack";
-import type { StackParams } from "@/utils/routesStack"; // ajuste o caminho se necessário
+import type { StackParams } from "@/utils/routesStack"; 
 
 type Props = StackScreenProps<StackParams, "Registro">;
 
