@@ -1,239 +1,246 @@
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Image, Alert } from "react-native";
 import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
-import { StackParams } from '@/utils/routesStack'; 
+import { StackParams } from '@/utils/routesStack';
 import { Menu } from "@/components/Menu";
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "@/styles/colors"
 import { colors } from "@/styles/colors";
-
+import { deleteSessao } from "@/services/sessao";
+import { reactSessao } from "@/services/sessao";
+import { comentarSessao } from "@/services/sessao";
+import { getAuthenticatedUid } from "@/services/authStorage";
 
 
 export default function Publicacao() {
-    const navigation = useNavigation<NavigationProp<StackParams>>();
-    const route = useRoute();
-    const dados = (route.params as any)?.sessao;
+  const navigation = useNavigation<NavigationProp<StackParams>>();
+  const route = useRoute();
+  const dados = (route.params as any)?.sessao;
+  const [isCriador, setIsCriador] = useState(false);
+  
+    useEffect(() => {
+        async function verificarCriador() {
+            const uid = await getAuthenticatedUid();
+            setIsCriador(dados.id_criador === uid);
+        }
+        verificarCriador();
+    }, []);
 
-    type Usuario = {
-        id: string;
-        nome: string;
-        foto: string | null;
-    };
+  type Usuario = {
+    id: string;
+    nome: string;
+    foto: string | null;
+  };
 
-    type Comentario = {
-        id: string;
-        texto: string;
-        usuario: Usuario;
-    };
+  type Comentario = {
+    firebaseUid_autor: string
+    nome_autor: string;
+    texto: string;
+  };
 
-    const [comentarios, setComentarios] = useState<Comentario[]>([]);
-    const [comentario, setComentario] = useState("");
-    const [curtido, setCurtido] = useState(false);
-    const [curtidas, setCurtidas] = useState(dados.curtidas || 0);
+  const [comentarios, setComentarios] = useState<Comentario[]>([]);
+  const [comentario, setComentario] = useState("");
+  const [curtido, setCurtido] = useState(false);
+  const [curtidas, setCurtidas] = useState(dados.curtidas || 0);
 
+  const usuarioLogado: Usuario = {
+    id: "1",
+    nome: "Gabriella Letícia",
+    foto: null
+  };
 
-    const usuarioLogado: Usuario = {
-        id: "1",
-        nome: "Gabriella Letícia",
-        foto: null
-    };
+  const [publicacao, setPublicacao] = useState({
+    ...dados,
+    usuario: usuarioLogado // mock 
+  });
 
-    const [publicacao, setPublicacao] = useState({
-        ...dados,
-        usuario: usuarioLogado // mock 
-    });
+  const handleVoltar = () => {
+    navigation.goBack();
+  };
 
-    const handleVoltar = () => {
-        navigation.goBack();
-    };
+  const handleEditar = () => {
+    navigation.navigate('CriarSessao', { sessao: dados } as any);
+  };
 
-    const handleEditar = () => {
-        navigation.navigate('CriarSessao', { sessao: dados } as any);
-    };
-
-    const handleExcluir = () => {
-        Alert.alert(
-        "Excluir desafio",
-        "Tem certeza que deseja excluir este desafio?",
-        [
-            {
-            text: "Cancelar",
-            style: "cancel"
-            },
-            {
-            text: "Excluir",
-            style: "destructive",
-            onPress: () => {
-                // Aqui você coloca a lógica de exclusão
-                console.log("Desafio excluído:", dados.id);
-
-                navigation.goBack(); // volta após excluir
+  const handleExcluir = async () => {
+    Alert.alert(
+      "Excluir desafio",
+      "Tem certeza que deseja excluir esta publicação?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteSessao(dados.id_sessao);
+              navigation.goBack();
+            } catch (error: any) {
+              Alert.alert("Erro", error.message);
             }
-            }
-        ]
-        );
-    };
+          }
+        }
+      ]
+    );
+  };
 
-    function handleAdicionarComentario() {
-        if (!comentario.trim()) return;
+  async function handleAdicionarComentario() {
+    if (!comentario.trim()) return;
 
-        const novoComentario: Comentario = {
-        id: Date.now().toString(),
-        texto: comentario,
-        usuario: usuarioLogado
-        };
+    try {
+        const novoComentario = await comentarSessao(dados.id_sessao, { texto: comentario });
 
         setComentarios([...comentarios, novoComentario]);
         setComentario("");
+    } catch (error: any) {
+        Alert.alert("Erro", error.message);
     }
-    function toggleLike() {
-        if (curtido) {
-        setCurtidas(curtidas - 1);
-        } else {
-        setCurtidas(curtidas + 1);
-        }
-        setCurtido(!curtido);
+}
+  async function toggleLike() {
+    try {
+      const resultado = await reactSessao(dados.id_sessao);
+
+      setCurtido(resultado.reagiu);
+      setCurtidas(resultado.total_reacoes);
+    } catch (error: any) {
+      Alert.alert("Erro", error.message);
     }
+  }
 
-    return (
-        <View style={styles.container}>
+  return (
+    <View style={styles.container}>
 
-        {/* HEADER */}
-        <View style={styles.header}>
-            <TouchableOpacity onPress={handleVoltar}>
-            <Ionicons name="arrow-back" size={24} color="#01415B"/>
-            </TouchableOpacity>
+      {/* HEADER */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={handleVoltar}>
+          <Ionicons name="arrow-back" size={24} color="#01415B" />
+        </TouchableOpacity>
 
-            <Text style={styles.headerTitle}>Publicação</Text>
-            <TouchableOpacity onPress={handleEditar}>
-            <Text style={styles.editButton}>Editar</Text>
-            </TouchableOpacity>
-        </View>
+        <Text style={styles.headerTitle}>Publicação</Text>
+        <TouchableOpacity onPress={handleEditar}>
+          <Text style={styles.editButton}>Editar</Text>
+        </TouchableOpacity>
+      </View>
 
-        <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content}>
 
-            {/* TÍTULO */}
-            <Text style={styles.titulo}>
-            {dados.titulo}
-            </Text>
+        {/* TÍTULO */}
+        <Text style={styles.titulo}>
+          {dados.titulo}
+        </Text>
 
-            {/* IMAGEM */}
+        {/* IMAGEM */}
+        <Image
+          source={{ uri: dados.url_foto }}
+          style={styles.image}
+        />
+        <View style={styles.userRow}>
+          <View style={styles.userInfo}>
             <Image
-            source={{ uri: dados.image }}
-            style={styles.image}
+              source={
+                publicacao.usuario.foto
+                  ? { uri: publicacao.usuario.foto }
+                  : require("@/assets/image-4.png")
+              }
+              style={styles.avatar}
             />
-            <View style={styles.userRow}>
-            <View style={styles.userInfo}>
-                <Image
-                source={
-                    publicacao.usuario.foto
-                    ? { uri: publicacao.usuario.foto }
-                    : require("@/assets/image-4.png")
-    }
-                style={styles.avatar}
-                />
 
-                <View>
-                <Text style={styles.userName}>
-                    {publicacao.usuario.nome}
-                </Text>
-                </View>
+            <View>
+              <Text style={styles.userName}>
+                {publicacao.usuario.nome}
+              </Text>
             </View>
+          </View>
 
-            <View style={styles.likeContainer}>
-                <Ionicons name="chatbubble-outline" size={20} color="#01415B" />
-                <Text style={styles.count}>{comentarios.length}</Text>
+          <View style={styles.likeContainer}>
+            <Ionicons name="chatbubble-outline" size={20} color="#01415B" />
+            <Text style={styles.count}>{comentarios.length}</Text>
 
-                <TouchableOpacity onPress={toggleLike}>
-                <Ionicons
-                    name={curtido ? "heart" : "heart-outline"}
-                    size={22}
-                    color={curtido ? "red" : "#01415B"}
-                />
-                </TouchableOpacity>
+            <TouchableOpacity onPress={toggleLike}>
+              <Ionicons
+                name={curtido ? "heart" : "heart-outline"}
+                size={22}
+                color={curtido ? "red" : "#01415B"}
+              />
+            </TouchableOpacity>
 
-                <Text style={styles.count}>{curtidas}</Text>
-            </View>
-            </View>
-            <View style={styles.card}>
-                <Text style={styles.section}>Descrição</Text>
-                <Text style={styles.texto}>{dados.descricao}</Text>
-
-                <View style={styles.divider} />
-
-                <Text style={styles.section}>Informações</Text>
-                <View style={styles.infoRow}>
-                <Text style={styles.label}>Disciplina</Text>
-                <Text style={styles.value}>{dados.disciplina?.nome}</Text>
-                </View>
-
-                <View style={styles.infoRow}>
-                <Text style={styles.label}>Tópico</Text>
-                <Text style={styles.value}>{dados.topico}</Text>
-                </View>
-
-                <View style={styles.infoRow}>
-                <Text style={styles.label}>Data</Text>
-                <Text style={styles.value}>
-                    {new Date(dados.dataHora).toLocaleDateString()}{" "}
-                    {new Date(dados.dataHora).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit"
-                    })}
-                </Text>
-                </View>
-
-                <View style={styles.infoRow}>
-                <Text style={styles.label}>Duração</Text>
-                <Text style={styles.value}>{dados.duracao}</Text>
-                </View>
-
-                <View style={styles.divider} />
-
-                <Text style={styles.section}>Comentários</Text>
-
-                {/* Lista só aparece se tiver comentários */}
-                {comentarios.map((item) => (
-                <View key={item.id} style={styles.commentBox}>
-                    
-                    <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Image
-                        source={
-                        item.usuario.foto
-                            ? { uri: item.usuario.foto }
-                            : require("@/assets/image-4.png")
-                        }
-                        style={styles.avatarSmall}
-                    />
-
-                    <Text style={styles.commentAuthor}>
-                        {item.usuario.nome}
-                    </Text>
-                    </View>
-
-                    <Text style={styles.commentText}>{item.texto}</Text>
-                </View>
-                ))}
-
-                    {/* Input sempre aparece */}
-                    <View style={styles.commentInputContainer}>
-                    <TextInput
-                        placeholder="Adicione um comentário..."
-                        value={comentario}
-                        onChangeText={setComentario}
-                        style={styles.commentInput}
-                    />
-
-                    <TouchableOpacity onPress={handleAdicionarComentario}>
-                        <Text style={styles.commentButton}>Enviar</Text>
-                    </TouchableOpacity>
-                    </View>
-                
-            </View>
-
-        </ScrollView>
+            <Text style={styles.count}>{curtidas}</Text>
+          </View>
         </View>
-    );
+        <View style={styles.card}>
+          <Text style={styles.section}>Descrição</Text>
+          <Text style={styles.texto}>{dados.descricao}</Text>
+
+          <View style={styles.divider} />
+
+          <Text style={styles.section}>Informações</Text>
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Disciplina</Text>
+            <Text style={styles.value}>{dados.disciplina}</Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Tópico</Text>
+            <Text style={styles.value}>{dados.horario_inicio}</Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Data</Text>
+            <Text style={styles.value}>
+              {new Date(dados.horario_inicio).toLocaleDateString()}{" "}
+              {new Date(dados.horario_inicio).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit"
+              })}
+            </Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.label}>Duração</Text>
+            <Text style={styles.value}>{dados.duracao_minutos}</Text>
+          </View>
+
+          <View style={styles.divider} />
+
+          <Text style={styles.section}>Comentários</Text>
+
+          {/* Lista só aparece se tiver comentários */}
+          {comentarios.map((item) => (
+            <View key={item.firebaseUid_autor} style={styles.commentBox}>
+
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text style={styles.commentAuthor}>
+                  {item.nome_autor}
+                </Text>
+              </View>
+
+              <Text style={styles.commentText}>{item.texto}</Text>
+            </View>
+          ))}
+
+          {/* Input sempre aparece */}
+          <View style={styles.commentInputContainer}>
+            <TextInput
+              placeholder="Adicione um comentário..."
+              value={comentario}
+              onChangeText={setComentario}
+              style={styles.commentInput}
+            />
+
+            <TouchableOpacity onPress={handleAdicionarComentario}>
+              <Text style={styles.commentButton}>Enviar</Text>
+            </TouchableOpacity>
+          </View>
+
+        </View>
+        {isCriador && (
+          <TouchableOpacity onPress={handleExcluir}>
+            <Text style={styles.deleteButtonText}>Excluir</Text>
+          </TouchableOpacity>
+        )}
+      </ScrollView>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -253,9 +260,9 @@ const styles = StyleSheet.create({
   },
 
   headerTitle: {
-      fontSize: 21,
-      fontWeight: "900",
-      textAlign: "left"
+    fontSize: 21,
+    fontWeight: "900",
+    textAlign: "left"
   },
 
   content: {
@@ -406,5 +413,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginHorizontal: 4,
   },
-
+  deleteButtonText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "bold"
+  }
 });

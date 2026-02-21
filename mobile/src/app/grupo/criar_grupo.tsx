@@ -9,6 +9,9 @@ import { StackParams } from '@/utils/routesStack';
 import { Menu } from "@/components/Menu";
 import { categories } from "@/utils/categories";
 import { colors } from "@/styles/colors";
+import { createGrupo } from "@/services/grupo";
+import { updateGrupo } from "@/services/grupo";
+import { uploadImagem } from "@/services/storage";
 
 export default function CriarGrupo() {
     
@@ -63,22 +66,43 @@ export default function CriarGrupo() {
             Alert.alert("Erro", "As regras são obrigatórias.");
             return;
         }
+        if (!imagem) {
+            Alert.alert("Erro", "A imagem é obrigatória.");
+            return;
+        }
 
-        const dados = {
-            nomeDesafio,
-            descricao,
-            regras,
-            dataInicio,
-            dataFinal,
-            imagem
-        };
+        try {
+            const foto_perfil = await uploadImagem(imagem, `grupos/${Date.now()}.jpg`);
 
-        if (grupo) {
-            Alert.alert("Sucesso", "Desafio atualizado!", [
-                { text: "OK", onPress: () => navigation.goBack() }
-            ]);
-        } else {
-            navigation.navigate("GrupoCriado", { desafio: dados })
+            if (grupo) {
+                await updateGrupo(grupo.id, {
+                    nome: nomeDesafio,
+                    descricao,
+                    foto_perfil,
+                    regras,
+                    data_inicio: dataInicio.toISOString(),
+                    data_fim: dataFinal.toISOString(),
+                },);
+
+                Alert.alert("Sucesso", "Desafio atualizado!", [
+                    { text: "OK", onPress: () => navigation.goBack() }
+                ]);
+            } else {
+
+                const novoGrupo = await createGrupo({
+                    nome: nomeDesafio,
+                    descricao,
+                    foto_perfil,
+                    regras,
+                    data_inicio: dataInicio.toISOString(),
+                    data_fim: dataFinal.toISOString(),
+                });
+
+                navigation.navigate("GrupoCriado", { desafio: novoGrupo });
+            }
+
+        } catch (error: any) {
+            Alert.alert("Erro", error.message);
         }
     };
 
@@ -129,7 +153,7 @@ export default function CriarGrupo() {
                 {/* FORMULÁRIO */}
                 <Text style={styles.sectionTitle}>Informações</Text>
 
-            <TextInput
+                <TextInput
                     placeholder="Nome do desafio"
                     placeholderTextColor="#2b2c2c"
                     style={styles.input}
@@ -213,10 +237,6 @@ export default function CriarGrupo() {
 
                 </ScrollView>
             </KeyboardAvoidingView>
-        <Menu
-            tabs={categories}
-            activeTabId="2" // "2" = Desafios
-        />
         </View>
     );
 }
