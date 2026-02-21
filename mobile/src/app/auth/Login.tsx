@@ -11,11 +11,23 @@ import {
   import { SafeAreaView } from "react-native-safe-area-context";
   import { useEffect, useRef, useState } from "react";
   import { Ionicons } from "@expo/vector-icons";
+
+  import { firebaseSignIn } from "../../services/firebaseAuth";
+  import { saveSession } from "../../services/authStorage";
+  import { getEstudanteByFirebaseUid } from "../../services/backendApi";
   
-  export default function Login() {
+  import type { StackScreenProps } from "@react-navigation/stack";
+  import type { StackParams } from "@/utils/routesStack"; 
+
+type Props = StackScreenProps<StackParams, "Login">;
+
+export default function Login({ navigation }: Props) {
     const [email, setEmail] = useState("");
     const [senha, setSenha] = useState("");
     const [mostrarSenha, setMostrarSenha] = useState(false);
+
+    const [loading, setLoading] = useState(false);
+    const [erro, setErro] = useState<string | null>(null);
   
     const translateY = useRef(new Animated.Value(0)).current;
   
@@ -41,75 +53,120 @@ import {
         hideSub.remove();
       };
     }, []);
-  
-    return (
-      <SafeAreaView style={styles.container}>
-        {/* TOPO */}
-        <View style={styles.header}>
-          <Image source={require("../../assets/logo.png")} style={styles.logo} />
-          <Text style={styles.logoText}>StudyRats</Text>
-        </View>
-  
-        {/* CARD */}
-        <Animated.View
-          style={[
-            styles.card,
-            {
-              transform: [{ translateY }],
-            },
-          ]}
-        >
-          <Text style={styles.title}>Fazer login</Text>
-  
-          <TextInput
-            placeholder="Email"
-            placeholderTextColor="#01415B"
-            style={styles.input}
-            value={email}
-            onChangeText={setEmail}
-          />
-  
-          {/* CAMPO SENHA*/}
-          <View style={styles.passwordContainer}>
-            <TextInput
-              placeholder="Senha"
-              placeholderTextColor="#01415B"
-              style={styles.passwordInput}
-              secureTextEntry={!mostrarSenha}
-              value={senha}
-              onChangeText={setSenha}
-            />
-  
-            <TouchableOpacity
-              onPress={() => setMostrarSenha(!mostrarSenha)}
-              activeOpacity={0.6}
-            >
-              <Ionicons
-                name={mostrarSenha ? "eye-off" : "eye"}
-                size={22}
-                color="#01415B"
-              />
-            </TouchableOpacity>
-          </View>
-  
-          <TouchableOpacity style={styles.buttonEntrar}>
-            <Text style={styles.buttonEntrarText}>ENTRAR</Text>
-          </TouchableOpacity>
-  
-          <TouchableOpacity style={styles.buttonCriarConta} activeOpacity={0.8}>
-            <Text style={styles.buttonCriarContaText}>CRIAR CONTA</Text>
-          </TouchableOpacity>
-  
-          {/* ESQUECI MINHA SENHA */}
-          <TouchableOpacity activeOpacity={0.6}>
-            <Text style={styles.forgotPassword}>
-              Esqueci minha senha
-            </Text>
-          </TouchableOpacity>
-        </Animated.View>
-      </SafeAreaView>
-    );
+
+  async function handleEntrar() {
+    const emailTrim = email.trim();
+
+    if (!emailTrim || !senha) {
+      setErro("Preencha email e senha.");
+      return;
+    }
+
+    setLoading(true);
+    setErro(null);
+
+    try {
+      const auth = await firebaseSignIn(emailTrim, senha);
+
+      const expiresAt = Date.now() + Number(auth.expiresIn) * 1000;
+
+      await saveSession({
+        idToken: auth.idToken,
+        refreshToken: auth.refreshToken,
+        expiresAt,
+        localId: auth.localId,
+        email: auth.email,
+      });
+
+      const firebaseUid = auth.localId;
+      const estudante = await getEstudanteByFirebaseUid(firebaseUid);
+
+      if (!estudante) {
+        throw new Error("ESTUDANTE_NAO_CADASTRADO");
+      }
+
+      navigation.replace("Home");
+
+    } catch (e: any) {
+      const code = e?.message;
+
+      if (code === "INVALID_LOGIN_CREDENTIALS") {
+        setErro("Email ou senha incorretos.");
+      } else {
+        setErro(code ?? "ERRO_AO_LOGAR");
+      }
+    } finally {
+      setLoading(false);
+    }
   }
+  
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Image source={require("../../assets/logo.png")} style={styles.logo} />
+        <Text style={styles.logoText}>StudyRats</Text>
+      </View>
+
+      <Animated.View style={[styles.card, { transform: [{ translateY }] }]}>
+        <Text style={styles.title}>Fazer login</Text>
+
+        <TextInput
+          placeholder="Email"
+          placeholderTextColor="#01415B"
+          style={styles.input}
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
+
+        <View style={styles.passwordContainer}>
+          <TextInput
+            placeholder="Senha"
+            placeholderTextColor="#01415B"
+            style={styles.passwordInput}
+            secureTextEntry={!mostrarSenha}
+            value={senha}
+            onChangeText={setSenha}
+          />
+
+          <TouchableOpacity
+            onPress={() => setMostrarSenha(!mostrarSenha)}
+            activeOpacity={0.6}
+          >
+            <Ionicons
+              name={mostrarSenha ? "eye-off" : "eye"}
+              size={22}
+              color="#01415B"
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* mensagem de erro */}
+        {erro ? <Text style={{ color: "crimson", marginBottom: 8 }}>{erro}</Text> : null}
+
+        <TouchableOpacity
+          style={[styles.buttonEntrar, loading ? { opacity: 0.7 } : null]}
+          onPress={handleEntrar}
+          activeOpacity={0.8}
+          disabled={loading}
+        >
+          <Text style={styles.buttonEntrarText}>
+            {loading ? "ENTRANDO..." : "ENTRAR"}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.buttonCriarConta} activeOpacity={0.8}>
+          <Text style={styles.buttonCriarContaText}>CRIAR CONTA</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity activeOpacity={0.6}>
+          <Text style={styles.forgotPassword}>Esqueci minha senha</Text>
+        </TouchableOpacity>
+      </Animated.View>
+    </SafeAreaView>
+  );
+}
 
   export const styles = StyleSheet.create({
   container: {
