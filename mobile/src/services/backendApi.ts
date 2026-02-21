@@ -28,14 +28,14 @@ export async function createEstudante(body: CreateEstudanteBody, idToken: string
   return data;
 }
 
-async function authFetch(path: string, options: RequestInit = {}) {
+export async function authFetch(path: string, options: RequestInit = {}) {
   const token = await getValidIdToken();
   if (!token) throw new Error("USUARIO_NAO_LOGADO");
 
-  const headers = {
-    ...(options.headers ?? {}),
-    Authorization: `Bearer ${token}`,
-  };
+  const url = `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 
-  return fetch(`${API_BASE_URL}${path}`, { ...options, headers });
+  const headers = new Headers(options.headers); 
+  headers.set("Authorization", `Bearer ${token}`);
+
+  return fetch(url, { ...options, headers });
 }
