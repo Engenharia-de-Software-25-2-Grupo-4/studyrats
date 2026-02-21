@@ -15,6 +15,7 @@ import Publicacao from '@/app/sessaoEstudo/publicacao';
 import Disciplinas from '@/app/disciplinas';
 
 import { StackParams } from '@/utils/routesStack';
+import RecuperarSenha from '@/app/auth/RecuperarSenha';
 
 const Stack = createStackNavigator<StackParams>();
 
@@ -27,6 +28,7 @@ export default function App() {
       >
         <Stack.Screen name="Index" component={Index} />
         <Stack.Screen name="Login" component={Login} />
+        <Stack.Screen name="RecuperarSenha" component={RecuperarSenha} />
         <Stack.Screen name="Registro" component={Registro} />
         <Stack.Screen name="Home" component={Home} />
         <Stack.Screen name="StudyGroupScreen" component={StudyGroupScreen} />

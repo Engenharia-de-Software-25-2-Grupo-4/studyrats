@@ -78,3 +78,15 @@ export async function firebaseDeleteAccount(idToken: string) {
   const url = `https://identitytoolkit.googleapis.com/v1/accounts:delete?key=${FIREBASE_API_KEY}`;
   return firebasePost<{ kind: string }>(url, { idToken });
 }
+
+type FirebaseSendOobCodeResponse = {
+  email: string;
+};
+
+export async function firebaseSendPasswordResetEmail(email: string) {
+  const url = `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${FIREBASE_API_KEY}`;
+  return firebasePost<FirebaseSendOobCodeResponse>(url, {
+    requestType: "PASSWORD_RESET",
+    email,
+  });
+}
