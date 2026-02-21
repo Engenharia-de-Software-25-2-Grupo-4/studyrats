@@ -24,6 +24,8 @@ import com.example.studyrats.repository.GrupoDeEstudoRepository;
 import com.example.studyrats.repository.MembroGrupoRepository;
 import com.example.studyrats.repository.EstudanteRepository;
 import com.example.studyrats.repository.SessaoDeEstudoRepository;
+import com.example.studyrats.repository.ComentarioSessaoRepository;
+import com.example.studyrats.repository.ReacaoSessaoRepository;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
 @Service
@@ -44,6 +46,10 @@ public class GrupoDeEstudoServiceImpl implements GrupoDeEstudoService {
 
     @Autowired
     private SessaoDeEstudoRepository sessaoRepo;
+    @Autowired
+    private ComentarioSessaoRepository comentarioRepo;
+    @Autowired
+    private ReacaoSessaoRepository reacaoRepo;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -100,7 +106,16 @@ public class GrupoDeEstudoServiceImpl implements GrupoDeEstudoService {
         if (!isAdmin(grupo, uid)) {
             throw new GrupoNaoEncontrado();
         }
-        
+
+        conviteRepo.deleteByGrupo_Id(id);
+        List<SessaoDeEstudo> sessoesDoGrupoDeletado = sessaoRepo.findByGrupoDeEstudo_Id(id);
+        for (SessaoDeEstudo sessao : sessoesDoGrupoDeletado) {
+            reacaoRepo.deleteBySessaoDeEstudoIdSessao(sessao.getIdSessao());
+            comentarioRepo.deleteBySessaoDeEstudoIdSessao(sessao.getIdSessao());
+            sessaoRepo.delete(sessao);
+        }
+        membroRepo.deleteByGrupo_Id(id);
+
         grupoRepo.delete(grupo);
     }
 

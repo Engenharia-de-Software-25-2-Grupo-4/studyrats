@@ -17,4 +17,9 @@ public interface MembroGrupoRepository extends JpaRepository<MembroGrupo, Long> 
     List<MembroGrupo> findByGrupo_IdOrderByQuantidadeCheckinsDesc(UUID idGrupo);
 
     List<MembroGrupo> findByGrupo_Id(UUID idGrupo);
+
+    List<MembroGrupo> findByEstudante_FirebaseUid(String firebaseUid);
+
+    void deleteByGrupo_Id(UUID idGrupo); 
 }
+

@@ -169,7 +169,10 @@ public class EstudanteTests {
                     "O estudante deletado foi encontrado como membro em algum grupo");
         }
         List<SessaoDeEstudo> sessoesRecuperadas = sessaoDeEstudoRepository.findAll();
-        assertEquals(sessoes.size(), sessoesRecuperadas.size());
+        long sessoesEsperadas = sessoes.stream()
+                .filter(sessao -> !tokenEstudantePrincipal.equals(sessao.getIdCriador()))
+                .count();
+        assertEquals(sessoesEsperadas, sessoesRecuperadas.size());
         assertTrue(sessoesRecuperadas.stream()
                 .noneMatch(sessaoDeEstudo -> sessaoDeEstudo.getCriador() == null || sessaoDeEstudo.getCriador().getFirebaseUid().equals(tokenEstudantePrincipal)),
                 "O estudante deletado foi encontrado como criador de alguma sessão de estudo");

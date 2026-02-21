@@ -71,7 +71,6 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
     @Override
     public SessaoDeEstudoResponseDTO visualizarSessaoDeEstudosPorId(UUID idSessao, String idUsuario) {
         SessaoDeEstudo sessaoDeEstudo = sessaoDeEstudoRepository.findById(idSessao).orElseThrow(SessaoDeEstudoNaoEncontrado::new);
-        //validarCriador(sessaoDeEstudo, idUsuario);
         validaMembro(sessaoDeEstudo.getGrupoDeEstudo().getId(), idUsuario);
         return toResponseDTO(sessaoDeEstudo, idUsuario);
     }
@@ -79,7 +78,6 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
     @Override
     public void removerSessaoDeEstudosPorId(UUID idSessao, String idUsuario) {
         SessaoDeEstudo sessaoDeEstudo = sessaoDeEstudoRepository.findById(idSessao).orElseThrow(SessaoDeEstudoNaoEncontrado::new);
-        validarCriador(sessaoDeEstudo, idUsuario);
         validarCriador(sessaoDeEstudo, idUsuario);
 
         MembroGrupo membro = membroGrupoRepository.findByGrupo_IdAndEstudante_FirebaseUid(
@@ -90,6 +88,8 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
             membro.setQuantidadeCheckins(membro.getQuantidadeCheckins() - 1);
             membroGrupoRepository.save(membro);
         }
+        reacaoSessaoRepository.deleteBySessaoDeEstudoIdSessao(idSessao);
+        comentarioSessaoRepository.deleteBySessaoDeEstudoIdSessao(idSessao);
         sessaoDeEstudoRepository.delete(sessaoDeEstudo); 
     }
 
@@ -103,7 +103,6 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
         return toResponseDTO(sessaoDeEstudo, idUsuario);
     }
 
-    ////// SÓ FAZ SENTIDO SE HOUVER, NO PRÓPRIO PERFIL DO USUARIO, VIZUALIZAÇÃO DAS PRÓPRIAS SESSÕES. O ACESSO A SESSÕES É FEITO ATRAVÉS DO GRUPO!
     @Override
     public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosPorUsuario(String idUsuario) {
         return sessaoDeEstudoRepository.findByCriador_FirebaseUid(idUsuario)
@@ -112,7 +111,6 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
             .toList();
     }
 
-    // filtra sessões do grupo por usuario
     @Override
     public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosPorUsuarioEmGrupo(String idUsuario, UUID idGrupo) {
         validaMembro(idGrupo, idUsuario);
@@ -123,7 +121,6 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
         return sessions;
     }
 
-    // filtra sessões do grupo por disciplina
     @Override
     public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosPorDisciplinaEmGrupo(String disciplina, UUID idGrupo, String idUsuario) {
         validaMembro(idGrupo, idUsuario);
@@ -134,7 +131,6 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
         return sessions; 
     }
 
-    // filtra sessões do grupo por topico
     @Override
     public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosPorTopicoEmGrupo(String topico, UUID idGrupo, String idUsuario) {
         validaMembro(idGrupo, idUsuario);
@@ -145,7 +141,6 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
         return sessions;
     }
 
-    // retorna todas as sessões de um grupo. questionamento, os grupos são todos públicos? se sim, não há porque validar
     @Override
     public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosPorGrupo(UUID idGrupo, String idUsuario) { 
         validaMembro(idGrupo, idUsuario);
@@ -156,7 +151,6 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
         return sessions; 
     } 
 
-    // retorna todas as sessões de um grupo ordenadas em ordem cronológica para o feed
     @Override
     public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosPorGrupoCronologicamente(UUID idGrupo, String idUsuario) { 
         validaMembro(idGrupo, idUsuario);
@@ -168,7 +162,6 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
         return sessions;
     }     
 
-////// OS DOIS MÉTODOS A SEGUIR SÓ FAZEM SENTIDO SE HOUVER, NO PRÓPRIO PERFIL DO USUARIO, FILTRAGEM DAS PRÓPRIAS SESSÕES. O ACESSO A SESSÃO É FEITO ATRAVÉS DO GRUPO!
     @Override
     public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosDeUsuarioPorDisciplina(String idUsuario, String disciplina) { 
         List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByCriador_FirebaseUidAndDisciplina(idUsuario, disciplina)
