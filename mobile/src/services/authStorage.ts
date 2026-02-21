@@ -23,3 +23,8 @@ export async function getSession(): Promise<Session | null> {
 export async function clearSession() {
   await SecureStore.deleteItemAsync(SESSION_KEY);
 }
+
+export async function getAuthenticatedUid(): Promise<string | null> {
+  const session = await getSession();
+  return session?.localId ?? null;
+}
