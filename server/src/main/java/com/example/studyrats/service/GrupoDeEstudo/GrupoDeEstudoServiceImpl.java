@@ -5,6 +5,8 @@ import java.util.List;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.Comparator;
+
+import com.example.studyrats.dto.GrupoDeEstudo.MembroGrupoResponseDTO;
 import com.example.studyrats.dto.GrupoDeEstudo.RankingGrupoResponseDTO;
 import com.example.studyrats.dto.SessaoDeEstudo.SessaoDeEstudoResponseDTO;
 import com.example.studyrats.exceptions.*;
@@ -141,6 +143,26 @@ public class GrupoDeEstudoServiceImpl implements GrupoDeEstudoService {
         return grupo.getSessoes().stream()
                 .sorted(Comparator.comparing(SessaoDeEstudo::getHorarioInicio).reversed())
                 .map(sessao -> modelMapper.map(sessao, SessaoDeEstudoResponseDTO.class))
+                .toList();
+    }
+
+    @Override
+    public List<MembroGrupoResponseDTO> listarMembros(UUID idGrupo, String uidUsuario) {
+        grupoRepo.findById(idGrupo).orElseThrow(GrupoNaoEncontrado::new);
+
+        if (!membroRepo.existsByGrupo_IdAndEstudante_FirebaseUid(idGrupo, uidUsuario)) {
+            throw new UsuarioNaoFazParteDoGrupoException();
+        }
+
+        List<MembroGrupo> membros = membroRepo.findByGrupo_Id(idGrupo);
+
+        return membros.stream()
+                .map(m -> new MembroGrupoResponseDTO(
+                        m.getEstudante().getNome(),
+                        m.getEstudante().getFirebaseUid(),
+                        m.getRole(),
+                        m.getQuantidadeCheckins()
+                ))
                 .toList();
     }
 

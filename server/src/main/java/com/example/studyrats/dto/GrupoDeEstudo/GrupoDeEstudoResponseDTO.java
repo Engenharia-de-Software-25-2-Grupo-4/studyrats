@@ -1,5 +1,6 @@
 package com.example.studyrats.dto.GrupoDeEstudo;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -33,6 +34,12 @@ public class GrupoDeEstudoResponseDTO {
 
     @JsonProperty("regras")
     private String regras;
+
+    @JsonProperty("data_inicio")
+    private LocalDateTime dataInicio;
+
+    @JsonProperty("data_fim")
+    private LocalDateTime dataFim;
 
     @Override
     public boolean equals(Object  o) {
