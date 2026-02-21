@@ -13,4 +13,8 @@ public interface ComentarioSessaoRepository extends JpaRepository<ComentarioSess
     long countBySessaoDeEstudoIdSessao(UUID idSessao);
 
     List<ComentarioSessao> findAllBySessaoDeEstudoIdSessaoAndAutorFirebaseUid(UUID idSessao, String firebaseUid);
+
+    void deleteByAutor_FirebaseUid(String firebaseUid);
+
+    void deleteBySessaoDeEstudoIdSessao(UUID idSessao);
 }

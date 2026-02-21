@@ -7,6 +7,7 @@ import com.example.studyrats.dto.SessaoDeEstudo.SessaoDeEstudoPostPutRequestDTO;
 import com.example.studyrats.dto.SessaoDeEstudo.SessaoDeEstudoResponseDTO;
 import com.example.studyrats.dto.estudante.EstudantePostPutRequestDTO;
 import com.example.studyrats.model.Estudante;
+import com.example.studyrats.model.GrupoDeEstudo;
 import com.example.studyrats.model.SessaoDeEstudo;
 import com.example.studyrats.repository.EstudanteRepository;
 import com.example.studyrats.repository.GrupoDeEstudoRepository;
@@ -106,6 +107,10 @@ public class SessaoDeEstudosTest {
         bodyGrupo = GrupoDeEstudoPostPutRequestDTO.builder()
                 .nome(randomChars())
                 .descricao(randomChars())
+                .fotoPerfil("foto.png")
+                .regras("Sem spam e respeitar horários")
+                .dataInicio(LocalDateTime.of(2026, 5, 19, 14, 0))
+                .dataFim(LocalDateTime.of(2026, 10, 19, 16, 0))
                 .build();
         grupo = requisitorGrupo.performPostCreated(GrupoDeEstudoResponseDTO.class, bodyGrupo, tokenEstudantePrincipal);
         idGrupo = grupo.getId();
@@ -117,15 +122,7 @@ public class SessaoDeEstudosTest {
             body = new EstudantePostPutRequestDTO(randomChars(), randomChars());
             requisitorEstudante.performPostCreated(body, token);
             requisitorGrupo.performPostOk("convites/"+convite+"/entrar", token);
-            bodySessao = new SessaoDeEstudoPostPutRequestDTO(
-                    randomChars(),
-                    randomChars(),
-                    LocalDateTime.now().plusDays(1),
-                    120,
-                    randomChars(),
-                    randomChars(),
-                    randomChars()
-            );
+            bodySessao = getRandomSessaoDeEstudo();
             sessoes.add(requisitorSessao.performPostCreated(SessaoDeEstudoResponseDTO.class, bodySessao, idGrupo.toString(), token));
         }
         this.sessoes = sessoes;
@@ -139,17 +136,109 @@ public class SessaoDeEstudosTest {
         Estudante estudante;
         for (SessaoDeEstudoResponseDTO sessao : sessoes) {
             setarToken(sessao.getIdCriador());
-            assertTrue(sessaoDeEstudoRepository
-                    .findAll()
+            assertTrue(sessaoDeEstudoRepository.findAll()
                     .stream()
                     .anyMatch(s -> sessao.getIdSessao().equals(s.getIdSessao())),
                     "Não foi possível recuperar a sessão direto do repositório antes da remoção");
+
             requisitorSessao.performDeleteNoContent(sessao.getIdCriador(), sessao.getIdSessao().toString());
-            assertEquals(11, estudanteRepository.count());
+
+            assertEquals(11, estudanteRepository.count(), "O total de estudantes recuperados não é igual ao total esperado");
+            assertNotNull(estudanteRepository.findById(sessao.getIdCriador()), "Não foi possível encontrar o estudante criador da sessão deletada");
+            estudanteRepository.findAll()
+                            .forEach(e -> e.getStudySessions().forEach(s -> assertNotEquals(sessao.getIdSessao(), s.getIdSessao(), "A sessão deletada foi encontrada na lista de sessões do usuário")));
             assertEquals(1, grupoDeEstudoRepository.count());
-            sessaoDeEstudoRepository
-                    .findAll()
-                    .forEach(s -> assertNotEquals(sessao.getIdSessao(), s.getIdSessao()));
+            grupoDeEstudoRepository.findAll()
+                            .forEach(gde -> gde.getSessoes().forEach(s -> assertNotEquals(sessao.getIdSessao(), s.getIdSessao(), "A sessão deletada foi encontrada na lista de sessões de algum grupo de estudo")));
+            sessaoDeEstudoRepository.findAll()
+                            .forEach(s -> assertNotEquals(sessao.getIdSessao(), s.getIdSessao(), "A sessão deletada foi recuperada via repositório."));
+        }
+    }
+
+    private SessaoDeEstudoPostPutRequestDTO getRandomSessaoDeEstudo() {
+        return new SessaoDeEstudoPostPutRequestDTO(
+                randomChars(),
+                randomChars(),
+                LocalDateTime.now().plusDays(1),
+                120,
+                randomChars(),
+                randomChars(),
+                randomChars()
+        );
+    }
+
+    private boolean sDoRepoEqualsBodySessao(SessaoDeEstudo sDoRepo, SessaoDeEstudoPostPutRequestDTO bodySessao) {
+        return sDoRepo.getDescricao().equals(bodySessao.getDescricao()) &&
+                sDoRepo.getDisciplina().equals(bodySessao.getDisciplina()) &&
+                sDoRepo.getDuracaoMinutos().equals(bodySessao.getDuracaoMinutos()) &&
+                sDoRepo.getHorarioInicio().equals(bodySessao.getHorarioInicio()) &&
+                sDoRepo.getTitulo().equals(bodySessao.getTitulo()) &&
+                sDoRepo.getTopico().equals(bodySessao.getTopico()) &&
+                sDoRepo.getUrlFoto().equals(bodySessao.getUrlFoto());
+    }
+
+    private boolean sDoRepoEqualsSAntes(SessaoDeEstudo sDoRepo, SessaoDeEstudoResponseDTO s) {
+        return sDoRepo.getCriador().getFirebaseUid().equals(s.getIdCriador()) &&
+                sDoRepo.getDescricao().equals(s.getDescricao()) &&
+                sDoRepo.getDisciplina().equals(s.getDisciplina()) &&
+                sDoRepo.getDuracaoMinutos().equals(s.getDuracaoMinutos()) &&
+                sDoRepo.getHorarioInicio().equals(s.getHorarioInicio()) &&
+                sDoRepo.getTitulo().equals(s.getTitulo()) &&
+                sDoRepo.getTopico().equals(s.getTopico()) &&
+                sDoRepo.getUrlFoto().equals(s.getUrlFoto());
+    }
+
+    // São redundantes, mas auxiliam a leitura
+    private boolean sDoGrupoEqualsSAntes(SessaoDeEstudo sDoGrupo, SessaoDeEstudoResponseDTO sAntes) {
+        return sDoRepoEqualsSAntes(sDoGrupo, sAntes);
+    }
+
+    // São redundantes, mas auxiliam a leitura
+    private boolean sDoEstudanteEqualsSAntes(SessaoDeEstudo sDoGrupo, SessaoDeEstudoResponseDTO sAntes) {
+        return sDoRepoEqualsSAntes(sDoGrupo, sAntes);
+    }
+
+    @Test @Transactional
+    @DisplayName("Atualizar Sessão de estudos altera a sessão correta e reflete nas outras classes")
+    void atualizarSessaoRefleteNasClasses() throws Exception {
+        List<SessaoDeEstudo> sessoesDoRepo;
+        List<Estudante> estudantesDoRepo;
+        List<GrupoDeEstudo> gruposDoRepo;
+        Estudante estudante;
+        setup1GrupoNEstudantesMembrosNSessoes();
+        for (SessaoDeEstudoResponseDTO sAntes : sessoes) {
+            String token = sAntes.getIdCriador();
+            setarToken(token);
+            SessaoDeEstudoPostPutRequestDTO bodySessao = getRandomSessaoDeEstudo();
+            requisitorSessao.performPutOk(bodySessao, sAntes.getIdSessao().toString(), token);
+            sessoesDoRepo = sessaoDeEstudoRepository.findAll();
+            assertEquals(sessoes.size(), sessoesDoRepo.size(), "O repo trouxe uma quantidade de sessões diferente do esperado");
+            assertTrue(sessoesDoRepo.stream().noneMatch(sDoRepo -> sDoRepoEqualsSAntes(sDoRepo, sAntes)), "Foi possível encontrar no repo os dados antigos após atualização.");
+
+            sessoesDoRepo.forEach(sDoRepo -> {
+                boolean idDiferente = !sDoRepo.getIdSessao().equals(sAntes.getIdSessao());
+                if (idDiferente) {
+                    assertFalse(sDoRepoEqualsBodySessao(sDoRepo, bodySessao), "Outra sessão possui os dados atualizados");
+                } else {
+                    assertTrue(sDoRepoEqualsBodySessao(sDoRepo, bodySessao), "A sessão do repo com o ID esperado não possui todas as informações atualizadas");
+                }
+            });
+
+            gruposDoRepo = grupoDeEstudoRepository.findAll();
+            assertEquals(1, gruposDoRepo.size(), "Atualizar sessão deletou algum grupo");
+            gruposDoRepo.forEach(g -> {
+                g.getSessoes().forEach(sDoGrupo -> {
+                    assertFalse(sDoGrupoEqualsSAntes(sDoGrupo, sAntes), "Foi possível recuperar a sessão com dados de antes da atualização na lista de sessões do grupo");
+                });
+            });
+
+            estudantesDoRepo = estudanteRepository.findAll();
+            assertEquals(11, estudantesDoRepo.size(), "Atualizar sessão deletou algum estudante");
+            estudantesDoRepo.forEach(e -> {
+                e.getStudySessions().forEach(sDoEstudante -> {
+                    assertFalse(sDoEstudanteEqualsSAntes(sDoEstudante, sAntes), "Foi possível recuperar a ses~sao com dados de antes da atualização na lista de sessões do estudante");
+                });
+            });
         }
     }
 }

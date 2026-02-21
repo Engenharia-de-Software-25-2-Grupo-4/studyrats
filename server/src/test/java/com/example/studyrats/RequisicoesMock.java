@@ -340,6 +340,15 @@ public class RequisicoesMock {
         return objectMapper.readValue(response, expectedTypeResponse);
     }
 
+    public void performPutOk(Object body, String complementoDoPath, String userToken) throws Exception {
+        String jsonBody = objectMapper.writeValueAsString(body);
+        driver.perform(put(putUrl+"/"+complementoDoPath)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonBody)
+                        .header("Authorization", "Bearer "+userToken))
+                .andExpect(status().isOk());
+    }
+
     public void performPutOk(Object body, String userToken) throws Exception {
         String jsonBody = objectMapper.writeValueAsString(body);
         driver.perform(put(putUrl)

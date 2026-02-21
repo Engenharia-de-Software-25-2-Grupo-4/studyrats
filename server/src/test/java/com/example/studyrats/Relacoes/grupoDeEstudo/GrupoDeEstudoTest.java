@@ -32,6 +32,7 @@ import java.util.Random;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
@@ -103,10 +104,25 @@ public class GrupoDeEstudoTest {
         bodyGrupo = GrupoDeEstudoPostPutRequestDTO.builder()
                 .nome(randomChars())
                 .descricao(randomChars())
+                .fotoPerfil("foto.png")
+                .regras("Sem spam e respeitar horários")
+                .dataInicio(LocalDateTime.of(2026, 5, 19, 14, 0))
+                .dataFim(LocalDateTime.of(2026, 10, 19, 16, 0))
+                .build();
+        GrupoDeEstudoPostPutRequestDTO bodyGrupo2 = GrupoDeEstudoPostPutRequestDTO.builder()
+                .nome(randomChars())
+                .descricao(randomChars())
+                .fotoPerfil("foto.png")
+                .regras("Sem spam e respeitar horários")
+                .dataInicio(LocalDateTime.of(2026, 5, 19, 14, 0))
+                .dataFim(LocalDateTime.of(2026, 10, 19, 16, 0))
                 .build();
         grupo = requisitorGrupo.performPostCreated(GrupoDeEstudoResponseDTO.class, bodyGrupo, tokenEstudantePrincipal);
+        GrupoDeEstudoResponseDTO grupo2 = requisitorGrupo.performPostCreated(GrupoDeEstudoResponseDTO.class, bodyGrupo2, tokenEstudantePrincipal);
         idGrupo = grupo.getId();
-        String convite = requisitorGrupo.performPostCreatedStringReturn(grupo.getId().toString()+"/convites/gerar", tokenEstudantePrincipal);
+        UUID idGrupo2 = grupo2.getId();
+        String convite = requisitorGrupo.performPostCreatedStringReturn(idGrupo.toString()+"/convites/gerar", tokenEstudantePrincipal);
+        String convite2 = requisitorGrupo.performPostCreatedStringReturn(idGrupo2.toString()+"/convites/gerar", tokenEstudantePrincipal);
 
         for (int i = 0; i < numMembros; i++) {
             token = randomChars();
@@ -114,6 +130,7 @@ public class GrupoDeEstudoTest {
             body = new EstudantePostPutRequestDTO(randomChars(), randomChars());
             requisitorEstudante.performPostCreated(body, token);
             requisitorGrupo.performPostOk("convites/"+convite+"/entrar", token);
+            requisitorGrupo.performPostOk("convites/"+convite2+"/entrar", token);
             bodySessao = new SessaoDeEstudoPostPutRequestDTO(
                     randomChars(),
                     randomChars(),
@@ -124,6 +141,7 @@ public class GrupoDeEstudoTest {
                     randomChars()
             );
             requisitorSessao.performPostCreated(bodySessao, idGrupo.toString(), token);
+            requisitorSessao.performPostCreated(bodySessao, idGrupo2.toString(), token);
         }
     }
 
@@ -133,12 +151,24 @@ public class GrupoDeEstudoTest {
         setup1GrupoNEstudantesMembrosNSessoes();
         setarToken(tokenEstudantePrincipal);
         requisitorGrupo.performDeleteNoContent(tokenEstudantePrincipal, idGrupo.toString());
+
         List<GrupoDeEstudo> grupos = grupoDeEstudoRepository.findAll();
-        assertEquals(0, grupos.size());
         List<Estudante> estudantes = estudanteRepository.findAll();
-        assertEquals(11, estudantes.size());
-        estudantes.forEach(estudante -> assertEquals(0, estudante.getStudySessions().size()));
         List<SessaoDeEstudo> sessoes = sessaoDeEstudoRepository.findAll();
-        assertEquals(0, sessoes.size());
+        assertEquals(1, grupos.size(), "Deveria existir 1 grupo após o delete");
+        assertEquals(11, estudantes.size(), "Deveriam existir 11 estudantes após a exclusão do grupo");
+        assertEquals(10, sessoes.size(), "Deveriam existir 10 sessões de um grupo após a exclusão do outro grupo");
+
+        grupos.forEach(
+                g -> assertNotEquals(g.getId(), idGrupo, "Foi possível recuperar o grupo deletado pelo repo")
+        );
+        estudantes.forEach(
+                e -> e.getStudySessions().forEach(
+                        se -> assertNotEquals(se.getGrupoDeEstudo().getId(), idGrupo, "Foi possível recuperar o grupo de estudos pela lista de sessões de estudo de um estudante")
+                )
+        );
+        sessoes.forEach(
+                se -> assertNotEquals(se.getGrupoDeEstudo().getId(), idGrupo, "Foi possível recuperar o grupo pelas sessões de estudo")
+        );
     }
 }

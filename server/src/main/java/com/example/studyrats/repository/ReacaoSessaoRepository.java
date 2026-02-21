@@ -17,4 +17,8 @@ public interface ReacaoSessaoRepository extends JpaRepository<ReacaoSessao, UUID
 
     void deleteBySessaoDeEstudoIdSessaoAndAutorFirebaseUid(UUID idSessao, String firebaseUid);
 
+    void deleteByAutor_FirebaseUid(String firebaseUid);
+
+    void deleteBySessaoDeEstudoIdSessao(UUID idSessao);
+
 }

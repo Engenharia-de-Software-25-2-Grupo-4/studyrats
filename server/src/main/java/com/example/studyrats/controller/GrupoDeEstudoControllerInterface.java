@@ -7,6 +7,7 @@ import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoPostPutRequestDTO;
 import com.example.studyrats.dto.GrupoDeEstudo.GrupoDeEstudoResponseDTO;
 import com.example.studyrats.dto.ConviteGrupo.ConviteResponseDTO;
 
+import com.example.studyrats.dto.GrupoDeEstudo.MembroGrupoResponseDTO;
 import com.example.studyrats.dto.SessaoDeEstudo.SessaoDeEstudoResponseDTO;
 import com.example.studyrats.dto.GrupoDeEstudo.RankingGrupoResponseDTO;
 import org.springframework.http.HttpStatus;
@@ -98,7 +99,19 @@ public interface GrupoDeEstudoControllerInterface {
             HttpServletRequest request
     );
 
-
+    @Operation(summary = "Listar todos os membros de um grupo")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
+            @ApiResponse(responseCode = "401", description = "Não autenticado"),
+            @ApiResponse(responseCode = "403", description = "Usuário não faz parte do grupo"),
+            @ApiResponse(responseCode = "404", description = "Grupo não encontrado")
+    })
+    @GetMapping("/{idGrupo}/membros")
+    List<MembroGrupoResponseDTO> listarMembrosDoGrupo(
+            @Parameter(description = "ID do grupo", required = true)
+            @PathVariable UUID idGrupo,
+            HttpServletRequest request
+    );
 
     @Operation(summary = "Listar todas as sessões (check-ins) de um grupo")
     @ApiResponses({
