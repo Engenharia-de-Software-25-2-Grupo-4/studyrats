@@ -80,6 +80,7 @@ export default function StudyGroupScreen() {
                                 title={post.title}
                                 user={post.user}
                                 subject={post.subject}
+                                image={post.image}
                             />
                         </TouchableOpacity>
                     </View>
@@ -114,6 +115,7 @@ export default function StudyGroupScreen() {
                                         index === 0 ? "gold" :
                                         index === 1 ? "silver" : "bronze"
                                     }
+                                    mode="stats" 
                                 />
                             )}
                             contentContainerStyle={{ padding: 20, paddingTop: 8 }}
@@ -123,7 +125,12 @@ export default function StudyGroupScreen() {
                     <FlatList
                         data={users.slice(0, visibleCount)}
                         keyExtractor={(item) => item.id}
-                        renderItem={({ item }) => <UserItem user={item} />}
+                        renderItem={({ item }) => (
+                            <UserItem 
+                                user={item}
+                                mode="participants"
+                            />
+                        )}
                         contentContainerStyle={{ padding: 20, paddingTop: 8 }}
                         onEndReached={loadMore}
                         onEndReachedThreshold={0.5}

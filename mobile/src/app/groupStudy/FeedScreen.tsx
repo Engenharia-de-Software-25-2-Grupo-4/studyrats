@@ -8,9 +8,37 @@ import { useNavigation  } from "@react-navigation/native";
 import type { NavigationProp } from '@react-navigation/native';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { StackParams } from "@/utils/routesStack";
+import { useMemo, useState } from "react";
+import { FilterModal } from "@/components/Modal";
 
 export default function FeedScreen() {
     const navigation = useNavigation<NavigationProp<StackParams>>();
+
+    const [filterVisible, setFilterVisible] = useState(false);
+    const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+    const [selectedUser, setSelectedUser] = useState<string | null>(null);
+
+    // Extrai disciplinas e usuários únicos dos posts
+    const subjects = useMemo(() => 
+        [...new Set(posts.map(p => p.subject))], 
+        []
+    );
+    
+    const users = useMemo(() => 
+        [...new Set(posts.map(p => p.user))], 
+        []
+    );
+
+    // Filtra os posts
+    const filteredPosts = useMemo(() => {
+        return posts.filter(post => {
+            const matchesSubject = !selectedSubject || post.subject === selectedSubject;
+            const matchesUser = !selectedUser || post.user === selectedUser;
+            return matchesSubject && matchesUser;
+        });
+    }, [selectedSubject, selectedUser]);
+
+    const hasActiveFilters = selectedSubject || selectedUser;
 
     const handleNavigateToCheckIn = () =>{
         navigation.navigate("CriarSessao")
@@ -43,28 +71,45 @@ export default function FeedScreen() {
                     Publicações
                 </Text>
 
-                <Text style={styles.headerSecondarySubitle}>
-                    Filtrar
-                </Text>
+                <TouchableOpacity onPress={() => setFilterVisible(true)}>
+                    <View style={styles.filterButton}>
+                        <Text style={styles.headerSecondarySubitle}>
+                            Filtrar
+                        </Text>
+                        {hasActiveFilters && <View style={styles.filterBadge} />}
+                    </View>
+                </TouchableOpacity>
             </View>
 
             <FlatList
-                data={posts}
+                data={filteredPosts}
                 keyExtractor={item => item.id}
                 renderItem={({ item }) => (
                     <Post
                         title={item.title}
                         user={item.user}
                         subject={item.subject}
+                        image={item.image}
                     />
                 )}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ padding: 20, paddingTop: 8, gap: 10 }}
+                ListEmptyComponent={
+                    <Text style={styles.emptyText}>
+                        Nenhuma publicação encontrada com os filtros selecionados
+                    </Text>
+                }
             />
 
-            <Menu
-                tabs={categories}
-                activeTabId="2"
+            <FilterModal
+                visible={filterVisible}
+                onClose={() => setFilterVisible(false)}
+                selectedSubject={selectedSubject}
+                selectedUser={selectedUser}
+                onSelectSubject={setSelectedSubject}
+                onSelectUser={setSelectedUser}
+                subjects={subjects}
+                users={users}
             />
         </View>)
 }
@@ -136,5 +181,23 @@ const styles = StyleSheet.create({
         paddingBottom: 8,
         fontWeight: "600",
         color: colors.cinza[500],
+    },
+    filterButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 4,
+    },
+    filterBadge: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: colors.azul[300],
+        marginRight: 30,
+    },
+    emptyText: {
+        textAlign: "center",
+        color: colors.cinza[500],
+        marginTop: 40,
+        fontSize: 16,
     },
 })

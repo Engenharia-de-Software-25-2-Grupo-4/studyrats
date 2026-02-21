@@ -1,5 +1,5 @@
 import { colors } from "@/styles/colors";
-import { RootStackParamList } from "@/utils/routesStack";
+import { StackParams } from "@/utils/routesStack";
 import { MaterialIcons } from "@expo/vector-icons";
 import type { NavigationProp } from "@react-navigation/native";
 import { useNavigation } from "@react-navigation/native";
@@ -19,7 +19,7 @@ type Props = {
 };
 
 export function Menu({ tabs, activeTabId }: Props) {
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NavigationProp<StackParams>>();
 
   const handleLogout = () => {
     Alert.alert("Sair", "Deseja realmente sair?", [
@@ -58,7 +58,7 @@ export function Menu({ tabs, activeTabId }: Props) {
         break;
       default:
         if (tab.route) {
-          navigation.navigate(tab.route as keyof RootStackParamList);
+          navigation.navigate("Home")
         }
     }
   };

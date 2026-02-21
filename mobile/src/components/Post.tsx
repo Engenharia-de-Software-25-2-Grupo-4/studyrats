@@ -1,18 +1,19 @@
 import { colors } from "@/styles/colors";
 import React from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, ImageSourcePropType, StyleSheet, Text, View } from "react-native";
 
 type Props = {
     title: string
     user: string
     subject: string
+    image: ImageSourcePropType
 }
 
-export function Post({ title, user, subject }: Props) {
+export function Post({ title, user, subject, image }: Props) {
     return (
         <View style={styles.container}>
 
-            <Image source={require("@/assets/fazer-check-in.png")} style={styles.image}/> 
+            <Image source={image} style={styles.image}/> 
             
             <View style={styles.contentLeft}>
                 <Text style={styles.title}>
