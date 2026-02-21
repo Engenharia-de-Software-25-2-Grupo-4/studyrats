@@ -1,4 +1,4 @@
-import { createStackNavigator } from '@react-navigation/stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
 
 import Index from '@/app/index';
@@ -17,15 +17,20 @@ import Disciplinas from '@/app/disciplinas';
 import { StackParams } from '@/utils/routesStack';
 import RecuperarSenha from '@/app/auth/RecuperarSenha';
 
-const Stack = createStackNavigator<StackParams>();
+const Stack = createNativeStackNavigator<StackParams>();
 
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName="Registro"   // abre direto na tela de registro
-        screenOptions={{ headerShown: false }}
-      >
+    <Stack.Navigator
+      initialRouteName="Registro"
+      screenOptions={{
+        headerShown: false,
+        animation: "slide_from_right",
+        animationDuration: 250,
+        gestureEnabled: true,
+      }}
+    >
         <Stack.Screen name="Index" component={Index} />
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="RecuperarSenha" component={RecuperarSenha} />

@@ -85,6 +85,7 @@ export default function Login({ navigation }: Props) {
         throw new Error("ESTUDANTE_NAO_CADASTRADO");
       }
 
+      Keyboard.dismiss();
       navigation.replace("Home");
 
     } catch (e: any) {
