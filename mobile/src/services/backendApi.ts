@@ -39,3 +39,17 @@ export async function authFetch(path: string, options: RequestInit = {}) {
 
   return fetch(url, { ...options, headers });
 }
+
+export async function getEstudanteByFirebaseUid(firebaseUid: string) {
+  const res = await authFetch(`/estudantes/${firebaseUid}`, { method: "GET" });
+
+  if (res.status === 404) return null;
+
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    throw new Error(data?.message ?? `ERRO_AO_BUSCAR_ESTUDANTE (${res.status})`);
+  }
+
+  return data;
+}
