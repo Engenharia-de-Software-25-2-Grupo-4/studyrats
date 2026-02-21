@@ -24,4 +24,10 @@ public interface UploadDeImagensController {
 
     @GetMapping("/sessaoDeEstudo/{idSessaoDeEstudo}")
     ResponseEntity<?> retornarImagemSessaoDeEstudo(@PathVariable String idSessaoDeEstudo);
+
+    @PostMapping("/upload/grupo/{idGrupo}")
+    ResponseEntity<?> adicionarImagemGrupoDeEstudo(@PathVariable String idGrupo, @RequestParam("imagem") MultipartFile imagem, HttpServletRequest request) throws IOException;
+
+    @GetMapping("/grupo/{idGrupo}")
+    ResponseEntity<?> retornarImagemGrupoDeEstudo(@PathVariable String idGrupo, HttpServletRequest request);
 }

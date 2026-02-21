@@ -34,15 +34,7 @@ public class UploadDeImagensImpl implements UploadDeImagensController {
         return firebaseToken.getUid();
     }
 
-    @Override
-    public ResponseEntity<?> adicionarImagemEstudante(MultipartFile imagem, HttpServletRequest request) throws IOException {
-        String firebaseUID = getFirebaseUID(request);
-        return ResponseEntity.ok(uploadDeImagensService.salvarEstudante(imagem, firebaseUID));
-    }
-
-    @Override
-    public ResponseEntity<?> retornarImagemEstudante(String firebaseUID, HttpServletRequest request) {
-        Path caminhoDaImagem = Paths.get(caminhoBase, "estudantes", firebaseUID).toAbsolutePath().normalize();
+    private ResponseEntity<?> processarERetornarResource(Path caminhoDaImagem) {
         Resource resource;
         try {
             resource = new UrlResource(caminhoDaImagem.toUri());
@@ -59,6 +51,32 @@ public class UploadDeImagensImpl implements UploadDeImagensController {
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))
                 .body(resource);
+    }
+
+    @Override
+    public ResponseEntity<?> adicionarImagemEstudante(MultipartFile imagem, HttpServletRequest request) throws IOException {
+        String firebaseUID = getFirebaseUID(request);
+        return ResponseEntity.ok(uploadDeImagensService.salvarEstudante(imagem, firebaseUID));
+    }
+
+    @Override
+    public ResponseEntity<?> retornarImagemEstudante(String firebaseUID, HttpServletRequest request) {
+        Path caminhoDaImagem = Paths.get(caminhoBase, "estudantes", firebaseUID).toAbsolutePath().normalize();
+        return processarERetornarResource(caminhoDaImagem);
+    }
+
+    @Override
+    public ResponseEntity<?> adicionarImagemGrupoDeEstudo(String idGrupo, MultipartFile imagem, HttpServletRequest request) throws IOException {
+        String firebaseUID = getFirebaseUID(request);
+        String nomeArquivoSalvo = uploadDeImagensService.salvarGrupoDeEstudo(imagem, idGrupo, firebaseUID);
+
+        return ResponseEntity.ok(nomeArquivoSalvo);
+    }
+
+    @Override
+    public ResponseEntity<?> retornarImagemGrupoDeEstudo(String idGrupo, HttpServletRequest request) {
+        Path caminhoDaImagem = Paths.get(caminhoBase, "gruposDeEstudo", idGrupo).toAbsolutePath().normalize();
+        return processarERetornarResource(caminhoDaImagem);
     }
 
     @Override
@@ -70,22 +88,7 @@ public class UploadDeImagensImpl implements UploadDeImagensController {
     @Override
     public ResponseEntity<?> retornarImagemSessaoDeEstudo(String idSessaoDeEstudo) {
         Path caminhoDaImagem = Paths.get(caminhoBase, "sessoesDeEstudo", idSessaoDeEstudo).toAbsolutePath().normalize();
-        Resource resource;
-        try {
-            resource = new UrlResource(caminhoDaImagem.toUri());
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
-        }
-
-        String contentType;
-        try {
-            contentType = Files.probeContentType(caminhoDaImagem);
-        } catch (IOException e) {
-            contentType = "application/octet-stream";
-        }
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(contentType))
-                .body(resource);
+        return processarERetornarResource(caminhoDaImagem);
     }
 
 
