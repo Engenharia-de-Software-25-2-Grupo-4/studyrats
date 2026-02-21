@@ -45,6 +45,8 @@ public class EstudanteTests {
     private MockMvc driver;
     @Autowired
     private GrupoDeEstudoRepository grupoDeEstudoRepository;
+    @Autowired
+    private SessaoDeEstudoRepository sessaoDeEstudoRepository;
 
     private RequisicoesMock requisitorEstudante;
     private RequisicoesMock requisitorGrupo;
@@ -55,8 +57,6 @@ public class EstudanteTests {
 
     private List<GrupoDeEstudoResponseDTO> grupos;
     private List<SessaoDeEstudoResponseDTO> sessoes;
-    @Autowired
-    private SessaoDeEstudoRepository sessaoDeEstudoRepository;
 
     @BeforeEach
     void setup() {
