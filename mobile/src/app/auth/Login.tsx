@@ -156,11 +156,11 @@ export default function Login({ navigation }: Props) {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.buttonCriarConta} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.buttonCriarConta} activeOpacity={0.8} onPress={() => navigation.navigate("Registro")}>
           <Text style={styles.buttonCriarContaText}>CRIAR CONTA</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity activeOpacity={0.6}>
+        <TouchableOpacity activeOpacity={0.6} onPress={() => navigation.navigate("RecuperarSenha")}>
           <Text style={styles.forgotPassword}>Esqueci minha senha</Text>
         </TouchableOpacity>
       </Animated.View>
