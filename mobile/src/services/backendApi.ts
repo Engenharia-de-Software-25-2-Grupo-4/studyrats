@@ -1,6 +1,8 @@
 // src/services/backendApi.ts
 const API_BASE_URL = "http://191.253.18.8:6431";
 
+import { getValidIdToken } from "./getValidIdToken";
+
 export type CreateEstudanteBody = {
   nome: string;
   email: string;
@@ -24,4 +26,16 @@ export async function createEstudante(body: CreateEstudanteBody, idToken: string
   }
 
   return data;
+}
+
+async function authFetch(path: string, options: RequestInit = {}) {
+  const token = await getValidIdToken();
+  if (!token) throw new Error("USUARIO_NAO_LOGADO");
+
+  const headers = {
+    ...(options.headers ?? {}),
+    Authorization: `Bearer ${token}`,
+  };
+
+  return fetch(`${API_BASE_URL}${path}`, { ...options, headers });
 }
