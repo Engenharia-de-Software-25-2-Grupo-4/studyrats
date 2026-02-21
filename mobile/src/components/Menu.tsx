@@ -4,6 +4,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import type { NavigationProp } from "@react-navigation/native";
 import { useNavigation } from "@react-navigation/native";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { clearSession } from "../services/authStorage";
 
 type TabItem = {
   id: string;
@@ -21,23 +22,24 @@ export function Menu({ tabs, activeTabId }: Props) {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
 
   const handleLogout = () => {
-    Alert.alert(
-      "Sair",
-      "Deseja realmente sair?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        { 
-          text: "Sair", 
-          onPress: () => {
-            console.log("Fazendo logout...");
+    Alert.alert("Sair", "Deseja realmente sair?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Sair",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await clearSession(); 
             navigation.reset({
               index: 0,
-              routes: [{ name: "StudyGroupScreen" }],
+              routes: [{ name: "Login" }], 
             });
+          } catch (e) {
+            Alert.alert("Erro", "Não foi possível sair. Tente novamente.");
           }
-        }
-      ]
-    );
+        },
+      },
+    ]);
   };
 
   const handleTabPress = (tab: TabItem) => {
