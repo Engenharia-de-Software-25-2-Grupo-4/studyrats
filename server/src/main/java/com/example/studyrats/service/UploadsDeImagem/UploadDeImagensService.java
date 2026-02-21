@@ -1,5 +1,9 @@
 package com.example.studyrats.service.UploadsDeImagem;
 
+import com.example.studyrats.exceptions.GrupoNaoEncontrado;
+import com.example.studyrats.exceptions.UsuarioNaoAdmin;
+import com.example.studyrats.model.GrupoDeEstudo;
+import com.example.studyrats.repository.GrupoDeEstudoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.example.studyrats.repository.EstudanteRepository;
 import com.example.studyrats.exceptions.ArquivoNaoEhImagem;
@@ -13,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.UUID;
 
 @Service
 public class UploadDeImagensService {
@@ -22,6 +27,9 @@ public class UploadDeImagensService {
 
     @Autowired
     private EstudanteRepository estudanteRepository;
+
+    @Autowired
+    private GrupoDeEstudoRepository grupoRepository;
 
     private record PathRecord(Path caminhoDoUpload, String nomeDoArquivo) {}
     private PathRecord gerarPathAPartirDaImagem(MultipartFile imagem, String idDoArquivo) throws IOException {
@@ -72,6 +80,26 @@ public class UploadDeImagensService {
         Path caminhoDoUpload = extenderPathEstudante(caminhoDoUploadENome.caminhoDoUpload);
         caminhoDoUpload = caminhoDoUpload.resolve(nomeDoArquivo);
         Files.copy(imagem.getInputStream(), caminhoDoUpload, StandardCopyOption.REPLACE_EXISTING);
+        return nomeDoArquivo;
+    }
+
+
+    public String salvarGrupoDeEstudo(MultipartFile imagem, String idGrupo, String firebaseUID) throws IOException {
+        GrupoDeEstudo grupo = grupoRepository.findById(UUID.fromString(idGrupo))
+                .orElseThrow(GrupoNaoEncontrado::new);
+
+        if (!grupo.getAdmin().getFirebaseUid().equals(firebaseUID)) {
+            throw new UsuarioNaoAdmin();
+        }
+
+        PathRecord caminhoDoUploadENome = gerarPathAPartirDaImagem(imagem, idGrupo);
+        String nomeDoArquivo = caminhoDoUploadENome.nomeDoArquivo();
+
+        Path caminhoDoUpload = extentenderPathGrupoDeEstudo(caminhoDoUploadENome.caminhoDoUpload());
+        caminhoDoUpload = caminhoDoUpload.resolve(nomeDoArquivo);
+
+        Files.copy(imagem.getInputStream(), caminhoDoUpload, StandardCopyOption.REPLACE_EXISTING);
+
         return nomeDoArquivo;
     }
 }

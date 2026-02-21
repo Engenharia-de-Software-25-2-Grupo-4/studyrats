@@ -58,4 +58,33 @@ public class UploadDeImagensImpl implements UploadDeImagensController {
                 .contentType(MediaType.parseMediaType(contentType))
                 .body(resource);
     }
+
+    @Override
+    public ResponseEntity<?> adicionarImagemGrupoDeEstudo(String idGrupo, MultipartFile imagem, HttpServletRequest request) throws IOException {
+        String firebaseUID = getFirebaseUID(request);
+        String nomeArquivoSalvo = uploadDeImagensService.salvarGrupoDeEstudo(imagem, idGrupo, firebaseUID);
+
+        return ResponseEntity.ok(nomeArquivoSalvo);
+    }
+
+    @Override
+    public ResponseEntity<?> retornarImagemGrupoDeEstudo(String idGrupo, HttpServletRequest request) {
+        Path caminhoDaImagem = Paths.get(caminhoBase, "gruposDeEstudo", idGrupo).toAbsolutePath().normalize();
+        Resource resource;
+        try {
+            resource = new UrlResource(caminhoDaImagem.toUri());
+        } catch (MalformedURLException e) {
+            throw new RuntimeException("Erro ao ler o arquivo", e);
+        }
+
+        String contentType;
+        try {
+            contentType = Files.probeContentType(caminhoDaImagem);
+        } catch (IOException e) {
+            contentType = "application/octet-stream";
+        }
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .body(resource);
+    }
 }

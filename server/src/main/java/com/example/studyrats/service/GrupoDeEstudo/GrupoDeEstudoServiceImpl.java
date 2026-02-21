@@ -98,9 +98,9 @@ public class GrupoDeEstudoServiceImpl implements GrupoDeEstudoService {
         GrupoDeEstudo grupo = grupoRepo.findById(id).orElseThrow(GrupoNaoEncontrado::new);
         
         if (!isAdmin(grupo, uid)) {
-            throw new GrupoNaoEncontrado();
+            throw new UsuarioNaoAdmin();
         }
-        
+
         grupoRepo.delete(grupo);
     }
 

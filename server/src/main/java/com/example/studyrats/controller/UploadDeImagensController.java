@@ -17,4 +17,10 @@ public interface UploadDeImagensController {
 
     @GetMapping("/estudante/{firebaseUID}")
     ResponseEntity<?> retornarImagemEstudante(@PathVariable String firebaseUID, HttpServletRequest request);
+
+    @PostMapping("/upload/grupo/{idGrupo}")
+    ResponseEntity<?> adicionarImagemGrupoDeEstudo(@PathVariable String idGrupo, @RequestParam("file") MultipartFile imagem, HttpServletRequest request) throws IOException;
+
+    @GetMapping("/grupo/{idGrupo}")
+    ResponseEntity<?> retornarImagemGrupoDeEstudo(@PathVariable String idGrupo, HttpServletRequest request);
 }
