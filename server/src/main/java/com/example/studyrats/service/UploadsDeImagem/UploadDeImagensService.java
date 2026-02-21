@@ -17,13 +17,14 @@ import java.nio.file.Path;
 @Service
 public class UploadDeImagensService {
 
-    @Value("${app.upload.dir")
+    @Value("${app.upload.dir}")
     private String caminhoBase;
 
     @Autowired
     private EstudanteRepository estudanteRepository;
 
-    public String salvarEstudante(MultipartFile imagem, String firebaseUID) throws IOException {
+    private record PathRecord(Path caminhoDoUpload, String nomeDoArquivo) {}
+    private PathRecord gerarPathAPartirDaImagem(MultipartFile imagem, String idDoArquivo) throws IOException {
         if (imagem.isEmpty()) {
             throw new ImagemVazia();
         }
@@ -34,18 +35,41 @@ public class UploadDeImagensService {
 
         String nomeOriginal = imagem.getOriginalFilename();
         String extensao = nomeOriginal.substring(nomeOriginal.lastIndexOf("."));
-        String nomeDoArquivo = firebaseUID+extensao;
+        String nomeDoArquivo = idDoArquivo+extensao;
         Path caminhoDoUpload = Paths.get(caminhoBase).toAbsolutePath().normalize();
 
         if (!Files.exists(caminhoDoUpload)) {
             Files.createDirectories(caminhoDoUpload);
         }
-        caminhoDoUpload = caminhoDoUpload.resolve("estudantes");
+        return new PathRecord(caminhoDoUpload, nomeDoArquivo);
+    }
+
+    private Path extenderPathEstudante(Path caminhoDoUpload) throws IOException {
+        return extenderPath(caminhoDoUpload, "estudantes");
+    }
+
+    private Path extentenderPathGrupoDeEstudo(Path caminhoDoUpload) throws IOException {
+        return extenderPath(caminhoDoUpload, "gruposDeEstudo");
+    }
+
+    private Path extenderPathSessaoDeEstudo(Path caminhoDoUpload) throws IOException {
+        return extenderPath(caminhoDoUpload, "sessoesDeEstudo");
+    }
+
+    private Path extenderPath(Path caminhoDoUpload, String extensao) throws IOException {
+        caminhoDoUpload = caminhoDoUpload.resolve(extensao);
 
         if (!Files.exists(caminhoDoUpload)) {
             Files.createDirectories(caminhoDoUpload);
         }
 
+        return caminhoDoUpload;
+    }
+
+    public String salvarEstudante(MultipartFile imagem, String firebaseUID) throws IOException {
+        PathRecord caminhoDoUploadENome = gerarPathAPartirDaImagem(imagem, firebaseUID);
+        String nomeDoArquivo = caminhoDoUploadENome.nomeDoArquivo;
+        Path caminhoDoUpload = extenderPathEstudante(caminhoDoUploadENome.caminhoDoUpload);
         caminhoDoUpload = caminhoDoUpload.resolve(nomeDoArquivo);
         Files.copy(imagem.getInputStream(), caminhoDoUpload, StandardCopyOption.REPLACE_EXISTING);
         return nomeDoArquivo;
