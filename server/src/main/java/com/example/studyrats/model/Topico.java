@@ -1,7 +1,6 @@
 package com.example.studyrats.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,7 +10,6 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@AllArgsConstructor
 public class Topico {
 
     @Id
@@ -19,5 +17,9 @@ public class Topico {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String nome;
+    private String topico;
+
+    public Topico(String topico) {
+        this.topico = topico;
+    }
 }

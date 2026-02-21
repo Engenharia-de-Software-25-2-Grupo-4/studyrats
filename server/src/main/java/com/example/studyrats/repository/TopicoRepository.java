@@ -7,5 +7,4 @@ public interface TopicoRepository extends JpaRepository<Topico, Long> {
 
     Optional<Topico> findByNome(String nome);
 
-    boolean existsByNome(String nome);
 }

@@ -6,6 +6,8 @@ import com.example.studyrats.model.MembroGrupo;
 import org.springframework.stereotype.Service;
 
 import com.example.studyrats.dto.SessaoDeEstudo.*;
+import com.example.studyrats.model.Disciplina;
+import com.example.studyrats.model.Topico;
 import com.example.studyrats.model.Estudante;
 import com.example.studyrats.model.GrupoDeEstudo;
 import com.example.studyrats.model.SessaoDeEstudo;
@@ -13,8 +15,10 @@ import com.example.studyrats.repository.EstudanteRepository;
 import com.example.studyrats.repository.GrupoDeEstudoRepository;
 import com.example.studyrats.repository.MembroGrupoRepository;
 import com.example.studyrats.repository.ComentarioSessaoRepository;
+import com.example.studyrats.repository.DisciplinaRepository;
 import com.example.studyrats.repository.ReacaoSessaoRepository;
 import com.example.studyrats.repository.SessaoDeEstudoRepository;
+import com.example.studyrats.repository.TopicoRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -40,6 +44,10 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
     @Autowired 
     public GrupoDeEstudoRepository grupoDeEstudoRepository;
     @Autowired
+    public DisciplinaRepository disciplinaRepository;
+    @Autowired
+    public TopicoRepository topicoRepository;
+    @Autowired
     public MembroGrupoRepository membroGrupoRepository;
     @Autowired
     public ComentarioSessaoRepository comentarioSessaoRepository;
@@ -52,14 +60,20 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
     public SessaoDeEstudoResponseDTO criarSessaoDeEstudos(UUID idGrupo, String idUsuario, SessaoDeEstudoPostPutRequestDTO sessaoDeEstudoPostPutRequestDTO) {
         Estudante student = studentRepository.findById(idUsuario).orElseThrow(EstudanteNaoEncontrado::new);
         GrupoDeEstudo grupo = grupoDeEstudoRepository.findById(idGrupo).orElseThrow(GrupoNaoEncontrado::new);
-
         MembroGrupo membro = membroGrupoRepository.findByGrupo_IdAndEstudante_FirebaseUid(idGrupo, idUsuario)
                 .orElseThrow(UsuarioNaoFazParteDoGrupoException::new);
+        String nomeDisciplina = sessaoDeEstudoPostPutRequestDTO.getDisciplina().toUpperCase();
+        String nomeTopico = sessaoDeEstudoPostPutRequestDTO.getTopico().toUpperCase();
+
+        disciplinaRepository.findByNome(nomeDisciplina).orElseGet(() -> disciplinaRepository.save(new Disciplina(nomeDisciplina.toUpperCase())));
+
+        topicoRepository.findByNome(nomeTopico).orElseGet(() -> topicoRepository.save(new Topico(nomeTopico.toUpperCase())));
 
         SessaoDeEstudo sessaoDeEstudo = modelMapper.map(sessaoDeEstudoPostPutRequestDTO, SessaoDeEstudo.class);
         sessaoDeEstudo.setCriador(student);
         sessaoDeEstudo.setGrupoDeEstudo(grupo);
-
+        sessaoDeEstudo.setDisciplina(nomeDisciplina);
+        sessaoDeEstudo.setTopico(nomeTopico);
         sessaoDeEstudo = sessaoDeEstudoRepository.save(sessaoDeEstudo);
 
         membro.setQuantidadeCheckins(membro.getQuantidadeCheckins() + 1);
@@ -127,7 +141,7 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
     @Override
     public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosPorDisciplinaEmGrupo(String disciplina, UUID idGrupo, String idUsuario) {
         validaMembro(idGrupo, idUsuario);
-        List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByGrupoDeEstudo_IdAndDisciplina(idGrupo, disciplina)
+        List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByGrupoDeEstudo_IdAndDisciplina(idGrupo, disciplina.toUpperCase())
             .stream()
             .map(session -> toResponseDTO(session, idUsuario))
             .toList();
@@ -171,7 +185,7 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
 ////// OS DOIS MÉTODOS A SEGUIR SÓ FAZEM SENTIDO SE HOUVER, NO PRÓPRIO PERFIL DO USUARIO, FILTRAGEM DAS PRÓPRIAS SESSÕES. O ACESSO A SESSÃO É FEITO ATRAVÉS DO GRUPO!
     @Override
     public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosDeUsuarioPorDisciplina(String idUsuario, String disciplina) { 
-        List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByCriador_FirebaseUidAndDisciplina(idUsuario, disciplina)
+        List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByCriador_FirebaseUidAndDisciplina(idUsuario, disciplina.toUpperCase())
             .stream()
             .map(session -> toResponseDTO(session, idUsuario))
             .toList();

@@ -7,7 +7,5 @@ import java.util.Optional;
 public interface DisciplinaRepository extends JpaRepository<Disciplina, Long> {
 
     Optional<Disciplina> findByNome(String nome);
-
-    boolean existsByNome(String nome);
 }
 
