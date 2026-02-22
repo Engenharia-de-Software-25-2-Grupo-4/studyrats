@@ -20,6 +20,9 @@ import { getEstudanteAtual } from "@/services/estudante"
 import { GrupoDetails, listGrupos } from "@/services/grupo"
 import { authFetch } from "@/services/backendApi"
 
+import { ImageSourcePropType } from "react-native"
+import { fetchProfilePhoto } from "../server/estudanteInfo/fetchProfilePhoto" 
+
 type HomeNavProp = StackNavigationProp<StackParams, "Home">
 
 export default function Home() {
@@ -34,6 +37,10 @@ export default function Home() {
   const [imagensGrupos, setImagensGrupos] = useState<Record<string, string>>({})
   const imagensGruposRef = useRef<Record<string, string>>({})
   const pendentesRef = useRef<Set<string>>(new Set())
+
+  const [estudante, setEstudante] = useState<any>(null) // se tiver tipo Estudante, melhor
+  const [fotoPerfil, setFotoPerfil] = useState<ImageSourcePropType>(require("@/assets/default_profile.jpg"))
+  const [loadingFoto, setLoadingFoto] = useState(true)
 
   useEffect(() => {
     imagensGruposRef.current = imagensGrupos
@@ -64,14 +71,16 @@ export default function Home() {
 
   const loadUserName = async () => {
     try {
-      const estudante = await getEstudanteAtual()
+      const estudanteAtual = await getEstudanteAtual()
 
-      if (!estudante) {
+      if (!estudanteAtual) {
         goToLogin()
         return
       }
 
-      const nome = estudante.nome?.trim()
+      setEstudante(estudanteAtual)
+
+      const nome = estudanteAtual.nome?.trim()
       setUserName(nome && nome.length > 0 ? nome : "Usuário")
     } catch (error: any) {
       if (String(error?.message).includes("USUARIO_NAO_LOGADO")) {
@@ -184,13 +193,43 @@ export default function Home() {
     loadGroups()
   }, [loadGroups])
 
+  useEffect(() => {
+    let alive = true
+
+    async function loadPhoto() {
+      try {
+        setLoadingFoto(true)
+
+        const uid = estudante?.firebaseUid ?? estudante?.uid ?? estudante?.id_firebase ?? ""
+        const img = await fetchProfilePhoto(uid)
+
+        if (alive) setFotoPerfil(img)
+      } finally {
+        if (alive) setLoadingFoto(false)
+      }
+    }
+
+    if (estudante) loadPhoto()
+
+    return () => {
+      alive = false
+    }
+  }, [estudante])
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* HEADER */}
         <View style={styles.header}>
           <View style={styles.userInfo}>
-            <Image source={require("@/assets/profile.jpg")} style={styles.avatar} />
+            <View style={styles.avatarWrapper}>
+              <Image source={fotoPerfil} style={styles.avatar} />
+              {loadingFoto && (
+                <View style={styles.avatarLoadingOverlay}>
+                  <ActivityIndicator size="small" color="#FFF" />
+                </View>
+              )}
+            </View>
             <View>
               <Text style={styles.greeting}>{greeting}</Text>
               <Text style={styles.name}>{userName}</Text>
@@ -455,5 +494,17 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 15,
     letterSpacing: 0.5,
+  },
+  avatarWrapper: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    overflow: "hidden",
+  },
+  avatarLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.15)",
   },
 })

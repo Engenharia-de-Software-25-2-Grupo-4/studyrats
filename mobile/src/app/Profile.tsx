@@ -18,6 +18,8 @@ import { StackParams } from "@/utils/routesStack"
 import { categories } from "@/utils/categories"
 import { GrupoDetails, listGrupos } from "@/services/grupo"
 import { getEstudanteAtual, Estudante } from "@/services/estudante"
+import { ImageSourcePropType } from "react-native"
+import { fetchProfilePhoto } from "../server/estudanteInfo/fetchProfilePhoto" 
 
 
 import { authFetch } from "@/services/backendApi" 
@@ -37,9 +39,27 @@ export default function Profile() {
   const imagensGruposRef = useRef<Record<string, string>>({})
   const pendentesRef = useRef<Set<string>>(new Set())
 
+  const [fotoPerfil, setFotoPerfil] = useState<ImageSourcePropType>(require("@/assets/default_profile.jpg"))
+  const [loadingFoto, setLoadingFoto] = useState(true)
+
   useEffect(() => {
     imagensGruposRef.current = imagensGrupos
   }, [imagensGrupos])
+
+  useEffect(() => {
+    async function loadPhoto() {
+        try {
+        setLoadingFoto(true)
+        const uid = estudante?.firebaseUid // <-- ajuste o nome do campo aqui
+        const img = await fetchProfilePhoto(uid || "")
+        setFotoPerfil(img)
+        } finally {
+        setLoadingFoto(false)
+        }
+    }
+
+    if (estudante) loadPhoto()
+    }, [estudante])
 
   useEffect(() => {
     async function fetchEstudante() {
@@ -136,7 +156,12 @@ export default function Profile() {
         <View style={styles.header}>
           <View style={styles.profileHeader}>
             <View style={styles.avatar}>
-              <Image source={require("@/assets/profile.jpg")} style={styles.avatarImage} />
+              <Image source={fotoPerfil} style={styles.avatarImage} />
+                {loadingFoto && (
+                <View style={styles.avatarLoadingOverlay}>
+                    <ActivityIndicator size="small" color="#FFF" />
+                </View>
+                )}
             </View>
 
             <View style={styles.profileInfo}>
@@ -156,9 +181,13 @@ export default function Profile() {
 
         {/* ACTION BUTTON */}
         <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.editButton} activeOpacity={0.85}>
+            <TouchableOpacity
+            style={styles.editButton}
+            activeOpacity={0.85}
+            onPress={() => navigation.navigate("EditAcc" as any)}
+            >
             <Text style={styles.editButtonText}>CONFIGURE SEU PERFIL</Text>
-          </TouchableOpacity>
+            </TouchableOpacity>
         </View>
 
         {/* TABS */}
@@ -478,4 +507,11 @@ const styles = StyleSheet.create({
     color: "#FFF",
     textAlign: "center",
   },
+
+  avatarLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.15)",
+    },
 })

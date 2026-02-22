@@ -86,8 +86,8 @@ export default function Login({ navigation }: Props) {
       const user = cred.user;
 
       // ✅ token atual (e renovável) do Firebase SDK
-      const idToken = await user.getIdToken(true);
-
+      const idToken = await user.getIdToken();
+      
       // (opcional) se você ainda usa authStorage em outras partes, pode salvar um cache:
       await saveSession({
         idToken,
@@ -105,7 +105,7 @@ export default function Login({ navigation }: Props) {
       }
 
       Keyboard.dismiss();
-      navigation.replace("EditAcc");
+      navigation.replace("Home");
     } catch (e: any) {
       if (String(e?.message) === "ESTUDANTE_NAO_CADASTRADO") {
         setErro("Sua conta foi autenticada, mas não encontramos seu cadastro no sistema.");
