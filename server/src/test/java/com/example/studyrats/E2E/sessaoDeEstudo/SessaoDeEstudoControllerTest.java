@@ -656,14 +656,14 @@ public class SessaoDeEstudoControllerTest {
             );
 
             assertEquals(5, resultado.size());
-            assertTrue(resultado.stream().allMatch(s -> s.getDisciplina().equals("Java")));
+            assertTrue(resultado.stream().allMatch(s -> s.getDisciplina().equals("Java".toUpperCase())));
 
             resultado = requisitor.performGetOK(
                     new TypeReference<List<SessaoDeEstudoResponseDTO>>() {}, "bySubject/Python/grupo/"+grupo1Id.toString(), tokenEstudante2
             );
 
             assertEquals(1, resultado.size());
-            assertTrue(resultado.stream().allMatch(s -> s.getDisciplina().equals("Python")));
+            assertTrue(resultado.stream().allMatch(s -> s.getDisciplina().equals("Python".toUpperCase())));
 
             setarToken(tokenEstudante1);
 
@@ -676,7 +676,7 @@ public class SessaoDeEstudoControllerTest {
             );
 
             assertEquals(7, resultado.size());
-            assertTrue(resultado.stream().allMatch(s -> s.getDisciplina().equals("Java")));
+            assertTrue(resultado.stream().allMatch(s -> s.getDisciplina().equals("Java".toUpperCase())));
         }
 
         @Test
@@ -695,7 +695,7 @@ public class SessaoDeEstudoControllerTest {
             );
 
             assertEquals(2, resultado.size());
-            assertTrue(resultado.stream().allMatch(s -> s.getTopico().equals("Brasil")));
+            assertTrue(resultado.stream().allMatch(s -> s.getTopico().equals("Brasil".toUpperCase())));
         }
 
         @Test
