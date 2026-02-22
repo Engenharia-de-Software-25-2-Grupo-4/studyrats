@@ -13,7 +13,7 @@ import CriarGrupo from '@/app/grupo/criar_grupo';
 import CriarSessao from '@/app/sessaoEstudo/sessao_estudo';
 import Publicacao from '@/app/sessaoEstudo/publicacao';
 import Disciplinas from '@/app/disciplinas';
-import EditAcc from '@/app/EditAcc';
+import EditAcc from '@/app/auth/EditAcc';
 
 import { StackParams } from '@/utils/routesStack';
 import RecuperarSenha from '@/app/auth/RecuperarSenha';
