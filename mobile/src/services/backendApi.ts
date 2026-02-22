@@ -38,25 +38,21 @@ export async function authFetch(path: string, options: RequestInit = {}) {
   const isFormData =
     typeof FormData !== "undefined" && options.body instanceof FormData;
 
-  // ✅ normaliza headers em objeto simples
+
   const base: Record<string, string> = {};
 
-  // pega headers existentes
   const inputHeaders = options.headers ?? {};
   const h = new Headers(inputHeaders as any);
   h.forEach((v, k) => (base[k] = v));
 
-  // injeta auth
+
   base["authorization"] = `Bearer ${token}`;
 
-  // ✅ se não for FormData, garantimos content-type (principalmente em GET)
+
   if (!isFormData) {
-    // força uma escolha válida (pra não ficar null)
     base["content-type"] = base["content-type"] || "application/octet-stream";
-    // também garante accept
     base["accept"] = base["accept"] || "*/*";
   } else {
-    // multipart: não setar content-type
     delete base["content-type"];
   }
 

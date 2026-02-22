@@ -21,7 +21,6 @@ export const colors = {
   roxo: "#8E44AD",
   rosa: "#FF54A7",
   turquesa: "#00FFEF",
-  amarelo: "#F5DA71",
 
   branco: "#FFFFFF",
   preto: "#000000",
