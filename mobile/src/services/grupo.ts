@@ -33,6 +33,14 @@ export type GrupoDetails = {
   regras: string;
   data_inicio: string;
   data_fim: string;
+  quantidadeMembros?: number;
+};
+
+export type GrupoMembro = {
+  nomeEstudante: string;
+  firebaseUid: string;
+  role: string;
+  quantidadeCheckins: number;
 };
 
 
@@ -117,4 +125,48 @@ export async function uploadImagem(idGrupo: string, uri: string): Promise<void> 
     const data = await res.json().catch(() => ({}));
     throw new Error(data?.message ?? "Erro ao fazer upload");
   }
+}
+
+export async function listMembrosDoGrupo(idGrupo: string): Promise<GrupoMembro[]> {
+  const res = await authFetch(`/grupos/${idGrupo}/membros`, { method: "GET" });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data?.message ?? "Erro ao listar membros do grupo");
+  }
+
+  return res.json() as Promise<GrupoMembro[]>;
+}
+
+const membrosCountCache = new Map<string, number>();
+
+export async function getQuantidadeMembrosCached(idGrupo: string): Promise<number> {
+  const cached = membrosCountCache.get(idGrupo);
+  if (cached !== undefined) return cached;
+
+  const membros = await listMembrosDoGrupo(idGrupo);
+  const qtd = membros.length;
+
+  membrosCountCache.set(idGrupo, qtd);
+  return qtd;
+}
+
+
+export async function promisePool<T, R>(
+  items: T[],
+  worker: (item: T) => Promise<R>,
+  concurrency = 5
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let index = 0;
+
+  const runners = new Array(concurrency).fill(null).map(async () => {
+    while (index < items.length) {
+      const currentIndex = index++;
+      results[currentIndex] = await worker(items[currentIndex]);
+    }
+  });
+
+  await Promise.all(runners);
+  return results;
 }

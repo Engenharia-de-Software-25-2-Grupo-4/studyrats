@@ -17,13 +17,17 @@ import { StackParams } from "@/utils/routesStack"
 import { categories } from "@/utils/categories"
 
 import { getEstudanteAtual } from "@/services/estudante"
-import { GrupoDetails, listGrupos } from "@/services/grupo"
+import { GrupoDetails, listGrupos, getQuantidadeMembrosCached, promisePool } from "@/services/grupo"
+import { DisciplinaDTO, listMinhasDisciplinas } from "@/services/disciplinas"
 import { authFetch } from "@/services/backendApi"
 
 import { ImageSourcePropType } from "react-native"
-import { fetchProfilePhoto } from "../server/estudanteInfo/fetchProfilePhoto" 
+import { fetchProfilePhoto } from "../server/estudanteInfo/fetchProfilePhoto"
 
 type HomeNavProp = StackNavigationProp<StackParams, "Home">
+
+
+type GrupoComQtd = GrupoDetails & { quantidadeMembros: number }
 
 export default function Home() {
   const navigation = useNavigation<HomeNavProp>()
@@ -31,15 +35,29 @@ export default function Home() {
   const [greeting, setGreeting] = useState("")
   const [userName, setUserName] = useState("Carregando...")
 
-  const [grupos, setGrupos] = useState<GrupoDetails[]>([])
+  const [grupos, setGrupos] = useState<GrupoComQtd[]>([])
   const [loadingGrupos, setLoadingGrupos] = useState(true)
 
   const [imagensGrupos, setImagensGrupos] = useState<Record<string, string>>({})
   const imagensGruposRef = useRef<Record<string, string>>({})
   const pendentesRef = useRef<Set<string>>(new Set())
 
-  const [estudante, setEstudante] = useState<any>(null) // se tiver tipo Estudante, melhor
-  const [fotoPerfil, setFotoPerfil] = useState<ImageSourcePropType>(require("@/assets/default_profile.jpg"))
+  const [disciplinas, setDisciplinas] = useState<DisciplinaDTO[]>([])
+  const [loadingDisciplinas, setLoadingDisciplinas] = useState(true)
+
+  const disciplinaColors = [
+    colors.verde,
+    colors.laranja,
+    colors.vermelho,
+    colors.roxo,
+    colors.rosa,
+    colors.turquesa,
+  ]
+
+  const [estudante, setEstudante] = useState<any>(null)
+  const [fotoPerfil, setFotoPerfil] = useState<ImageSourcePropType>(
+    require("@/assets/default_profile.jpg")
+  )
   const [loadingFoto, setLoadingFoto] = useState(true)
 
   useEffect(() => {
@@ -126,15 +144,45 @@ export default function Home() {
     }
   }, [])
 
+  const loadDisciplinas = useCallback(async () => {
+    try {
+      setLoadingDisciplinas(true)
+      const data = await listMinhasDisciplinas()
+      setDisciplinas(data.slice(0, 6))
+    } catch (error: any) {
+      console.log("Erro ao buscar disciplinas:", error)
+
+      if (String(error?.message).includes("USUARIO_NAO_LOGADO")) {
+        goToLogin()
+        return
+      }
+
+      setDisciplinas([])
+    } finally {
+      setLoadingDisciplinas(false)
+    }
+  }, [])
   const loadGroups = useCallback(async () => {
     try {
       setLoadingGrupos(true)
       const data = await listGrupos()
-      setGrupos(data)
 
-      data.forEach((g) => {
-        buscarImagemDoGrupo(g.id_grupo)
-      })
+      data.forEach((g) => buscarImagemDoGrupo(g.id_grupo))
+
+      const gruposComQtd = await promisePool(
+        data,
+        async (g) => {
+          try {
+            const qtd = await getQuantidadeMembrosCached(g.id_grupo)
+            return { ...g, quantidadeMembros: qtd }
+          } catch {
+            return { ...g, quantidadeMembros: 0 }
+          }
+        },
+        5
+      )
+
+      setGrupos(gruposComQtd)
     } catch (error) {
       Alert.alert("Erro", "Não foi possível carregar os grupos")
       console.error(error)
@@ -191,7 +239,8 @@ export default function Home() {
   useEffect(() => {
     loadUserName()
     loadGroups()
-  }, [loadGroups])
+    loadDisciplinas()
+  }, [loadGroups, loadDisciplinas])
 
   useEffect(() => {
     let alive = true
@@ -215,6 +264,11 @@ export default function Home() {
       alive = false
     }
   }, [estudante])
+
+
+  const formatParticipantes = (qtd: number) => `${qtd} ${qtd === 1 ? "participante" : "participantes"}`
+
+
 
   return (
     <View style={styles.container}>
@@ -267,7 +321,8 @@ export default function Home() {
               <Text style={styles.groupSub}>
                 {formatPeriodo(grupoDestaque.data_inicio, grupoDestaque.data_fim) || "Período não informado"}
                 {"\n"}
-                0 participantes
+                {}
+                {formatParticipantes(grupoDestaque.quantidadeMembros ?? 0)}
               </Text>
 
               <TouchableOpacity
@@ -324,13 +379,23 @@ export default function Home() {
             <Text style={styles.link}>Ver mais</Text>
           </TouchableOpacity>
         </View>
-
-        <View style={styles.chipsRow}>
-          <Chip label="Engenharia de Software" color={colors.verde} />
-          <Chip label="BD" color={colors.laranja} />
-          <Chip label="PLP" color={colors.azul[300]} />
-          <Chip label="SO" color={colors.roxo} />
-        </View>
+        {loadingDisciplinas ? (
+          <ActivityIndicator size="small" color={colors.azul[300]} style={{ marginBottom: 16 }} />
+        ) : disciplinas.length === 0 ? (
+          <Text style={{ color: colors.preto, marginBottom: 16 }}>
+            Você ainda não tem disciplinas cadastradas
+          </Text>
+        ) : (
+          <View style={styles.chipsRow}>
+            {disciplinas.map((d, index) => (
+              <Chip
+                key={d.id_disciplina}
+                label={d.nome}
+                color={disciplinaColors[index % disciplinaColors.length]}
+              />
+            ))}
+          </View>
+        )}
 
         <TouchableOpacity style={styles.bigButton} onPress={() => navigation.navigate("Profile")}>
           <Text style={styles.bigButtonText}>VER TODOS OS DESAFIOS</Text>
@@ -345,7 +410,9 @@ export default function Home() {
 function Chip({ label, color }: { label: string; color: string }) {
   return (
     <View style={[styles.chip, { backgroundColor: color + "22" }]}>
-      <Text style={[styles.chipText, { color }]}>{label}</Text>
+      <Text style={[styles.chipText, { color }]} numberOfLines={1}>
+        {label}
+      </Text>
     </View>
   )
 }
