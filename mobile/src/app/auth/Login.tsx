@@ -1,61 +1,76 @@
 import {
-    View,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    Image,
-    Keyboard,
-    Animated,
-    StyleSheet
-  } from "react-native";
-  import { SafeAreaView } from "react-native-safe-area-context";
-  import { useEffect, useRef, useState } from "react";
-  import { Ionicons } from "@expo/vector-icons";
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  Keyboard,
+  Animated,
+  StyleSheet,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useEffect, useRef, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
 
-  import { firebaseSignIn } from "../../services/firebaseAuth";
-  import { saveSession } from "../../services/authStorage";
-  import { getEstudanteByFirebaseUid } from "../../services/backendApi";
-  
-  import type { StackScreenProps } from "@react-navigation/stack";
-  import type { StackParams } from "@/utils/routesStack"; 
+import type { StackScreenProps } from "@react-navigation/stack";
+import type { StackParams } from "@/utils/routesStack";
+
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/firebaseConfig";
+
+import { getEstudanteByFirebaseUid } from "../../services/backendApi";
+import { saveSession } from "../../services/authStorage"; // opcional
 
 type Props = StackScreenProps<StackParams, "Login">;
 
-export default function Login({ navigation }: Props) {
-    const [email, setEmail] = useState("");
-    const [senha, setSenha] = useState("");
-    const [mostrarSenha, setMostrarSenha] = useState(false);
+function mapAuthError(e: any) {
+  const code = String(e?.code ?? "");
 
-    const [loading, setLoading] = useState(false);
-    const [erro, setErro] = useState<string | null>(null);
-  
-    const translateY = useRef(new Animated.Value(0)).current;
-  
-    useEffect(() => {
-      const showSub = Keyboard.addListener("keyboardDidShow", (event) => {
-        Animated.timing(translateY, {
-          toValue: -event.endCoordinates.height + 80,
-          duration: 250,
-          useNativeDriver: true,
-        }).start();
-      });
-  
-      const hideSub = Keyboard.addListener("keyboardDidHide", () => {
-        Animated.timing(translateY, {
-          toValue: 0,
-          duration: 250,
-          useNativeDriver: true,
-        }).start();
-      });
-  
-      return () => {
-        showSub.remove();
-        hideSub.remove();
-      };
-    }, []);
+  if (code === "auth/invalid-email") return "Email inválido.";
+  if (code === "auth/user-not-found") return "Email ou senha incorretos.";
+  if (code === "auth/wrong-password") return "Email ou senha incorretos.";
+  if (code === "auth/invalid-credential") return "Email ou senha incorretos.";
+  if (code === "auth/too-many-requests")
+    return "Muitas tentativas. Tente novamente mais tarde.";
+
+  return e?.message ?? "ERRO_AO_LOGAR";
+}
+
+export default function Login({ navigation }: Props) {
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+
+  const [loading, setLoading] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  const translateY = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const showSub = Keyboard.addListener("keyboardDidShow", (event) => {
+      Animated.timing(translateY, {
+        toValue: -event.endCoordinates.height + 80,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    });
+
+    const hideSub = Keyboard.addListener("keyboardDidHide", () => {
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   async function handleEntrar() {
-    const emailTrim = email.trim();
+    const emailTrim = email.trim().toLowerCase();
 
     if (!emailTrim || !senha) {
       setErro("Preencha email e senha.");
@@ -66,20 +81,24 @@ export default function Login({ navigation }: Props) {
     setErro(null);
 
     try {
-      const auth = await firebaseSignIn(emailTrim, senha);
+      // ✅ LOGIN PELO SDK (isso cria auth.currentUser e persiste sessão)
+      const cred = await signInWithEmailAndPassword(auth, emailTrim, senha);
+      const user = cred.user;
 
-      const expiresAt = Date.now() + Number(auth.expiresIn) * 1000;
-
+      // ✅ token atual (e renovável) do Firebase SDK
+      const idToken = await user.getIdToken();
+      
+      // (opcional) se você ainda usa authStorage em outras partes, pode salvar um cache:
       await saveSession({
-        idToken: auth.idToken,
-        refreshToken: auth.refreshToken,
-        expiresAt,
-        localId: auth.localId,
-        email: auth.email,
+        idToken,
+        refreshToken: "", // você não precisa controlar refreshToken manualmente com o SDK
+        expiresAt: Date.now() + 55 * 60 * 1000, // opcional (não use como verdade)
+        localId: user.uid,
+        email: user.email ?? emailTrim,
       });
 
-      const firebaseUid = auth.localId;
-      const estudante = await getEstudanteByFirebaseUid(firebaseUid);
+      // ✅ Agora busque seu estudante usando o UID real do Firebase
+      const estudante = await getEstudanteByFirebaseUid(user.uid);
 
       if (!estudante) {
         throw new Error("ESTUDANTE_NAO_CADASTRADO");
@@ -87,20 +106,17 @@ export default function Login({ navigation }: Props) {
 
       Keyboard.dismiss();
       navigation.replace("Home");
-
     } catch (e: any) {
-      const code = e?.message;
-
-      if (code === "INVALID_LOGIN_CREDENTIALS") {
-        setErro("Email ou senha incorretos.");
+      if (String(e?.message) === "ESTUDANTE_NAO_CADASTRADO") {
+        setErro("Sua conta foi autenticada, mas não encontramos seu cadastro no sistema.");
       } else {
-        setErro(code ?? "ERRO_AO_LOGAR");
+        setErro(mapAuthError(e));
       }
     } finally {
       setLoading(false);
     }
   }
-  
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -143,7 +159,6 @@ export default function Login({ navigation }: Props) {
           </TouchableOpacity>
         </View>
 
-        {/* mensagem de erro */}
         {erro ? <Text style={{ color: "crimson", marginBottom: 8 }}>{erro}</Text> : null}
 
         <TouchableOpacity
@@ -157,11 +172,18 @@ export default function Login({ navigation }: Props) {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.buttonCriarConta} activeOpacity={0.8} onPress={() => navigation.navigate("Registro")}>
+        <TouchableOpacity
+          style={styles.buttonCriarConta}
+          activeOpacity={0.8}
+          onPress={() => navigation.navigate("Registro")}
+        >
           <Text style={styles.buttonCriarContaText}>CRIAR CONTA</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity activeOpacity={0.6} onPress={() => navigation.navigate("RecuperarSenha")}>
+        <TouchableOpacity
+          activeOpacity={0.6}
+          onPress={() => navigation.navigate("RecuperarSenha")}
+        >
           <Text style={styles.forgotPassword}>Esqueci minha senha</Text>
         </TouchableOpacity>
       </Animated.View>
@@ -169,32 +191,28 @@ export default function Login({ navigation }: Props) {
   );
 }
 
-  export const styles = StyleSheet.create({
+export const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#01415B",
     justifyContent: "space-between",
   },
-
   header: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },
-
   logo: {
     width: 140,
     height: 140,
     resizeMode: "contain",
   },
-
   logoText: {
     marginTop: 8,
     fontSize: 30,
     fontWeight: "700",
     color: "#FFFFFF",
   },
-
   card: {
     backgroundColor: "#EAF9FF",
     borderTopLeftRadius: 24,
@@ -202,14 +220,12 @@ export default function Login({ navigation }: Props) {
     padding: 24,
     minHeight: 360,
   },
-
   title: {
     fontSize: 18,
     fontWeight: "700",
     marginBottom: 16,
     color: "#01415B",
   },
-
   input: {
     backgroundColor: "#FFFFFF",
     borderRadius: 8,
@@ -217,7 +233,6 @@ export default function Login({ navigation }: Props) {
     marginBottom: 12,
     color: "#01415B",
   },
-
   passwordContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -226,14 +241,12 @@ export default function Login({ navigation }: Props) {
     paddingHorizontal: 14,
     marginBottom: 12,
   },
-
   passwordInput: {
     flex: 1,
     paddingVertical: 14,
     paddingLeft: 0,
     color: "#01415B",
   },
-
   buttonEntrar: {
     backgroundColor: "#01415B",
     padding: 14,
@@ -241,13 +254,11 @@ export default function Login({ navigation }: Props) {
     alignItems: "center",
     marginTop: 8,
   },
-
   buttonEntrarText: {
     color: "#FFFFFF",
     fontWeight: "700",
     fontSize: 14,
   },
-
   buttonCriarConta: {
     backgroundColor: "#FFFFFF",
     padding: 14,
@@ -255,13 +266,11 @@ export default function Login({ navigation }: Props) {
     alignItems: "center",
     marginTop: 8,
   },
-
   buttonCriarContaText: {
     color: "#01415B",
     fontWeight: "700",
     fontSize: 14,
   },
-
   forgotPassword: {
     marginTop: 16,
     textAlign: "center",

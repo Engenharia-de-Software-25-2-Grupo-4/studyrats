@@ -12,22 +12,29 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useRef, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 
-import { firebaseSignUp, firebaseDeleteAccount } from "../../services/firebaseAuth";
+import { registerWithEmail } from "@/services/auth";
+import { auth } from "@/firebaseConfig";
+
 import { createEstudante } from "../../services/backendApi";
 import { saveSession } from "../../services/authStorage";
 
 import type { StackScreenProps } from "@react-navigation/stack";
 import type { StackParams } from "@/utils/routesStack"; 
 
+import { Modal, ScrollView } from "react-native";
+import { privacyPolicyText } from "@/assets/privacy_policy";
+
 type Props = StackScreenProps<StackParams, "Registro">;
 
-function mapFirebaseError(msg: string) {
-  if (msg.includes("EMAIL_EXISTS")) return "Esse email já está cadastrado.";
-  if (msg.includes("WEAK_PASSWORD")) return "Senha fraca (mín. 6 caracteres).";
-  if (msg.includes("INVALID_EMAIL")) return "Email inválido.";
-  if (msg.includes("INVALID_LOGIN_CREDENTIALS")) return "Email ou senha inválidos.";
-  return msg;
+function mapFirebaseError(e: any) {
+  const code = String(e?.code ?? "");
+
+  if (code === "auth/email-already-in-use") return "Esse email já está cadastrado.";
+  if (code === "auth/weak-password") return "Senha fraca (mín. 6 caracteres).";
+  if (code === "auth/invalid-email") return "Email inválido.";
+  return e?.message ?? "Erro inesperado";
 }
+
 
 export default function Registro({ navigation }: any) {
   const [nome, setNome] = useState("");
@@ -41,6 +48,9 @@ export default function Registro({ navigation }: any) {
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [termsModalVisible, setTermsModalVisible] = useState(false);
 
   const translateY = useRef(new Animated.Value(0)).current;
 
@@ -67,6 +77,14 @@ export default function Registro({ navigation }: any) {
     };
   }, []);
 
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("blur", () => {
+      setAcceptedTerms(false);
+      setTermsModalVisible(false);
+    });
+    return unsubscribe;
+  }, [navigation]);
+
   const handleCadastro = async () => {
     setErro("");
     setSucesso("");
@@ -82,28 +100,36 @@ export default function Registro({ navigation }: any) {
       return;
     }
 
+    if (!acceptedTerms) {
+      setErro("Você precisa ler e aceitar a Política de Privacidade e os Termos de Uso.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const auth = await firebaseSignUp(emailNorm, senha);
-      const expiresAt = Date.now() + Number(auth.expiresIn) * 1000;
+      const user = await registerWithEmail(emailNorm, senha);
 
-      try {
-        await createEstudante({ nome, email: auth.email }, auth.idToken);
+      // token do Firebase SDK (sempre válido e renovável)
+      const idToken = await user.getIdToken(true);
 
-        await saveSession({
-          idToken: auth.idToken,
-          refreshToken: auth.refreshToken,
-          expiresAt,
-          localId: auth.localId,
-          email: auth.email,
-        });
+      await createEstudante({ nome, email: user.email! }, idToken);
 
-        setSucesso("Cadastro realizado com sucesso!");
-      } catch (err) {
-        await firebaseDeleteAccount(auth.idToken).catch(() => {});
-        throw err;
-      }
+      await saveSession({
+        idToken,
+        refreshToken: "", 
+        expiresAt: Date.now() + 55 * 60 * 1000, 
+        localId: user.uid,
+        email: user.email!,
+      });
+
+      setSucesso("Cadastro realizado com sucesso!");
+
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Home" }],
+      });
+
     } catch (e: any) {
       setErro(mapFirebaseError(String(e?.message ?? "Erro inesperado")));
     } finally {
@@ -192,6 +218,30 @@ export default function Registro({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
+        {/* TERMOS */}
+        <View style={styles.termsRow}>
+          <TouchableOpacity
+            style={styles.checkbox}
+            activeOpacity={0.7}
+            onPress={() => setAcceptedTerms((v) => !v)}
+          >
+            {acceptedTerms ? (
+              <Ionicons name="checkmark" size={16} color="#01415B" />
+            ) : null}
+          </TouchableOpacity>
+
+          <Text style={styles.termsText}>
+            Eu li e concordo com a{" "}
+            <Text
+              style={styles.termsLink}
+              onPress={() => setTermsModalVisible(true)}
+            >
+              Política de Privacidade e os Termos de Uso
+            </Text>
+            .
+          </Text>
+        </View>
+
         {/* MENSAGENS */}
         {erro ? <Text style={styles.error}>{erro}</Text> : null}
         {sucesso ? <Text style={styles.success}>{sucesso}</Text> : null}
@@ -211,6 +261,39 @@ export default function Registro({ navigation }: any) {
       </TouchableOpacity>
 
       </Animated.View>
+
+      {/* MODAL TERMOS */}
+      <Modal visible={termsModalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Política de Privacidade e Termos de Uso</Text>
+
+            <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator>
+              <Text style={styles.modalBody}>{privacyPolicyText}</Text>
+            </ScrollView>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalClose}
+                onPress={() => setTermsModalVisible(false)}
+              >
+                <Text style={styles.modalCloseText}>Fechar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalAccept}
+                onPress={() => {
+                  setAcceptedTerms(true);
+                  setTermsModalVisible(false);
+                }}
+              >
+                <Text style={styles.modalAcceptText}>Aceitar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -310,6 +393,104 @@ export const styles = StyleSheet.create({
     textAlign: "center",
     color: "#01415B",
     fontWeight: "700",
+  },
+
+  termsRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    marginTop: 10,
+  },
+
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: "#01415B",
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
+  },
+
+  termsText: {
+    flex: 1,
+    color: "#01415B",
+    fontSize: 13,
+    lineHeight: 18,
+  },
+
+  termsLink: {
+    textDecorationLine: "underline",
+    fontWeight: "700",
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center",
+    padding: 16,
+  },
+
+  modalCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 16,
+    maxHeight: "85%",
+  },
+
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#01415B",
+    marginBottom: 12,
+  },
+
+  modalScroll: {
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+  },
+
+  modalBody: {
+    fontSize: 13,
+    color: "#0F172A",
+    lineHeight: 18,
+  },
+
+  modalActions: {
+    flexDirection: "row",
+    gap: 10,
+  },
+
+  modalClose: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+    alignItems: "center",
+  },
+
+  modalCloseText: {
+    color: "#0F172A",
+    fontWeight: "700",
+  },
+
+  modalAccept: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: "#01415B",
+    alignItems: "center",
+  },
+
+  modalAcceptText: {
+    color: "#EAF9FF",
+    fontWeight: "800",
   },
 });
 

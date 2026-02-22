@@ -35,10 +35,36 @@ export async function authFetch(path: string, options: RequestInit = {}) {
 
   const url = `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 
-  const headers = new Headers(options.headers); 
-  headers.set("Authorization", `Bearer ${token}`);
+  const isFormData =
+    typeof FormData !== "undefined" && options.body instanceof FormData;
 
-  return fetch(url, { ...options, headers });
+
+  const base: Record<string, string> = {};
+
+  const inputHeaders = options.headers ?? {};
+  const h = new Headers(inputHeaders as any);
+  h.forEach((v, k) => (base[k] = v));
+
+
+  base["authorization"] = `Bearer ${token}`;
+
+
+  if (!isFormData) {
+    base["content-type"] = base["content-type"] || "application/octet-stream";
+    base["accept"] = base["accept"] || "*/*";
+  } else {
+    delete base["content-type"];
+  }
+
+  console.log("[authFetch] URL:", url);
+  console.log("[authFetch] method:", options.method ?? "GET");
+  console.log("[authFetch] isFormData:", isFormData);
+  console.log("[authFetch] final headers:", base);
+
+  return fetch(url, {
+    ...options,
+    headers: base,
+  });
 }
 
 export async function getEstudanteByFirebaseUid(firebaseUid: string) {

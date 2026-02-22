@@ -16,30 +16,52 @@ import { colors } from "@/styles/colors"
 import { Menu } from "@/components/Menu"
 import { StackParams } from "@/utils/routesStack"
 import { categories } from "@/utils/categories"
-import { GrupoDetails, listGrupos } from "@/services/grupo"
+import { GrupoDetails, listGrupos, getQuantidadeMembrosCached, promisePool } from "@/services/grupo"
 import { getEstudanteAtual, Estudante } from "@/services/estudante"
+import { ImageSourcePropType } from "react-native"
+import { fetchProfilePhoto } from "../server/estudanteInfo/fetchProfilePhoto"
 
-
-import { authFetch } from "@/services/backendApi" 
+import { authFetch } from "@/services/backendApi"
 
 type HomeNavProp = StackNavigationProp<StackParams, "Profile">
+
+type GrupoComQtd = GrupoDetails & { quantidadeMembros: number }
 
 export default function Profile() {
   const navigation = useNavigation<HomeNavProp>()
 
   const [estudante, setEstudante] = useState<Estudante | null>(null)
-  const [grupos, setGrupos] = useState<GrupoDetails[]>([])
+  const [grupos, setGrupos] = useState<GrupoComQtd[]>([])
   const [loadingEstudante, setLoadingEstudante] = useState(true)
   const [loadingGrupos, setLoadingGrupos] = useState(true)
-
 
   const [imagensGrupos, setImagensGrupos] = useState<Record<string, string>>({})
   const imagensGruposRef = useRef<Record<string, string>>({})
   const pendentesRef = useRef<Set<string>>(new Set())
 
+  const [fotoPerfil, setFotoPerfil] = useState<ImageSourcePropType>(
+    require("@/assets/default_profile.jpg")
+  )
+  const [loadingFoto, setLoadingFoto] = useState(true)
+
   useEffect(() => {
     imagensGruposRef.current = imagensGrupos
   }, [imagensGrupos])
+
+  useEffect(() => {
+    async function loadPhoto() {
+      try {
+        setLoadingFoto(true)
+        const uid = estudante?.firebaseUid
+        const img = await fetchProfilePhoto(uid || "")
+        setFotoPerfil(img)
+      } finally {
+        setLoadingFoto(false)
+      }
+    }
+
+    if (estudante) loadPhoto()
+  }, [estudante])
 
   useEffect(() => {
     async function fetchEstudante() {
@@ -93,12 +115,25 @@ export default function Profile() {
   const loadGroups = useCallback(async () => {
     try {
       setLoadingGrupos(true)
-      const data = await listGrupos()
-      setGrupos(data)
 
-      data.forEach((g) => {
-        buscarImagemDoGrupo(g.id_grupo)
-      })
+      const data = await listGrupos()
+
+      data.forEach((g) => buscarImagemDoGrupo(g.id_grupo))
+
+      const gruposComQtd = await promisePool(
+        data,
+        async (g) => {
+          try {
+            const qtd = await getQuantidadeMembrosCached(g.id_grupo)
+            return { ...g, quantidadeMembros: qtd }
+          } catch {
+            return { ...g, quantidadeMembros: 0 }
+          }
+        },
+        5
+      )
+
+      setGrupos(gruposComQtd)
     } catch (error) {
       Alert.alert("Erro", "Não foi possível carregar os grupos")
       console.error(error)
@@ -131,12 +166,20 @@ export default function Profile() {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         {/* HEADER */}
         <View style={styles.header}>
           <View style={styles.profileHeader}>
             <View style={styles.avatar}>
-              <Image source={require("@/assets/profile.jpg")} style={styles.avatarImage} />
+              <Image source={fotoPerfil} style={styles.avatarImage} />
+              {loadingFoto && (
+                <View style={styles.avatarLoadingOverlay}>
+                  <ActivityIndicator size="small" color="#FFF" />
+                </View>
+              )}
             </View>
 
             <View style={styles.profileInfo}>
@@ -156,14 +199,21 @@ export default function Profile() {
 
         {/* ACTION BUTTON */}
         <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.editButton} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={styles.editButton}
+            activeOpacity={0.85}
+            onPress={() => navigation.navigate("EditAcc" as any)}
+          >
             <Text style={styles.editButtonText}>CONFIGURE SEU PERFIL</Text>
           </TouchableOpacity>
         </View>
 
         {/* TABS */}
         <View style={styles.tabs}>
-          <TouchableOpacity style={[styles.tab, styles.tabActive]} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={[styles.tab, styles.tabActive]}
+            activeOpacity={0.85}
+          >
             <Ionicons name="grid" size={24} color={colors.azul[300]} />
           </TouchableOpacity>
 
@@ -174,7 +224,11 @@ export default function Profile() {
 
         {/* CARDS GRID */}
         {loadingGrupos ? (
-          <ActivityIndicator size="large" color={colors.azul[300]} style={{ marginTop: 40 }} />
+          <ActivityIndicator
+            size="large"
+            color={colors.azul[300]}
+            style={{ marginTop: 40 }}
+          />
         ) : (
           <View style={styles.cardsGrid}>
             {grupos.map((grupo) => {
@@ -184,7 +238,7 @@ export default function Profile() {
                 <GroupCard
                   key={grupo.id_grupo}
                   title={grupo.nome}
-                  participants={0} // ajustar quando a API retornar membros
+                  participants={grupo.quantidadeMembros ?? 0}
                   color={colors.azul[200]}
                   badge={isFinished ? "check" : "time"}
                   imageSource={resolveGroupImageSource(grupo)}
@@ -255,7 +309,11 @@ function GroupCard({ title, participants, color, badge, imageSource, onPress }: 
 
 function NewGroupCard({ onPress }: { onPress: () => void }) {
   return (
-    <TouchableOpacity style={[styles.groupCard, styles.newGroupCard]} onPress={onPress} activeOpacity={0.85}>
+    <TouchableOpacity
+      style={[styles.groupCard, styles.newGroupCard]}
+      onPress={onPress}
+      activeOpacity={0.85}
+    >
       <View style={styles.newGroupIcon}>
         <Feather name="plus" size={30} color={colors.azul[300]} />
       </View>
@@ -477,5 +535,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#FFF",
     textAlign: "center",
+  },
+
+  avatarLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.15)",
   },
 })

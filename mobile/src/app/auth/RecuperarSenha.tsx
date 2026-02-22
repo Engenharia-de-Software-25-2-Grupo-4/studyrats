@@ -10,7 +10,7 @@ import {
   } from "react-native";
   import { SafeAreaView } from "react-native-safe-area-context";
   import { useEffect, useRef, useState } from "react";
-  import { firebaseSendPasswordResetEmail } from "../../services/firebaseAuth";
+  import { resetarSenha } from "../../server/estudanteInfo/sendPasswordResetEmail";
   
   import type { StackScreenProps } from "@react-navigation/stack";
   import type { StackParams } from "@/utils/routesStack";
@@ -67,7 +67,7 @@ export default function RecuperarSenha({ navigation }: Props) {
       }
 
       try {
-        await firebaseSendPasswordResetEmail(e);
+        await resetarSenha(e);
         setInfo("Enviamos um link de recuperação para o seu e-mail.");
         setStep("SUCESSO");
       } catch (err: any) {

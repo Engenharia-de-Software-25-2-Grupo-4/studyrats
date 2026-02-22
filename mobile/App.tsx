@@ -13,6 +13,7 @@ import CriarGrupo from '@/app/grupo/criar_grupo';
 import CriarSessao from '@/app/sessaoEstudo/sessao_estudo';
 import Publicacao from '@/app/sessaoEstudo/publicacao';
 import Disciplinas from '@/app/disciplinas';
+import EditAcc from '@/app/auth/EditAcc';
 
 import { StackParams } from '@/utils/routesStack';
 import RecuperarSenha from '@/app/auth/RecuperarSenha';
@@ -24,7 +25,7 @@ export default function App() {
   return (
     <NavigationContainer>
     <Stack.Navigator
-      initialRouteName="Registro"
+      initialRouteName="Login"
       screenOptions={{
         headerShown: false,
         animation: "slide_from_right",
@@ -39,6 +40,7 @@ export default function App() {
         <Stack.Screen name="Home" component={Home} />
         <Stack.Screen name="StudyGroupScreen" component={StudyGroupScreen} />
         <Stack.Screen name="Feed" component={FeedScreen} />
+        <Stack.Screen name="EditAcc" component={EditAcc} />
         <Stack.Screen name="Profile" component={Profile} />
         <Stack.Screen name="Disciplinas" component={Disciplinas} />
         <Stack.Screen name="CriarGrupo" component={CriarGrupo} />
