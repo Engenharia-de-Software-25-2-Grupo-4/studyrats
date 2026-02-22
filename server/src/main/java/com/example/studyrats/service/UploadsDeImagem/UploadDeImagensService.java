@@ -112,9 +112,10 @@ public class UploadDeImagensService {
     public String salvarSessaoDeEstudo(MultipartFile imagem, UUID idSessaoDeEstudo, String firebaseUID) throws IOException {
         SessaoDeEstudo sessaoDeEstudo = sessaoDeEstudoRepository.findById(idSessaoDeEstudo).orElseThrow(SessaoDeEstudoNaoEncontrado::new);
         if (sessaoDeEstudo.getCriador().getFirebaseUid().equals(firebaseUID)) {
-            PathRecord caminhoDOUploadENome = gerarPathAPartirDaImagem(imagem, firebaseUID);
+            PathRecord caminhoDOUploadENome = gerarPathAPartirDaImagem(imagem, sessaoDeEstudo.getIdSessao().toString());
             String nomeDoArquivo = caminhoDOUploadENome.nomeDoArquivo;
             Path caminhoDoUpload = extenderPathSessaoDeEstudo(caminhoDOUploadENome.caminhoDoUpload);
+            caminhoDoUpload = caminhoDoUpload.resolve(nomeDoArquivo);
             Files.copy(imagem.getInputStream(), caminhoDoUpload, StandardCopyOption.REPLACE_EXISTING);
             return nomeDoArquivo;
         }
