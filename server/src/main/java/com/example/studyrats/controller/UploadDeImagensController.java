@@ -17,17 +17,17 @@ public interface UploadDeImagensController {
     ResponseEntity<?> adicionarImagemEstudante(@RequestParam("imagem") MultipartFile imagem, HttpServletRequest request) throws IOException;
 
     @GetMapping("/estudante/{firebaseUID}")
-    ResponseEntity<?> retornarImagemEstudante(@PathVariable String firebaseUID, HttpServletRequest request);
+    ResponseEntity<?> retornarImagemEstudante(@PathVariable String firebaseUID, HttpServletRequest request) throws IOException;
 
     @PostMapping("/upload/sessaoDeEstudo/{idSessaoDeEstudo}")
     ResponseEntity<?> adicionarImagemSessaoDeEstudo(@RequestParam("imagem") MultipartFile imagem, @PathVariable UUID idSessaoDeEstudo, HttpServletRequest request) throws IOException;
 
     @GetMapping("/sessaoDeEstudo/{idSessaoDeEstudo}")
-    ResponseEntity<?> retornarImagemSessaoDeEstudo(@PathVariable String idSessaoDeEstudo);
+    ResponseEntity<?> retornarImagemSessaoDeEstudo(@PathVariable String idSessaoDeEstudo) throws IOException;
 
     @PostMapping("/upload/grupo/{idGrupo}")
     ResponseEntity<?> adicionarImagemGrupoDeEstudo(@PathVariable String idGrupo, @RequestParam("imagem") MultipartFile imagem, HttpServletRequest request) throws IOException;
 
     @GetMapping("/grupo/{idGrupo}")
-    ResponseEntity<?> retornarImagemGrupoDeEstudo(@PathVariable String idGrupo, HttpServletRequest request);
+    ResponseEntity<?> retornarImagemGrupoDeEstudo(@PathVariable String idGrupo, HttpServletRequest request) throws IOException;
 }

@@ -73,7 +73,7 @@ public class UploadDeImagensImpl implements UploadDeImagensController {
     }
 
     @Override
-    public ResponseEntity<?> retornarImagemEstudante(String firebaseUID, HttpServletRequest request) {
+    public ResponseEntity<?> retornarImagemEstudante(String firebaseUID, HttpServletRequest request) throws IOException {
         Path caminhoDaImagem = Paths.get(caminhoBase, "estudantes").toAbsolutePath().normalize();
         return processarERetornarResource(caminhoDaImagem, firebaseUID);
     }
@@ -87,7 +87,7 @@ public class UploadDeImagensImpl implements UploadDeImagensController {
     }
 
     @Override
-    public ResponseEntity<?> retornarImagemGrupoDeEstudo(String idGrupo, HttpServletRequest request) {
+    public ResponseEntity<?> retornarImagemGrupoDeEstudo(String idGrupo, HttpServletRequest request) throws IOException {
         Path caminhoDaImagem = Paths.get(caminhoBase, "gruposDeEstudo").toAbsolutePath().normalize();
         return processarERetornarResource(caminhoDaImagem, idGrupo);
     }
@@ -99,7 +99,7 @@ public class UploadDeImagensImpl implements UploadDeImagensController {
     }
 
     @Override
-    public ResponseEntity<?> retornarImagemSessaoDeEstudo(String idSessaoDeEstudo) {
+    public ResponseEntity<?> retornarImagemSessaoDeEstudo(String idSessaoDeEstudo) throws IOException {
         Path caminhoDaImagem = Paths.get(caminhoBase, "sessoesDeEstudo").toAbsolutePath().normalize();
         return processarERetornarResource(caminhoDaImagem, idSessaoDeEstudo);
     }
