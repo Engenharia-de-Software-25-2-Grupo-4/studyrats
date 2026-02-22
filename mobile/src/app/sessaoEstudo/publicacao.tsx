@@ -10,6 +10,7 @@ import { deleteSessao } from "@/services/sessao";
 import { reactSessao } from "@/services/sessao";
 import { comentarSessao } from "@/services/sessao";
 import { getAuthenticatedUid } from "@/services/authStorage";
+import { authFetch } from "@/services/backendApi";
 
 
 export default function Publicacao() {
@@ -17,14 +18,35 @@ export default function Publicacao() {
   const route = useRoute();
   const dados = (route.params as any)?.sessao;
   const [isCriador, setIsCriador] = useState(false);
+  const [imagemSessao, setImagemSessao] = useState<string | null>(null);
   
     useEffect(() => {
         async function verificarCriador() {
             const uid = await getAuthenticatedUid();
             setIsCriador(dados.id_criador === uid);
         }
-        verificarCriador();
-    }, []);
+        
+            async function buscarImagem() {
+              try {
+                const res = await authFetch(`/imagens/grupo/${dados.id_grupo}`, {
+                  method: "GET",
+                });
+                const blob = await res.blob();
+                const reader = new FileReader();
+                reader.onload = () => {
+                  const base64 = reader.result as string;
+                  console.log("imagem base64:", base64.substring(0, 50));
+                  setImagemSessao(base64); 
+                };
+                reader.readAsDataURL(blob);
+              } catch (error) {
+                console.log("erro imagem:", error);
+              }
+            }
+        
+            verificarCriador();
+            buscarImagem();
+          }, []);
 
   type Usuario = {
     id: string;
@@ -59,7 +81,12 @@ export default function Publicacao() {
   };
 
   const handleEditar = () => {
-    navigation.navigate('CriarSessao', { sessao: dados } as any);
+    navigation.navigate('CriarSessao', { 
+        grupo: {
+            ...dados,
+            foto_perfil: imagemSessao
+        }
+    } as any);
   };
 
   const handleExcluir = async () => {

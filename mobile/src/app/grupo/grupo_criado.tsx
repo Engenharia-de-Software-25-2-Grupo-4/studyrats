@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
+import { useNavigation, useRoute, NavigationProp } from '@react-navigation/native';
 import { StackParams } from '@/utils/routesStack';
 import { Menu } from "@/components/Menu";
 import { categories } from "@/utils/categories";
@@ -8,6 +8,7 @@ import { colors } from "@/styles/colors";
 import { deleteGrupo } from "@/services/grupo";
 import { getAuthenticatedUid } from "@/services/authStorage";
 import { useState, useEffect } from "react";
+import { authFetch } from "@/services/backendApi";
 
 export default function GrupoCriado() {
   const navigation = useNavigation<NavigationProp<StackParams>>();
@@ -15,13 +16,35 @@ export default function GrupoCriado() {
 
   const dados = (route.params as any)?.desafio;
   const [isAdmin, setIsAdmin] = useState(false);
+  const [imagemGrupo, setImagemGrupo] = useState<string | null>(null);
+
 
   useEffect(() => {
-      async function verificarAdmin() {
-          const uid = await getAuthenticatedUid();
-          setIsAdmin(dados.admin?.firebaseUid === uid);
+    async function verificarAdmin() {
+      const uid = await getAuthenticatedUid();
+      setIsAdmin(dados.admin?.firebaseUid === uid);
+    }
+
+    async function buscarImagem() {
+      try {
+        const res = await authFetch(`/imagens/grupo/${dados.id_grupo}`, {
+          method: "GET",
+        });
+        const blob = await res.blob();
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64 = reader.result as string;
+          console.log("imagem base64:", base64.substring(0, 50));
+          setImagemGrupo(base64); // seta no estado para renderizar
+        };
+        reader.readAsDataURL(blob);
+      } catch (error) {
+        console.log("erro imagem:", error);
       }
-      verificarAdmin();
+    }
+
+    verificarAdmin();
+    buscarImagem();
   }, []);
   //const isAdmin = true // mock temporário
 
@@ -30,7 +53,12 @@ export default function GrupoCriado() {
   };
 
   const handleEditar = () => {
-    navigation.navigate('CriarGrupo', { grupo: dados } as any);
+    navigation.navigate('CriarGrupo', { 
+        grupo: {
+            ...dados,
+            foto_perfil: imagemGrupo  
+        }
+    } as any);
   };
 
   const handleExcluir = () => {
@@ -48,7 +76,7 @@ export default function GrupoCriado() {
           onPress: async () => {
             try {
               await deleteGrupo(dados.id_grupo)
-              navigation.goBack(); // volta após excluir
+              navigation.goBack(); 
             } catch (error: any) {
               Alert.alert("Erro", error.message);
             }
@@ -83,10 +111,11 @@ export default function GrupoCriado() {
         </Text>
 
         {/* IMAGEM */}
-        <Image
-          source={{ uri: dados.foto_perfil }}
-          style={styles.image}
-        />
+        {imagemGrupo ? (
+          <Image source={{ uri: imagemGrupo }} style={styles.image} />
+        ) : (
+          <View style={styles.image} />
+        )}
 
         {/* CARD INFORMAÇÕES */}
         <View style={styles.card}>
@@ -101,8 +130,8 @@ export default function GrupoCriado() {
           <View style={styles.divider} />
           <Text style={styles.section}>Data Final</Text>
           <Text style={styles.data}>
-            {new Date(dados.data_final).toLocaleDateString()}{" "}
-            {new Date(dados.data_final).toLocaleTimeString([], {
+            {new Date(dados.data_fim).toLocaleDateString()}{" "}
+            {new Date(dados.data_fim).toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit"
             })}

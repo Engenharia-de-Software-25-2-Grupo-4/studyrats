@@ -6,7 +6,7 @@ type StackParams = {
   Home: undefined;
   Profile: undefined;
   Disciplinas: undefined;
-  StudyGroupScreen: undefined;
+  StudyGroupScreen: { grupoId: string };
   Feed: undefined;
   EditAcc: undefined;
   CriarGrupo: undefined; 
