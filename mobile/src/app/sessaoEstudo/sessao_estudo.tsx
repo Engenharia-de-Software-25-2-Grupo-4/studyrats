@@ -38,9 +38,9 @@ export default function CriarSessao() {
             setTitulo(sessao.titulo);
             setDescricao(sessao.descricao);
             setDisciplina(sessao.disciplina);
-            setDataHora(new Date(sessao.dataHora));
-            setImage(sessao.image);
-            setDuracao(sessao.duracao);
+            setDataHora(new Date(sessao.horario_inicio));
+            setImage(sessao.url_foto);
+            setDuracao(sessao.duracao_minutos);
             setTopico(sessao.topico);
         }
     }, [sessao]);
@@ -113,7 +113,7 @@ export default function CriarSessao() {
                     disciplina,
                     topico
 
-                });
+                }, sessao.id_grupo);
                 console.log("retorno createSessao:", novaSessao); 
                 if (image) await uploadImagem(novaSessao.id_sessao, image);
                 navigation.navigate("Publicacao", { sessao: novaSessao })

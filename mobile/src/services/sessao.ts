@@ -58,9 +58,8 @@ export type Upload = {
   imagem: string
 }
 
-export async function createSessao(body: CreateSessaoBody): Promise<SessaoDetails> {
-  console.log("chamando createSessao com:", body);
-  const res = await authFetch(`/sessaoDeEstudo/`, {
+export async function createSessao(body: CreateSessaoBody, idGrupo: string): Promise<SessaoDetails> {
+  const res = await authFetch(`/sessaoDeEstudo/${idGrupo}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

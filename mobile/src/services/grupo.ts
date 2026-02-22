@@ -20,22 +20,21 @@ export type UpdateGrupoBody = {
 };
 
 export type GrupoDetails = {
-    id_grupo: string
-    nome: string
-    descricao: string
-    admin: {
-      firebaseUid: string,
-      nome: string,
-      email: string
-    },
-    foto_perfil: string,
-    regras: string
-    data_inicio: string;
-    data_fim: string;
+  id_grupo: string
+  nome: string
+  descricao: string
+  admin: {
+    firebaseUid: string,
+    nome: string,
+    email: string
+  },
+  foto_perfil: string,
+  regras: string
+  data_inicio: string;
+  data_fim: string;
 }
 
-export async function createGrupo(body: CreateGrupoBody) : Promise<GrupoDetails> {
-  console.log("chamando createGrupo com:", body);
+export async function createGrupo(body: CreateGrupoBody): Promise<GrupoDetails> {
   const res = await authFetch(`/grupos`, {
     method: "POST",
     headers: {
@@ -43,12 +42,11 @@ export async function createGrupo(body: CreateGrupoBody) : Promise<GrupoDetails>
     },
     body: JSON.stringify(body),
   });
-  console.log("status:", res.status);
 
- if (!res.ok) {
-  const data = await res.json().catch(() => ({}));
-  throw new Error(data?.message ?? "Erro desconhecido");
-}
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data?.message ?? "Erro desconhecido");
+  }
 
   return res.json() as Promise<GrupoDetails>;
 }
@@ -82,7 +80,7 @@ export async function deleteGrupo(idGrupo: string): Promise<void> {
 }
 export async function uploadImagem(idGrupo: string, uri: string): Promise<void> {
   const token = await getValidIdToken();
-  
+
   const formData = new FormData();
   formData.append("imagem", {
     uri,

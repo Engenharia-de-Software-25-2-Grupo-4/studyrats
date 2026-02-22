@@ -30,7 +30,7 @@ export async function createEstudante(body: CreateEstudanteBody, idToken: string
 
 export async function authFetch(path: string, options: RequestInit = {}) {
   const token = await getValidIdToken();
-  console.log("token authFetch:", token);
+ 
   if (!token) throw new Error("USUARIO_NAO_LOGADO");
 
   const url = `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;

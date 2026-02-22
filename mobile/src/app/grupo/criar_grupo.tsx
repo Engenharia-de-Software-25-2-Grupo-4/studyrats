@@ -30,12 +30,12 @@ export default function CriarGrupo() {
 
     useEffect(() => {
         if (grupo) {
-            setnomeDesafio(grupo.nomeDesafio);
+            setnomeDesafio(grupo.nome);
             setDescricao(grupo.descricao);
             setRegras(grupo.regras);
-            setDataInicio(new Date(grupo.dataInicio));
-            setDataFinal(new Date(grupo.dataFinal));
-            setImage(grupo.imagem);
+            setDataInicio(new Date(grupo.data_inicio));
+            setDataFinal(new Date(grupo.data_fim));
+            setImage(grupo.foto_perfil);
         }
     }, [grupo]);
 
@@ -76,7 +76,7 @@ export default function CriarGrupo() {
             console.log("2. grupo:", grupo);
             if (grupo) {
                 console.log("3. editando grupo");
-                await updateGrupo(grupo.id, {
+                await updateGrupo(grupo.id_grupo, {
                     nome: nomeDesafio,
                     descricao,
                     foto_perfil: "",
