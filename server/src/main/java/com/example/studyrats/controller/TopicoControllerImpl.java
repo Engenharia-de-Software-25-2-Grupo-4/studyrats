@@ -12,11 +12,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.List;
 
-@Tag(name = "Disciplina", description = "Operacoes sobre disciplinas")
-@RequestMapping(value = "/disciplinas", produces = MediaType.APPLICATION_JSON_VALUE)
+@Tag(name = "Tópicos", description = "Operacoes sobre tópicos")
+@RequestMapping(value = "/topicos", produces = MediaType.APPLICATION_JSON_VALUE)
 public interface TopicoControllerImpl {
 
-    @Operation(summary = "Listar todas as disciplinas")
+    @Operation(summary = "Listar todas as topicos")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Lista retornada"),
         @ApiResponse(responseCode = "401", description = "Nao autenticado")

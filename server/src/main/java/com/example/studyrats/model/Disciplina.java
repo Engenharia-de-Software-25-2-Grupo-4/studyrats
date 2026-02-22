@@ -16,9 +16,9 @@ public class Disciplina {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String disciplina;
+    private String nome;
 
     public Disciplina(String disciplina) {
-        this.disciplina = disciplina;
+        this.nome = disciplina;
     }
 }
