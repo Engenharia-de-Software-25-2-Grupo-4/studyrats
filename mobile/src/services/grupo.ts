@@ -1,4 +1,5 @@
 import { authFetch } from "./backendApi";
+import { getValidIdToken } from "./getValidIdToken";
 
 export type CreateGrupoBody = {
   nome: string;
@@ -29,9 +30,12 @@ export type GrupoDetails = {
     },
     foto_perfil: string,
     regras: string
+    data_inicio: string;
+    data_fim: string;
 }
 
 export async function createGrupo(body: CreateGrupoBody) : Promise<GrupoDetails> {
+  console.log("chamando createGrupo com:", body);
   const res = await authFetch(`/grupos`, {
     method: "POST",
     headers: {
@@ -39,6 +43,7 @@ export async function createGrupo(body: CreateGrupoBody) : Promise<GrupoDetails>
     },
     body: JSON.stringify(body),
   });
+  console.log("status:", res.status);
 
  if (!res.ok) {
   const data = await res.json().catch(() => ({}));
@@ -73,5 +78,27 @@ export async function deleteGrupo(idGrupo: string): Promise<void> {
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw new Error(data?.message ?? "Erro desconhecido");
+  }
+}
+export async function uploadImagem(idGrupo: string, uri: string): Promise<void> {
+  const token = await getValidIdToken();
+  
+  const formData = new FormData();
+  formData.append("imagem", {
+    uri,
+    type: "image/jpeg",
+    name: "foto.jpg",
+  } as any);
+
+  const res = await authFetch(`/imagens/upload/grupo/${idGrupo}`, {
+    method: "POST",
+    body: formData,
+  });
+
+  console.log("status upload:", res.status);
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data?.message ?? "Erro ao fazer upload");
   }
 }

@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
+import { useNavigation, useRoute,  NavigationProp } from '@react-navigation/native';
 import { StackParams } from '@/utils/routesStack';
 import { Menu } from "@/components/Menu";
 import { categories } from "@/utils/categories";
@@ -8,6 +8,7 @@ import { colors } from "@/styles/colors";
 import { deleteGrupo } from "@/services/grupo";
 import { getAuthenticatedUid } from "@/services/authStorage";
 import { useState, useEffect } from "react";
+import { authFetch } from "@/services/backendApi";
 
 export default function GrupoCriado() {
   const navigation = useNavigation<NavigationProp<StackParams>>();
@@ -15,14 +16,30 @@ export default function GrupoCriado() {
 
   const dados = (route.params as any)?.desafio;
   const [isAdmin, setIsAdmin] = useState(false);
+ 
 
   useEffect(() => {
-      async function verificarAdmin() {
-          const uid = await getAuthenticatedUid();
-          setIsAdmin(dados.admin?.firebaseUid === uid);
-      }
-      verificarAdmin();
-  }, []);
+    async function verificarAdmin() {
+        const uid = await getAuthenticatedUid();
+        setIsAdmin(dados.admin?.firebaseUid === uid);
+    }
+
+    async function buscarImagem() {
+        try {
+            const res = await authFetch(`/imagens/grupo/${dados.id_grupo}`, {
+                method: "GET",
+            });
+            console.log("status imagem:", res.status);
+            const data = await res.json().catch(() => ({}));
+            console.log("retorno imagem:", data);
+        } catch (error) {
+            console.log("erro imagem:", error);
+        }
+    }
+
+    verificarAdmin();
+    buscarImagem();
+}, []);
   //const isAdmin = true // mock temporário
 
   const handleVoltar = () => {
@@ -101,8 +118,8 @@ export default function GrupoCriado() {
           <View style={styles.divider} />
           <Text style={styles.section}>Data Final</Text>
           <Text style={styles.data}>
-            {new Date(dados.data_final).toLocaleDateString()}{" "}
-            {new Date(dados.data_final).toLocaleTimeString([], {
+            {new Date(dados.data_fim).toLocaleDateString()}{" "}
+            {new Date(dados.data_fim).toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit"
             })}
