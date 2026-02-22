@@ -65,9 +65,9 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
         String nomeDisciplina = sessaoDeEstudoPostPutRequestDTO.getDisciplina().toUpperCase();
         String nomeTopico = sessaoDeEstudoPostPutRequestDTO.getTopico().toUpperCase();
 
-        disciplinaRepository.findByNome(nomeDisciplina).orElseGet(() -> disciplinaRepository.save(new Disciplina(nomeDisciplina.toUpperCase())));
+        disciplinaRepository.findByNome(nomeDisciplina).orElseGet(() -> disciplinaRepository.save(new Disciplina(nomeDisciplina)));
 
-        topicoRepository.findByNome(nomeTopico).orElseGet(() -> topicoRepository.save(new Topico(nomeTopico.toUpperCase())));
+        topicoRepository.findByNome(nomeTopico).orElseGet(() -> topicoRepository.save(new Topico(nomeTopico)));
 
         SessaoDeEstudo sessaoDeEstudo = modelMapper.map(sessaoDeEstudoPostPutRequestDTO, SessaoDeEstudo.class);
         sessaoDeEstudo.setCriador(student);
@@ -148,7 +148,7 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
     @Override
     public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosPorTopicoEmGrupo(String topico, UUID idGrupo, String idUsuario) {
         validaMembro(idGrupo, idUsuario);
-        List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByGrupoDeEstudo_IdAndTopico(idGrupo, topico)
+        List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByGrupoDeEstudo_IdAndTopico(idGrupo, topico.toUpperCase())
             .stream()
             .map(session -> toResponseDTO(session, idUsuario))
             .toList();
@@ -187,7 +187,7 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
 
     @Override
     public List<SessaoDeEstudoResponseDTO> listarSessaoDeEstudosDeUsuarioPorTopico(String idUsuario, String topico) { 
-        List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByCriador_FirebaseUidAndTopico(idUsuario, topico)
+        List<SessaoDeEstudoResponseDTO> sessions = sessaoDeEstudoRepository.findByCriador_FirebaseUidAndTopico(idUsuario, topico.toUpperCase())
             .stream()
             .map(session -> toResponseDTO(session, idUsuario))
             .toList();
