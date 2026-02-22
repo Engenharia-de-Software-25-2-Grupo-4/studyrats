@@ -31,8 +31,9 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
@@ -59,6 +60,7 @@ public class GrupoDeEstudoTest {
     private String tokenEstudantePrincipal = "tokenE1";
     private String tokenEstudanteSecuntadio = "tokenE2";
     private UUID idGrupo;
+    private GrupoDeEstudoResponseDTO grupo;
 
     @BeforeEach
     void setup() {
@@ -95,7 +97,6 @@ public class GrupoDeEstudoTest {
         String token;
         EstudantePostPutRequestDTO body;
         GrupoDeEstudoPostPutRequestDTO bodyGrupo;
-        GrupoDeEstudoResponseDTO grupo;
         SessaoDeEstudoPostPutRequestDTO bodySessao;
 
         setarToken(tokenEstudantePrincipal);
@@ -170,5 +171,54 @@ public class GrupoDeEstudoTest {
         sessoes.forEach(
                 se -> assertNotEquals(se.getGrupoDeEstudo().getId(), idGrupo, "Foi possível recuperar o grupo pelas sessões de estudo")
         );
+    }
+
+    private boolean gEqualsGAntes(GrupoDeEstudo g, GrupoDeEstudoResponseDTO grupoAntes) {
+        return g.getNome().equals(grupoAntes.getNome()) &&
+                g.getDescricao().equals(grupoAntes.getDescricao()) &&
+                g.getRegras().equals(grupoAntes.getRegras()) &&
+                g.getFotoPerfil().equals(grupoAntes.getFotoPerfil());
+    }
+
+    private boolean gEqualsGAtualizado(GrupoDeEstudo g, GrupoDeEstudoPostPutRequestDTO grupoAtualizado) {
+        return g.getNome().equals(grupoAtualizado.getNome()) &&
+                g.getDescricao().equals(grupoAtualizado.getDescricao()) &&
+                g.getRegras().equals(grupoAtualizado.getRegras()) &&
+                g.getFotoPerfil().equals(grupoAtualizado.getFotoPerfil());
+    }
+
+    @Test @Transactional
+    @DisplayName("Atualizar grupo reflete nas entidades relacionadas")
+    void atualizarGrupoRefleteNasEntidades() throws Exception {
+        setup1GrupoNEstudantesMembrosNSessoes();
+        setarToken(tokenEstudantePrincipal);
+        GrupoDeEstudoPostPutRequestDTO bodyGrupoAtualizado = GrupoDeEstudoPostPutRequestDTO.builder()
+                .nome(randomChars())
+                .descricao(randomChars())
+                .fotoPerfil("fotoAtualizada.png")
+                .regras("Sem spam e respeitar horários atualizados")
+                .dataInicio(LocalDateTime.of(2026, 5, 19, 14, 0))
+                .dataFim(LocalDateTime.of(2026, 10, 19, 16, 0))
+                .build();
+        requisitorGrupo.performPutOk(bodyGrupoAtualizado, grupo.getId().toString(), tokenEstudantePrincipal);
+        List<GrupoDeEstudo> gruposRecuperados = grupoDeEstudoRepository.findAll();
+        assertEquals(2, gruposRecuperados.size(), "Deveriam existir 2 grupos após o update");
+        gruposRecuperados.forEach(g -> {
+            assertFalse(gEqualsGAntes(g, grupo), "Foi possível recuperar o grupo antigo pelo repo");
+        });
+        assertTrue(gruposRecuperados.stream().anyMatch(g -> gEqualsGAtualizado(g, bodyGrupoAtualizado)), "Não foi possível recuperar o grupo atualizado no repo");
+
+        assertEquals(11, estudanteRepository.count(), "Deveriam existir 2 estudantes após atualização do grupo");
+
+        List<SessaoDeEstudo> sessoesRecuperadas = sessaoDeEstudoRepository.findAll();
+        assertEquals(20, sessoesRecuperadas.size(), "Deveriam existir 20 sessões após a atualização do outro grupo");
+        assertTrue(sessoesRecuperadas.stream().noneMatch(s -> gEqualsGAntes(s.getGrupoDeEstudo(), grupo)), "Foi possível recuperar o grupo antigo pelo repo de sessão de estudo.");
+        sessoesRecuperadas.forEach(s -> {
+            if (s.getGrupoDeEstudo().getId().equals(grupo.getId())) {
+                assertTrue(gEqualsGAtualizado(s.getGrupoDeEstudo(), bodyGrupoAtualizado), "Algum grupo com o ID do grupo atualizado não possui os dados atualizados");
+            } else {
+                assertFalse(gEqualsGAtualizado(s.getGrupoDeEstudo(), bodyGrupoAtualizado), "Algum grupo com ID diferente do grupo atualizado possui os dados da atualização");
+            }
+        });
     }
 }

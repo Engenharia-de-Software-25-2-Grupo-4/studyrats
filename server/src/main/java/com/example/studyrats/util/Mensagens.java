@@ -37,4 +37,6 @@ public class Mensagens {
     public static final String NAO_RETORNOU_NOT_FOUND = "A rota não retornou 404 - Not found - ";
     public static final String NAO_RETORNOU_NO_CONTENT = "A rota não retornou 204 - Not content - ";
 
+    public static final String IMAGEM_VAZIA = "A imagem enviada está vazia";
+    public static final String ARQUIVO_NAO_E_IMAGEM = "O arquivo enviado não é uma imagem";
 }

@@ -17,9 +17,9 @@ public class Topico {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String topico;
+    private String nome;
 
     public Topico(String topico) {
-        this.topico = topico;
+        this.nome = topico;
     }
 }
