@@ -19,6 +19,7 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -33,25 +34,37 @@ public class UploadDeImagensImpl implements UploadDeImagensController {
         FirebaseToken firebaseToken = (FirebaseToken) request.getAttribute("firebaseUser");
         return firebaseToken.getUid();
     }
-
-    private ResponseEntity<?> processarERetornarResource(Path caminhoDaImagem) {
+    private ResponseEntity<?> processarERetornarResource(Path caminhoDaImagem, String id) throws IOException {
         Resource resource;
-        try {
-            resource = new UrlResource(caminhoDaImagem.toUri());
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
+
+        Optional<Path> arquivo = Files.list(caminhoDaImagem)
+                .filter(p -> p.getFileName().toString().startsWith(id + "."))
+                .findFirst();
+
+        if (arquivo.isEmpty()) {
+            return ResponseEntity.notFound().build();
         }
+
+        Path caminho = arquivo.get();
+        resource = new UrlResource(caminho.toUri());
+        String nome = caminho.getFileName().toString().toLowerCase();
 
         String contentType;
-        try {
-            contentType = Files.probeContentType(caminhoDaImagem);
-        } catch (IOException e) {
+        if (nome.endsWith(".png")) {
+            contentType = "image/png";
+        } else if (nome.endsWith(".jpg") || nome.endsWith(".jpeg")) {
+            contentType = "image/jpeg";
+        } else if (nome.endsWith(".webp")) {
+            contentType = "image/webp";
+        } else {
             contentType = "application/octet-stream";
         }
+
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))
                 .body(resource);
     }
+
 
     @Override
     public ResponseEntity<?> adicionarImagemEstudante(MultipartFile imagem, HttpServletRequest request) throws IOException {
@@ -61,8 +74,8 @@ public class UploadDeImagensImpl implements UploadDeImagensController {
 
     @Override
     public ResponseEntity<?> retornarImagemEstudante(String firebaseUID, HttpServletRequest request) {
-        Path caminhoDaImagem = Paths.get(caminhoBase, "estudantes", firebaseUID).toAbsolutePath().normalize();
-        return processarERetornarResource(caminhoDaImagem);
+        Path caminhoDaImagem = Paths.get(caminhoBase, "estudantes").toAbsolutePath().normalize();
+        return processarERetornarResource(caminhoDaImagem, firebaseUID);
     }
 
     @Override
@@ -75,8 +88,8 @@ public class UploadDeImagensImpl implements UploadDeImagensController {
 
     @Override
     public ResponseEntity<?> retornarImagemGrupoDeEstudo(String idGrupo, HttpServletRequest request) {
-        Path caminhoDaImagem = Paths.get(caminhoBase, "gruposDeEstudo", idGrupo).toAbsolutePath().normalize();
-        return processarERetornarResource(caminhoDaImagem);
+        Path caminhoDaImagem = Paths.get(caminhoBase, "gruposDeEstudo").toAbsolutePath().normalize();
+        return processarERetornarResource(caminhoDaImagem, idGrupo);
     }
 
     @Override
@@ -87,8 +100,8 @@ public class UploadDeImagensImpl implements UploadDeImagensController {
 
     @Override
     public ResponseEntity<?> retornarImagemSessaoDeEstudo(String idSessaoDeEstudo) {
-        Path caminhoDaImagem = Paths.get(caminhoBase, "sessoesDeEstudo", idSessaoDeEstudo).toAbsolutePath().normalize();
-        return processarERetornarResource(caminhoDaImagem);
+        Path caminhoDaImagem = Paths.get(caminhoBase, "sessoesDeEstudo").toAbsolutePath().normalize();
+        return processarERetornarResource(caminhoDaImagem, idSessaoDeEstudo);
     }
 
 

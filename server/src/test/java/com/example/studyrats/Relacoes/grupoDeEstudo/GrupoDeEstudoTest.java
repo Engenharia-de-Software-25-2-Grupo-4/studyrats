@@ -60,6 +60,8 @@ public class GrupoDeEstudoTest {
     private String tokenEstudanteSecuntadio = "tokenE2";
     private UUID idGrupo;
 
+    private GrupoDeEstudoResponseDTO grupo;
+
     @BeforeEach
     void setup() {
         String baseUrl = "/estudantes";
@@ -95,7 +97,6 @@ public class GrupoDeEstudoTest {
         String token;
         EstudantePostPutRequestDTO body;
         GrupoDeEstudoPostPutRequestDTO bodyGrupo;
-        GrupoDeEstudoResponseDTO grupo;
         SessaoDeEstudoPostPutRequestDTO bodySessao;
 
         setarToken(tokenEstudantePrincipal);
@@ -170,5 +171,24 @@ public class GrupoDeEstudoTest {
         sessoes.forEach(
                 se -> assertNotEquals(se.getGrupoDeEstudo().getId(), idGrupo, "Foi possível recuperar o grupo pelas sessões de estudo")
         );
+    }
+
+    @Test @Transactional
+    @DisplayName("Atualizar grupo reflete nas entidades relacionadas")
+    void atualizarGrupoRefleteNasEntidades() throws Exception {
+        setup1GrupoNEstudantesMembrosNSessoes();
+        setarToken(tokenEstudantePrincipal);
+        GrupoDeEstudoPostPutRequestDTO bodyGrupoAtualizado = GrupoDeEstudoPostPutRequestDTO.builder()
+                .nome(randomChars())
+                .descricao(randomChars())
+                .fotoPerfil("fotoAtualizada.png")
+                .regras("Sem spam e respeitar horários atualizados")
+                .dataInicio(LocalDateTime.of(2026, 5, 19, 14, 0))
+                .dataFim(LocalDateTime.of(2026, 10, 19, 16, 0))
+                .build();
+        requisitorGrupo.performPutOk(bodyGrupoAtualizado, grupo.getId().toString(), tokenEstudantePrincipal);
+        grupoDeEstudoRepository.findAll().forEach(g -> {
+
+        });
     }
 }
