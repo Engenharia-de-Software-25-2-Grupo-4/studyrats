@@ -48,7 +48,8 @@ export function Menu({ tabs, activeTabId }: Props) {
         navigation.navigate("Home");
         break;
       case "2": // Grupos de estudo
-        navigation.navigate("StudyGroupScreen");
+        // navigation.navigate("StudyGroupScreen");
+        navigation.navigate("GroupHome");
         break;
       case "3": // Perfil
         navigation.navigate("Profile");

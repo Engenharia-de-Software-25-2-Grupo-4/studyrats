@@ -19,7 +19,8 @@ export default function CriarSessao() {
     const navigation = useNavigation<NavigationProp<StackParams>>();
     const route = useRoute();
 
-    const sessao = (route.params as any)?.sessao;
+    const sessao = (route.params as any)?.sessao
+    const grupoId = (route.params as any)?.grupoId
 
     const [image, setImage] = useState("");
     const [titulo, setTitulo] = useState("");
@@ -83,46 +84,44 @@ export default function CriarSessao() {
             return;
         }
         try {
-            console.log("1. iniciando submit");
-            console.log("2. sessao:", sessao);
-
             if (sessao) {
-                console.log("3. editando sessao");
                 await updateSessao(sessao.id_sessao, {
-                    titulo,
-                    descricao,
-                    horario_inicio: dataHora.toISOString(),
-                    duracao_minutos,
-                    url_foto: "",
-                    disciplina,
-                    topico
-                }, );
-                if (image) await uploadImagem(sessao.id_sessao, image); 
+                titulo,
+                descricao,
+                horario_inicio: dataHora.toISOString(),
+                duracao_minutos,
+                url_foto: "",
+                disciplina,
+                topico
+                });
+                if (image) await uploadImagem(sessao.id_sessao, image);
 
                 Alert.alert("Sucesso", "Check-in atualizado!", [
-                    { text: "OK", onPress: () => navigation.goBack() }
+                { text: "OK", onPress: () => navigation.goBack() }
                 ]);
             } else {
-                console.log("3. criando sessao");
+                if (!grupoId) { 
+                Alert.alert("Erro", "ID do grupo não encontrado");
+                return;
+                }
+
                 const novaSessao = await createSessao({
-                    titulo,
-                    descricao,
-                    horario_inicio: dataHora.toISOString(),
-                    duracao_minutos,
-                    url_foto: "",
-                    disciplina,
-                    topico
+                titulo,
+                descricao,
+                horario_inicio: dataHora.toISOString(),
+                duracao_minutos,
+                url_foto: "",
+                disciplina,
+                topico
+                }, grupoId); 
 
-                }, sessao.id_grupo);
-                console.log("retorno createSessao:", novaSessao); 
                 if (image) await uploadImagem(novaSessao.id_sessao, image);
-                navigation.navigate("Publicacao", { sessao: novaSessao })
+                navigation.navigate("Publicacao", { sessao: novaSessao });
             }
-
         } catch (error: any) {
             Alert.alert("Erro", error.message);
         }
-    };
+    }
 
     return (
         <View style={styles.container}>

@@ -1,4 +1,5 @@
 import { colors } from "@/styles/colors";
+import { useImagemSessao } from "@/utils/useImageSessao";
 import React from "react";
 import { Image, ImageSourcePropType, StyleSheet, Text, View } from "react-native";
 
@@ -6,14 +7,24 @@ type Props = {
     title: string
     user: string
     subject: string
-    image: ImageSourcePropType
+    image?: string
+    idSessao?: string
 }
 
-export function Post({ title, user, subject, image }: Props) {
+export function Post({ title, user, subject, image, idSessao }: Props) {
+
+    const { imagemBase64, loading } = useImagemSessao(idSessao)
+
+    const imageSource = imagemBase64
+    ? { uri: imagemBase64 }
+    : image
+    ? { uri: image }
+    : require("@/assets/image.png")
+
     return (
         <View style={styles.container}>
 
-            <Image source={image} style={styles.image}/> 
+            <Image source={imageSource} style={styles.image}/> 
             
             <View style={styles.contentLeft}>
                 <Text style={styles.title}>

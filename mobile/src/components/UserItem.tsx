@@ -16,7 +16,7 @@ export function UserItem({ user, showMedal, medal, mode = "stats" }: Props) {
       bronze: require("@/assets/medalha-de-bronze.png"),
     } as const;
 
-    const initial = user.name.charAt(0).toUpperCase()
+    const initial = user?.name ? user.name.charAt(0).toUpperCase() : "?"
 
     return (
       <View style={styles.container}>
@@ -33,11 +33,11 @@ export function UserItem({ user, showMedal, medal, mode = "stats" }: Props) {
 
 
         <View style={styles.info}>
-          <Text style={styles.name}>{user.name}</Text>
+          <Text style={styles.name}>{user?.name || "Usuário"}</Text>
           <Text style={styles.subtitle}>
             {mode === "stats" 
-              ? `${user.daysActive} dias ativos`
-              : `${user.groups} ${user.groups === 1 ? 'grupo' : 'grupos'}`
+              ? `${user?.daysActive || 0} ${user?.daysActive === 1 ? 'check-in' : 'check-ins'}`
+              : `${user?.groups || 0} ${user?.groups === 1 ? 'grupo' : 'grupos'}`
             }
           </Text>
         </View>

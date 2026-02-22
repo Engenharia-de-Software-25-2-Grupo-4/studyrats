@@ -12,8 +12,9 @@ import { RouteProp, useNavigation, useRoute } from "@react-navigation/native"
 import type { NavigationProp } from "@react-navigation/native"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native"
-import { getGrupoById, GrupoDetails } from "@/services/grupo"
+import { getGrupoById, GrupoDetails, grupoServer, MembroGrupo, RankingItem } from "@/services/grupo"
 import { authFetch } from "@/services/backendApi"
+import { SessaoDetails } from "@/services/sessao"
 
 enum Tab {
   ESTATISTICAS = 1,
@@ -32,6 +33,15 @@ export default function StudyGroupScreen() {
 
   const [grupo, setGrupo] = useState<GrupoDetails | null>(null)
   const [loadingGrupo, setLoadingGrupo] = useState(true)
+
+  const [sessoes, setSessoes] = useState<SessaoDetails[]>([])
+  const [loadingSessoes, setLoadingSessoes] = useState(false)
+
+  const [ranking, setRanking] = useState<RankingItem[]>([])
+  const [loadingRanking, setLoadingRanking] = useState(false)
+
+  const [membros, setMembros] = useState<MembroGrupo[]>([])
+  const [loadingMembros, setLoadingMembros] = useState(false)
 
   const [grupoImagemBase64, setGrupoImagemBase64] = useState<string | null>(null)
   const pendenteImagemRef = useRef(false)
@@ -107,10 +117,81 @@ export default function StudyGroupScreen() {
     loadGrupoImagem()
   }, [grupoId])
 
+  // Carrega sessões
+  useEffect(() => {
+    async function loadSessoes() {
+      if (!grupoId) return
+
+      try {
+        setLoadingSessoes(true)
+        const data = await grupoServer.getSessoes(grupoId)
+        setSessoes(data)
+      } catch (e: any) {
+        console.log("Erro ao carregar sessões:", e?.message ?? e)
+        setSessoes([])
+      } finally {
+        setLoadingSessoes(false)
+      }
+    }
+
+    loadSessoes()
+  }, [grupoId])
+
+  // Carrega ranking
+  useEffect(() => {
+    async function loadRanking() {
+      if (!grupoId) return
+
+      try {
+        setLoadingRanking(true)
+        const data = await grupoServer.getRanking(grupoId)
+        setRanking(data)
+      } catch (e: any) {
+        console.log("Erro ao carregar ranking:", e?.message ?? e)
+        setRanking([])
+      } finally {
+        setLoadingRanking(false)
+      }
+    }
+
+    loadRanking()
+  }, [grupoId])
+
+    // Carrega membros
+  useEffect(() => {
+    async function loadMembros() {
+      if (!grupoId) return
+
+      try {
+        setLoadingMembros(true)
+        const data = await grupoServer.getMembros(grupoId)
+        console.log("Membros carregados:", data) 
+        setMembros(data)
+      } catch (e: any) {
+        console.log("Erro ao carregar membros:", e?.message ?? e)
+        setMembros([])
+      } finally {
+        setLoadingMembros(false)
+      }
+    }
+
+    loadMembros()
+  }, [grupoId])
+
+  const sessaoMaisRecente = useMemo(() => {
+    if (sessoes.length === 0) return null
+    return sessoes[0] // assumindo que vem ordenado
+  }, [sessoes])
+
+    const topThree = useMemo(() => {
+    return ranking
+      .filter(r => r.quantidadeCheckins > 0)
+      .slice(0, 3)
+  }, [ranking])
+
   const post = posts[0]
 
   const sortedUsers = useMemo(() => [...users].sort((a, b) => b.daysActive - a.daysActive), [])
-  const topThree = useMemo(() => sortedUsers.slice(0, 3), [sortedUsers])
 
   const ITEMS_PER_LOAD = 5
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_LOAD)
@@ -125,7 +206,17 @@ export default function StudyGroupScreen() {
   }
 
   const handleNavigateToFeed = () => {
-    navigation.navigate("Feed")
+    if (!grupoId) return
+    navigation.navigate("Feed", { grupoId })
+  }
+
+  const handleNavigateCheckIn = () => {
+    console.log("Criar sessão do grupo:", grupoId)
+    navigation.navigate("CriarSessao", { grupoId: grupoId })
+  }
+
+  const handleNavigateToPublicacao = (sessao: SessaoDetails) => {
+    navigation.navigate("Publicacao", { sessao })
   }
 
   return (
@@ -146,7 +237,11 @@ export default function StudyGroupScreen() {
         {loadingGrupo ? (
           <ActivityIndicator size="small" color={colors.azul[300]} />
         ) : (
-            <GroupOverviewCard grupo={grupo} grupoImagemBase64={grupoImagemBase64} />
+            <GroupOverviewCard
+              grupo={grupo}
+              grupoImagemBase64={grupoImagemBase64}
+              onCheckIn={handleNavigateCheckIn}
+            />
         )}
       </View>
 
@@ -158,12 +253,30 @@ export default function StudyGroupScreen() {
       ) : null}
 
       {tab === Tab.ESTATISTICAS && (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Acompanhe as publicações recentes</Text>
-          <TouchableOpacity onPress={handleNavigateToFeed}>
-            <Post title={post.title} user={post.user} subject={post.subject} image={post.image} />
-          </TouchableOpacity>
-        </View>
+        <>
+          {loadingSessoes ? (
+            <ActivityIndicator size="small" color={colors.azul[300]} style={{ marginTop: 20 }} />
+          ) : sessaoMaisRecente ? (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Acompanhe as publicações recentes</Text>
+              <TouchableOpacity onPress={() => handleNavigateToPublicacao(sessaoMaisRecente)}>
+                <Post
+                  title={sessaoMaisRecente.titulo}
+                  user={sessaoMaisRecente.nome_criador}
+                  subject={sessaoMaisRecente.disciplina}
+                  idSessao={sessaoMaisRecente.id_sessao}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleNavigateToFeed} style={styles.verMaisButton}>
+                <Text style={styles.verMaisText}>Ver todas as publicações</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.card}>
+              <Text style={styles.emptyText}>Nenhuma publicação ainda</Text>
+            </View>
+          )}
+        </>
       )}
 
       <View style={styles.tabs}>
@@ -178,23 +291,53 @@ export default function StudyGroupScreen() {
 
       <View style={styles.content}>
         {tab === Tab.ESTATISTICAS ? (
+          loadingRanking ? (
+            <ActivityIndicator size="small" color={colors.azul[300]} style={{ marginTop: 20 }} />
+          ) : topThree.length > 0 ? (
+            <FlatList
+              data={topThree}
+              keyExtractor={(item, index) => `${item.firebaseUid}-${index}`}
+              renderItem={({ item, index }) => (
+                <UserItem
+                  user={{
+                    id: item.firebaseUid,
+                    name: item.nomeEstudante,
+                    daysActive: item.quantidadeCheckins,
+                    groups: 0,
+                    avatar: null,
+                  }}
+                  showMedal
+                  medal={index === 0 ? "gold" : index === 1 ? "silver" : "bronze"}
+                  mode="stats"
+                />
+              )}
+              contentContainerStyle={{ padding: 20, paddingTop: 8 }}
+            />
+          ) : (
+            <Text style={styles.emptyText}>Nenhum check-in registrado ainda</Text>
+          )
+        ) : loadingMembros ? (
+          <ActivityIndicator size="small" color={colors.azul[300]} style={{ marginTop: 20 }} />
+        ) : membros.length > 0 ? (
           <FlatList
-            data={topThree}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item, index }) => (
-              <UserItem user={item} showMedal medal={index === 0 ? "gold" : index === 1 ? "silver" : "bronze"} mode="stats" />
+            data={membros}
+            keyExtractor={(item) => item.firebaseUid}
+            renderItem={({ item }) => (
+              <UserItem
+                user={{
+                  id: item.firebaseUid,
+                  name: item.nomeEstudante,
+                  daysActive: item.quantidadeCheckins,
+                  groups: 1, 
+                  avatar: null,
+                }}
+                mode="participants"
+              />
             )}
             contentContainerStyle={{ padding: 20, paddingTop: 8 }}
           />
         ) : (
-          <FlatList
-            data={users.slice(0, visibleCount)}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <UserItem user={item} mode="participants" />}
-            contentContainerStyle={{ padding: 20, paddingTop: 8 }}
-            onEndReached={loadMore}
-            onEndReachedThreshold={0.5}
-          />
+          <Text style={styles.emptyText}>Nenhum participante</Text>
         )}
       </View>
 
@@ -270,5 +413,19 @@ const styles = StyleSheet.create({
     color: colors.azul[400],
     borderBottomWidth: 1.5,
     borderColor: colors.azul[400],
+  },
+  verMaisButton: {
+    marginTop: 12,
+    alignSelf: "center",
+  },
+  verMaisText: {
+    color: colors.azul[300],
+    fontWeight: "600",
+  },
+  emptyText: {
+    textAlign: "center",
+    color: colors.cinza[500],
+    fontSize: 14,
+    marginTop: 20,
   },
 })

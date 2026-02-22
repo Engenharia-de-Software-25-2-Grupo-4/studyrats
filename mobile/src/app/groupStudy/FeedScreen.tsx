@@ -4,45 +4,75 @@ import { colors } from "@/styles/colors";
 import { categories } from "@/utils/categories";
 import { posts } from "@/utils/posts";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { useNavigation  } from "@react-navigation/native";
+import { useNavigation, useRoute  } from "@react-navigation/native";
 import type { NavigationProp } from '@react-navigation/native';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { StackParams } from "@/utils/routesStack";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FilterModal } from "@/components/Modal";
+import { SessaoDetails } from "@/services/sessao";
+import { grupoServer } from "@/services/grupo";
 
 export default function FeedScreen() {
     const navigation = useNavigation<NavigationProp<StackParams>>();
+    const route = useRoute();
 
     const [filterVisible, setFilterVisible] = useState(false);
     const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
     const [selectedUser, setSelectedUser] = useState<string | null>(null);
 
-    // Extrai disciplinas e usuários únicos dos posts
+    const grupoId = (route.params as any)?.grupoId
+
+    const [sessoes, setSessoes] = useState<SessaoDetails[]>([]);
+    const [loading, setLoading] = useState(true);
+
     const subjects = useMemo(() => 
-        [...new Set(posts.map(p => p.subject))], 
-        []
+        [...new Set(sessoes.map(s => s.disciplina))], 
+        [sessoes]
     );
     
     const users = useMemo(() => 
-        [...new Set(posts.map(p => p.user))], 
-        []
+        [...new Set(sessoes.map(s => s.nome_criador))], 
+        [sessoes]
     );
 
-    // Filtra os posts
-    const filteredPosts = useMemo(() => {
-        return posts.filter(post => {
-            const matchesSubject = !selectedSubject || post.subject === selectedSubject;
-            const matchesUser = !selectedUser || post.user === selectedUser;
+    useEffect(() => {
+        async function loadSessoes() {
+        if (!grupoId) return;
+
+        try {
+            setLoading(true);
+            const data = await grupoServer.getSessoes(grupoId);
+            setSessoes(data);
+        } catch (e: any) {
+            Alert.alert("Erro", "Não foi possível carregar as publicações");
+        } finally {
+            setLoading(false);
+        }
+        }
+
+        loadSessoes();
+    }, [grupoId])
+
+    const handleNavigateToCheckIn = () => {
+        if (!grupoId) return;
+        navigation.navigate("CriarSessao", { grupoId });
+    }
+
+    const handleNavigateToPublicacao = (sessao: SessaoDetails) => {
+        navigation.navigate("Publicacao", { sessao });
+    };
+
+    // Filtra as sessões reais
+    const filteredSessoes = useMemo(() => {
+        return sessoes.filter(sessao => {
+            const matchesSubject = !selectedSubject || sessao.disciplina === selectedSubject;
+            const matchesUser = !selectedUser || sessao.nome_criador === selectedUser;
             return matchesSubject && matchesUser;
         });
-    }, [selectedSubject, selectedUser]);
+    }, [sessoes, selectedSubject, selectedUser]);
 
-    const hasActiveFilters = selectedSubject || selectedUser;
-
-    const handleNavigateToCheckIn = () =>{
-        navigation.navigate("CriarSessao")
-    }
+    const hasActiveFilters = selectedSubject || selectedUser
     
     return (
         <View style={styles.container}>
@@ -81,25 +111,34 @@ export default function FeedScreen() {
                 </TouchableOpacity>
             </View>
 
-            <FlatList
-                data={filteredPosts}
-                keyExtractor={item => item.id}
-                renderItem={({ item }) => (
-                    <Post
-                        title={item.title}
-                        user={item.user}
-                        subject={item.subject}
-                        image={item.image}
-                    />
-                )}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ padding: 20, paddingTop: 8, gap: 10 }}
-                ListEmptyComponent={
-                    <Text style={styles.emptyText}>
-                        Nenhuma publicação encontrada com os filtros selecionados
-                    </Text>
-                }
-            />
+            {loading ? (
+                <ActivityIndicator size="large" color={colors.azul[300]} style={{ marginTop: 40 }} />
+            ) : (
+                <FlatList
+                    data={filteredSessoes}
+                    keyExtractor={item => item.id_sessao}
+                    renderItem={({ item }) => (
+                        <TouchableOpacity onPress={() => handleNavigateToPublicacao(item)}>
+                            <Post
+                                title={item.titulo}
+                                user={item.nome_criador}
+                                subject={item.disciplina}
+                                idSessao={item.id_sessao}
+                            />
+                        </TouchableOpacity>
+                    )}
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ padding: 20, paddingTop: 8, gap: 10 }}
+                    ListEmptyComponent={
+                        <Text style={styles.emptyText}>
+                            {hasActiveFilters 
+                                ? "Nenhuma publicação encontrada com os filtros selecionados"
+                                : "Nenhuma publicação neste grupo ainda"
+                            }
+                        </Text>
+                    }
+                />
+            )}
 
             <FilterModal
                 visible={filterVisible}

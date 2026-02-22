@@ -118,3 +118,62 @@ export async function uploadImagem(idGrupo: string, uri: string): Promise<void> 
     throw new Error(data?.message ?? "Erro ao fazer upload");
   }
 }
+
+export type RankingItem = {
+  nomeEstudante: string
+  firebaseUid: string
+  role: string
+  quantidadeCheckins: number
+}
+
+export type MembroGrupo = {
+  firebaseUid: string
+  nomeEstudante: string
+  quantidadeCheckins: number
+  role: string
+}
+
+async function getSessoes(idGrupo: string) {
+  const res = await authFetch(`/grupos/${idGrupo}/sessoes`, {
+    method: "GET",
+  })
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data?.message ?? "Erro ao buscar sessões")
+  }
+
+  return res.json() 
+}
+
+async function getRanking(idGrupo: string) {
+  const res = await authFetch(`/grupos/${idGrupo}/ranking`, {
+    method: "GET",
+  })
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data?.message ?? "Erro ao buscar ranking")
+  }
+
+  return res.json() 
+}
+
+async function getMembros(idGrupo: string) {
+  const res = await authFetch(`/grupos/${idGrupo}/membros`, {
+    method: "GET",
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data?.message ?? "Erro ao buscar membros")
+  }
+
+  return res.json() 
+}
+
+export const grupoServer = {
+  getRanking,
+  getMembros, 
+  getSessoes
+}

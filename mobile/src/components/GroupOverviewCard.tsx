@@ -7,6 +7,7 @@ import type { GrupoDetails } from "@/services/grupo"
 type Props = {
   grupo: GrupoDetails | null
   grupoImagemBase64?: string | null
+  onCheckIn?: () => void
 }
 
 function formatDatePtBR(iso?: string) {
@@ -16,12 +17,8 @@ function formatDatePtBR(iso?: string) {
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long" })
 }
 
-export function GroupOverviewCard({ grupo, grupoImagemBase64 }: Props) {
+export function GroupOverviewCard({ grupo, grupoImagemBase64, onCheckIn }: Props) {
   const navigation = useNavigation<NavigationProp<StackParams>>()
-
-  const handleNavigateToCheckIn = () => {
-    navigation.navigate("CriarSessao")
-  }
 
   const inicio = formatDatePtBR(grupo?.data_inicio)
   const fim = formatDatePtBR(grupo?.data_fim)
@@ -38,7 +35,7 @@ export function GroupOverviewCard({ grupo, grupoImagemBase64 }: Props) {
           <Text style={styles.description}>Fim: {fim}</Text>
         </View>
 
-        <TouchableOpacity style={styles.buttonStyle} onPress={handleNavigateToCheckIn} disabled={!grupo}>
+        <TouchableOpacity style={styles.buttonStyle} onPress={onCheckIn} disabled={!grupo}>
           <Text style={styles.buttonText}>FAZER CHECK-IN</Text>
         </TouchableOpacity>
       </View>

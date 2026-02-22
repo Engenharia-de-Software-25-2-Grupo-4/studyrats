@@ -16,6 +16,7 @@ import Disciplinas from '@/app/disciplinas';
 
 import { StackParams } from '@/utils/routesStack';
 import RecuperarSenha from '@/app/auth/RecuperarSenha';
+import GroupHome from '@/app/groupStudy/GroupHome';
 
 const Stack = createNativeStackNavigator<StackParams>();
 
@@ -44,6 +45,7 @@ export default function App() {
         <Stack.Screen name="GrupoCriado" component={GrupoCriado} />
         <Stack.Screen name="CriarSessao" component={CriarSessao} />
         <Stack.Screen name="Publicacao" component={Publicacao} />
+        <Stack.Screen name="GroupHome" component={GroupHome} />
       </Stack.Navigator>
     </NavigationContainer>
   );
