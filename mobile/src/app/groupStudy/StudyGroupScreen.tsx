@@ -6,7 +6,7 @@ import { colors } from "@/styles/colors"
 import { categories } from "@/utils/categories"
 import { posts } from "@/utils/posts"
 import { StackParams } from "@/utils/routesStack"
-import { users } from "@/utils/users"
+// import { users } from "@/utils/users"
 import { Ionicons, MaterialIcons } from "@expo/vector-icons"
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native"
 import type { NavigationProp } from "@react-navigation/native"
@@ -15,6 +15,8 @@ import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View }
 import { getGrupoById, GrupoDetails, grupoServer, MembroGrupo, RankingItem } from "@/services/grupo"
 import { authFetch } from "@/services/backendApi"
 import { SessaoDetails } from "@/services/sessao"
+import { fetchProfilePhoto } from "@/server/estudanteInfo/fetchProfilePhoto"
+import { ImageSourcePropType } from "react-native"
 
 enum Tab {
   ESTATISTICAS = 1,
@@ -43,6 +45,8 @@ export default function StudyGroupScreen() {
   const [membros, setMembros] = useState<MembroGrupo[]>([])
   const [loadingMembros, setLoadingMembros] = useState(false)
 
+  const [avatars, setAvatars] = useState<Record<string, ImageSourcePropType>>({})
+
   const [grupoImagemBase64, setGrupoImagemBase64] = useState<string | null>(null)
   const pendenteImagemRef = useRef(false)
 
@@ -53,6 +57,21 @@ export default function StudyGroupScreen() {
       reader.onerror = reject
       reader.readAsDataURL(blob)
     })
+  }
+
+  async function loadAvatar(firebaseUid: string) {
+    if (!firebaseUid) return
+    if (avatars[firebaseUid]) return // já carregado
+
+    try {
+      const img = await fetchProfilePhoto(firebaseUid)
+      setAvatars(prev => ({
+        ...prev,
+        [firebaseUid]: img,
+      }))
+    } catch {
+      // silencioso: fetchProfilePhoto já trata fallback
+    }
   }
 
   useEffect(() => {
@@ -180,7 +199,7 @@ export default function StudyGroupScreen() {
 
   const sessaoMaisRecente = useMemo(() => {
     if (sessoes.length === 0) return null
-    return sessoes[0] // assumindo que vem ordenado
+    return sessoes[0]
   }, [sessoes])
 
     const topThree = useMemo(() => {
@@ -191,15 +210,15 @@ export default function StudyGroupScreen() {
 
   const post = posts[0]
 
-  const sortedUsers = useMemo(() => [...users].sort((a, b) => b.daysActive - a.daysActive), [])
+  // const sortedUsers = useMemo(() => [...users].sort((a, b) => b.daysActive - a.daysActive), [])
 
   const ITEMS_PER_LOAD = 5
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_LOAD)
 
-  const loadMore = () => {
-    if (visibleCount >= users.length) return
-    setVisibleCount((prev) => prev + ITEMS_PER_LOAD)
-  }
+  // const loadMore = () => {
+  //   if (visibleCount >= users.length) return
+  //   setVisibleCount((prev) => prev + ITEMS_PER_LOAD)
+  // }
 
   const handleNavigateToHome = () => {
     navigation.navigate("Home")
@@ -218,6 +237,18 @@ export default function StudyGroupScreen() {
   const handleNavigateToPublicacao = (sessao: SessaoDetails) => {
     navigation.navigate("Publicacao", { sessao })
   }
+
+    useEffect(() => {
+    ranking.forEach(item => {
+      loadAvatar(item.firebaseUid)
+    })
+  }, [ranking])
+
+    useEffect(() => {
+    ranking.forEach(item => {
+      loadAvatar(item.firebaseUid)
+    })
+  }, [ranking])
 
   return (
     <View style={styles.container}>
@@ -304,7 +335,7 @@ export default function StudyGroupScreen() {
                     name: item.nomeEstudante,
                     daysActive: item.quantidadeCheckins,
                     groups: 0,
-                    avatar: null,
+                    avatar: avatars[item.firebaseUid],
                   }}
                   showMedal
                   medal={index === 0 ? "gold" : index === 1 ? "silver" : "bronze"}
@@ -329,7 +360,7 @@ export default function StudyGroupScreen() {
                   name: item.nomeEstudante,
                   daysActive: item.quantidadeCheckins,
                   groups: 1, 
-                  avatar: null,
+                  avatar: avatars[item.firebaseUid],
                 }}
                 mode="participants"
               />

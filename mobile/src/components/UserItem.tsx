@@ -22,7 +22,7 @@ export function UserItem({ user, showMedal, medal, mode = "stats" }: Props) {
       <View style={styles.container}>
         {user.avatar ? (
           <Image
-            source={{ uri: user.avatar }}
+            source={user.avatar}
             style={styles.avatar}
           />
         ) : (
