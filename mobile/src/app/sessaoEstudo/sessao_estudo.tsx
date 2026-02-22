@@ -10,7 +10,7 @@ import { Menu } from "@/components/Menu";
 import { categories } from "@/utils/categories";
 import { StackParams } from "@/utils/routesStack";
 import { createSessao, updateSessao } from "@/services/sessao";
-import { uploadImagem } from "@/services/storage";
+import { uploadImagem } from "@/services/sessao";
 import { getAuthenticatedUid } from "@/services/authStorage";
 
 
@@ -38,9 +38,9 @@ export default function CriarSessao() {
             setTitulo(sessao.titulo);
             setDescricao(sessao.descricao);
             setDisciplina(sessao.disciplina);
-            setDataHora(new Date(sessao.dataHora));
-            setImage(sessao.image);
-            setDuracao(sessao.duracao);
+            setDataHora(new Date(sessao.horario_inicio));
+            setImage(sessao.url_foto);
+            setDuracao(sessao.duracao_minutos);
             setTopico(sessao.topico);
         }
     }, [sessao]);
@@ -83,36 +83,40 @@ export default function CriarSessao() {
             return;
         }
         try {
-            const url_foto = await uploadImagem(image, `sessaoDeEstudo/${Date.now()}.jpg`);
+            console.log("1. iniciando submit");
+            console.log("2. sessao:", sessao);
 
             if (sessao) {
-                await updateSessao(sessao.id, {
+                console.log("3. editando sessao");
+                await updateSessao(sessao.id_sessao, {
                     titulo,
                     descricao,
                     horario_inicio: dataHora.toISOString(),
                     duracao_minutos,
-                    url_foto,
+                    url_foto: "",
                     disciplina,
                     topico
                 }, );
+                if (image) await uploadImagem(sessao.id_sessao, image); 
 
                 Alert.alert("Sucesso", "Check-in atualizado!", [
                     { text: "OK", onPress: () => navigation.goBack() }
                 ]);
             } else {
-
-                const novoGrupo = await createSessao({
+                console.log("3. criando sessao");
+                const novaSessao = await createSessao({
                     titulo,
                     descricao,
                     horario_inicio: dataHora.toISOString(),
                     duracao_minutos,
-                    url_foto,
+                    url_foto: "",
                     disciplina,
                     topico
 
-                });
-
-                navigation.navigate("Publicacao", { sessao: novoGrupo })
+                }, sessao.id_grupo);
+                console.log("retorno createSessao:", novaSessao); 
+                if (image) await uploadImagem(novaSessao.id_sessao, image);
+                navigation.navigate("Publicacao", { sessao: novaSessao })
             }
 
         } catch (error: any) {

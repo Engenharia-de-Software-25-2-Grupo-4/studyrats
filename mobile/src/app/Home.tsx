@@ -1,29 +1,46 @@
-import { useEffect, useState } from "react";
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image } from "react-native";
-import { colors } from "@/styles/colors";
-import { useNavigation } from "@react-navigation/native";
-import { StackNavigationProp } from "@react-navigation/stack";
-import { Menu } from "@/components/Menu";
-import { StackParams } from "@/utils/routesStack";
-import { categories } from "@/utils/categories";
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  Alert,
+  ActivityIndicator,
+} from "react-native"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { colors } from "@/styles/colors"
+import { useNavigation } from "@react-navigation/native"
+import { StackNavigationProp } from "@react-navigation/stack"
+import { Menu } from "@/components/Menu"
+import { StackParams } from "@/utils/routesStack"
+import { categories } from "@/utils/categories"
 
-import { getEstudanteAtual } from "@/services/estudante";
+import { getEstudanteAtual } from "@/services/estudante"
+import { GrupoDetails, listGrupos } from "@/services/grupo"
+import { authFetch } from "@/services/backendApi"
 
-type HomeNavProp = StackNavigationProp<StackParams, "Home">;
-
-type EstudanteResponse = {
-  nome?: string;
-  firebaseUid?: string;
-};
+type HomeNavProp = StackNavigationProp<StackParams, "Home">
 
 export default function Home() {
-  const navigation = useNavigation<HomeNavProp>();
+  const navigation = useNavigation<HomeNavProp>()
 
-  const [greeting, setGreeting] = useState("");
-  const [userName, setUserName] = useState("Carregando...");
+  const [greeting, setGreeting] = useState("")
+  const [userName, setUserName] = useState("Carregando...")
+
+  const [grupos, setGrupos] = useState<GrupoDetails[]>([])
+  const [loadingGrupos, setLoadingGrupos] = useState(true)
+
+  const [imagensGrupos, setImagensGrupos] = useState<Record<string, string>>({})
+  const imagensGruposRef = useRef<Record<string, string>>({})
+  const pendentesRef = useRef<Set<string>>(new Set())
+
+  useEffect(() => {
+    imagensGruposRef.current = imagensGrupos
+  }, [imagensGrupos])
 
   const getGreeting = () => {
-    const now = new Date();
+    const now = new Date()
 
     const hour = Number(
       new Intl.DateTimeFormat("pt-BR", {
@@ -31,55 +48,141 @@ export default function Home() {
         hour12: false,
         timeZone: "America/Sao_Paulo",
       }).format(now)
-    );
+    )
 
-    if (hour >= 5 && hour < 12) return "Bom dia,";
-    if (hour >= 12 && hour < 18) return "Boa tarde,";
-    return "Boa noite,";
-  };
+    if (hour >= 5 && hour < 12) return "Bom dia,"
+    if (hour >= 12 && hour < 18) return "Boa tarde,"
+    return "Boa noite,"
+  }
 
   const goToLogin = () => {
     navigation.reset({
       index: 0,
       routes: [{ name: "Login" as keyof StackParams }],
-    });
-  };
+    })
+  }
 
-    const loadUserName = async () => {
+  const loadUserName = async () => {
     try {
-        const estudante = await getEstudanteAtual();
+      const estudante = await getEstudanteAtual()
 
-        if (!estudante) {
-        goToLogin();
-        return;
-        }
+      if (!estudante) {
+        goToLogin()
+        return
+      }
 
-        const nome = estudante.nome?.trim();
-        setUserName(nome && nome.length > 0 ? nome : "Usuário");
+      const nome = estudante.nome?.trim()
+      setUserName(nome && nome.length > 0 ? nome : "Usuário")
     } catch (error: any) {
-        if (String(error?.message).includes("USUARIO_NAO_LOGADO")) {
-        goToLogin();
-        return;
-        }
+      if (String(error?.message).includes("USUARIO_NAO_LOGADO")) {
+        goToLogin()
+        return
+      }
 
-        console.log("Erro ao buscar estudante:", error);
-        setUserName("Usuário");
+      console.log("Erro ao buscar estudante:", error)
+      setUserName("Usuário")
     }
-    };
+  }
+
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = reject
+      reader.readAsDataURL(blob)
+    })
+  }
+
+  const buscarImagemDoGrupo = useCallback(async (grupoId: string) => {
+    if (imagensGruposRef.current[grupoId]) return
+    if (pendentesRef.current.has(grupoId)) return
+
+    pendentesRef.current.add(grupoId)
+
+    try {
+      const res = await authFetch(`/imagens/grupo/${grupoId}`, { method: "GET" })
+      if (!res.ok) {
+        console.log("Falha ao buscar imagem do grupo:", grupoId, res.status)
+        return
+      }
+
+      const blob = await res.blob()
+      const base64 = await blobToBase64(blob)
+
+      setImagensGrupos((prev) => ({ ...prev, [grupoId]: base64 }))
+    } catch (error) {
+      console.log("Erro ao buscar imagem do grupo:", grupoId, error)
+    } finally {
+      pendentesRef.current.delete(grupoId)
+    }
+  }, [])
+
+  const loadGroups = useCallback(async () => {
+    try {
+      setLoadingGrupos(true)
+      const data = await listGrupos()
+      setGrupos(data)
+
+      data.forEach((g) => {
+        buscarImagemDoGrupo(g.id_grupo)
+      })
+    } catch (error) {
+      Alert.alert("Erro", "Não foi possível carregar os grupos")
+      console.error(error)
+      setGrupos([])
+    } finally {
+      setLoadingGrupos(false)
+    }
+  }, [buscarImagemDoGrupo])
+
+  const resolveGroupImageSource = (grupo: GrupoDetails) => {
+    const base64 = imagensGrupos[grupo.id_grupo]
+    if (base64) return { uri: base64 }
+
+    if (grupo.foto_perfil && grupo.foto_perfil.startsWith("http")) {
+      return { uri: grupo.foto_perfil }
+    }
+
+    return require("@/assets/image.png")
+  }
+
+  const formatPeriodo = (inicio?: string, fim?: string) => {
+    try {
+      if (!inicio || !fim) return ""
+      const di = new Date(inicio)
+      const df = new Date(fim)
+
+      const ini = di.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })
+      const end = df.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })
+      return `${ini} - ${end}`
+    } catch {
+      return ""
+    }
+  }
+
+  const grupoDestaque =
+    grupos.find((g) => {
+      try {
+        return new Date(g.data_fim) >= new Date()
+      } catch {
+        return false
+      }
+    }) ?? grupos[0]
 
   useEffect(() => {
-    setGreeting(getGreeting());
+    setGreeting(getGreeting())
 
     const interval = setInterval(() => {
-      setGreeting(getGreeting());
-    }, 60000);
+      setGreeting(getGreeting())
+    }, 60000)
 
-    return () => clearInterval(interval);
-  }, []);
+    return () => clearInterval(interval)
+  }, [])
 
   useEffect(() => {
-    loadUserName();
-  }, []);
+    loadUserName()
+    loadGroups()
+  }, [loadGroups])
 
   return (
     <View style={styles.container}>
@@ -90,28 +193,60 @@ export default function Home() {
             <Image source={require("@/assets/profile.jpg")} style={styles.avatar} />
             <View>
               <Text style={styles.greeting}>{greeting}</Text>
-
-              {}
               <Text style={styles.name}>{userName}</Text>
             </View>
           </View>
         </View>
 
-        {/* GROUP CARD */}
-        <View style={styles.groupCard}>
-          <View style={styles.groupContent}>
-            <Text style={styles.groupTitle}>Grupo de estudos</Text>
-            <Text style={styles.groupSub}>
-              02/dez - 26/jan{"\n"}8 participantes
-            </Text>
-            <TouchableOpacity style={styles.statusButton} onPress={() => navigation.navigate("StudyGroupScreen")}>
-              <Text style={styles.statusText}>VER STATUS</Text>
-            </TouchableOpacity>
+        {/*  GROUP CARD GRANDE  */}
+        {loadingGrupos ? (
+          <View style={[styles.groupCard, { alignItems: "center", justifyContent: "center", padding: 24 }]}>
+            <ActivityIndicator size="small" color={colors.azul[300]} />
           </View>
-          <Image source={require("@/assets/fazer-check-in.png")} style={styles.groupImage} resizeMode="cover" />
-        </View>
+        ) : !grupoDestaque ? (
+          <View style={styles.groupCard}>
+            <View style={styles.groupContent}>
+              <Text style={styles.groupTitle}>Nenhum grupo ainda</Text>
+              <Text style={styles.groupSub}>Entre ou crie um grupo para acompanhar o status aqui.</Text>
 
-        {/* DESAFIOS */}
+              <TouchableOpacity
+                style={styles.statusButton}
+                onPress={() => navigation.navigate("Profile")}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.statusText}>VER GRUPOS</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Image source={require("@/assets/fazer-check-in.png")} style={styles.groupImage} resizeMode="cover" />
+          </View>
+        ) : (
+          <View style={styles.groupCard}>
+            <View style={styles.groupContent}>
+              <Text style={styles.groupTitle}>{grupoDestaque.nome}</Text>
+
+              <Text style={styles.groupSub}>
+                {formatPeriodo(grupoDestaque.data_inicio, grupoDestaque.data_fim) || "Período não informado"}
+                {"\n"}
+                0 participantes
+              </Text>
+
+              <TouchableOpacity
+                style={styles.statusButton}
+                onPress={() =>
+                  navigation.navigate("StudyGroupScreen", { grupoId: grupoDestaque.id_grupo } as any)
+                }
+                activeOpacity={0.85}
+              >
+                <Text style={styles.statusText}>VER STATUS</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Image source={resolveGroupImageSource(grupoDestaque)} style={styles.groupImage} resizeMode="cover" />
+          </View>
+        )}
+
+        {/* MEUS DESAFIOS */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Meus desafios</Text>
           <TouchableOpacity onPress={() => navigation.navigate("Profile")}>
@@ -119,11 +254,29 @@ export default function Home() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.challengesScroll}>
-          <ChallengeCard title="Desafio 1" />
-          <ChallengeCard title="Desafio 2" />
-          <ChallengeCard title="Desafio 3" />
-        </ScrollView>
+        {loadingGrupos ? (
+          <ActivityIndicator size="small" color={colors.azul[300]} style={{ marginBottom: 16 }} />
+        ) : grupos.length === 0 ? (
+          <Text style={{ color: colors.cinza[600], marginBottom: 16 }}>
+            Você ainda não participa de nenhum grupo.
+          </Text>
+        ) : (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.challengesScroll}>
+            {grupos.map((grupo) => (
+              <TouchableOpacity
+                key={grupo.id_grupo}
+                style={styles.challengeCard}
+                activeOpacity={0.85}
+                onPress={() => navigation.navigate("StudyGroupScreen", { grupoId: grupo.id_grupo })}
+              >
+                <Image source={resolveGroupImageSource(grupo)} style={styles.challengeImage} resizeMode="cover" />
+                <Text style={styles.challengeTitle} numberOfLines={1}>
+                  {grupo.nome}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
 
         {/* DISCIPLINAS */}
         <View style={styles.sectionHeader}>
@@ -147,16 +300,7 @@ export default function Home() {
 
       <Menu tabs={categories} activeTabId="1" />
     </View>
-  );
-}
-
-function ChallengeCard({ title }: { title: string }) {
-  return (
-    <View style={styles.challengeCard}>
-      <Image source={require("@/assets/image.png")} style={styles.challengeImage} resizeMode="cover" />
-      <Text style={styles.challengeTitle}>{title}</Text>
-    </View>
-  );
+  )
 }
 
 function Chip({ label, color }: { label: string; color: string }) {
@@ -164,7 +308,7 @@ function Chip({ label, color }: { label: string; color: string }) {
     <View style={[styles.chip, { backgroundColor: color + "22" }]}>
       <Text style={[styles.chipText, { color }]}>{label}</Text>
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -237,6 +381,7 @@ const styles = StyleSheet.create({
     borderColor: colors.azul[200],
     marginBottom: 24,
     overflow: "hidden",
+    minHeight: 160,
   },
   groupContent: {
     flex: 1,
@@ -311,4 +456,4 @@ const styles = StyleSheet.create({
     fontSize: 15,
     letterSpacing: 0.5,
   },
-});
+})

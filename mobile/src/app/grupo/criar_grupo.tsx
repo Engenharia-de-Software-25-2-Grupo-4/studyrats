@@ -11,7 +11,7 @@ import { categories } from "@/utils/categories";
 import { colors } from "@/styles/colors";
 import { createGrupo } from "@/services/grupo";
 import { updateGrupo } from "@/services/grupo";
-import { uploadImagem } from "@/services/storage";
+import { uploadImagem } from "@/services/grupo";
 
 export default function CriarGrupo() {
     
@@ -30,12 +30,12 @@ export default function CriarGrupo() {
 
     useEffect(() => {
         if (grupo) {
-            setnomeDesafio(grupo.nomeDesafio);
+            setnomeDesafio(grupo.nome);
             setDescricao(grupo.descricao);
             setRegras(grupo.regras);
-            setDataInicio(new Date(grupo.dataInicio));
-            setDataFinal(new Date(grupo.dataFinal));
-            setImage(grupo.imagem);
+            setDataInicio(new Date(grupo.data_inicio));
+            setDataFinal(new Date(grupo.data_fim));
+            setImage(grupo.foto_perfil);
         }
     }, [grupo]);
 
@@ -72,32 +72,35 @@ export default function CriarGrupo() {
         }
 
         try {
-            const foto_perfil = await uploadImagem(imagem, `grupos/${Date.now()}.jpg`);
-
+            console.log("1. iniciando submit");
+            console.log("2. grupo:", grupo);
             if (grupo) {
-                await updateGrupo(grupo.id, {
+                console.log("3. editando grupo");
+                await updateGrupo(grupo.id_grupo, {
                     nome: nomeDesafio,
                     descricao,
-                    foto_perfil,
+                    foto_perfil: "",
                     regras,
                     data_inicio: dataInicio.toISOString(),
                     data_fim: dataFinal.toISOString(),
                 },);
+                if (imagem) await uploadImagem(grupo.id_grupo, imagem); 
 
                 Alert.alert("Sucesso", "Desafio atualizado!", [
                     { text: "OK", onPress: () => navigation.goBack() }
                 ]);
             } else {
-
+                console.log("3. criando sessao");
                 const novoGrupo = await createGrupo({
                     nome: nomeDesafio,
                     descricao,
-                    foto_perfil,
+                    foto_perfil: "",
                     regras,
                     data_inicio: dataInicio.toISOString(),
                     data_fim: dataFinal.toISOString(),
                 });
-
+                console.log("retorno createSessao:", novoGrupo); 
+                if (imagem) await uploadImagem(novoGrupo.id_grupo, imagem); 
                 navigation.navigate("GrupoCriado", { desafio: novoGrupo });
             }
 

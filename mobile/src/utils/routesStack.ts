@@ -6,7 +6,7 @@ type StackParams = {
   Home: undefined;
   Profile: undefined;
   Disciplinas: undefined;
-  StudyGroupScreen: undefined;
+  StudyGroupScreen: { grupoId: string };
   Feed: undefined;
   CriarGrupo: undefined; 
   GrupoCriado: { desafio: any }; // colocar tipo dps

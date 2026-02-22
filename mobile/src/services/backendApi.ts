@@ -1,4 +1,4 @@
-// src/services/backendApi.ts
+
 const API_BASE_URL = "http://191.253.18.8:6431";
 
 import { getValidIdToken } from "./getValidIdToken";
@@ -30,6 +30,7 @@ export async function createEstudante(body: CreateEstudanteBody, idToken: string
 
 export async function authFetch(path: string, options: RequestInit = {}) {
   const token = await getValidIdToken();
+ 
   if (!token) throw new Error("USUARIO_NAO_LOGADO");
 
   const url = `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
