@@ -1,751 +1,529 @@
-import { useState } from "react";
-import { Modal, StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, Image, Alert} from "react-native"
-import { Ionicons } from '@expo/vector-icons';
+import React, { useCallback, useState } from "react";
+import {
+  Alert,
+  Image,
+  Modal,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  ImageSourcePropType,
+  StyleSheet,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { colors } from "@/styles/colors";
+import { fetchProfilePhoto } from "@/server/fetchProfilePhoto";
+import * as ImagePicker from "expo-image-picker";
+import { uploadProfilePhoto } from "@/server/uploadProfilePhoto";
+import { changePassword } from "@/services/changePassword";
+import { auth } from "@/firebaseConfig";
 
-export default function EditProfile(){
+// ✅ helper: só aplica cache-bust em URL de rede (http/https)
+// ❌ NÃO mexe em data: (base64) nem file: (local), porque isso quebra a URI
+function withCacheBuster(uri: string) {
+  if (/^https?:\/\//i.test(uri)) {
+    return `${uri}${uri.includes("?") ? "&" : "?"}t=${Date.now()}`;
+  }
+  return uri;
+}
 
-    const [name, setName] = useState("Kemilli Nicole");
-    const [email, setEmail] = useState("kemilli.nicole@email.com");
-    const [phone, setPhone] = useState("(83) 99999-9999");
-    const [bio, setBio] = useState("Estudante de Ciência da Computação");
-    const [university, setUniversity] = useState("UFCG");
+export default function EditProfile() {
+  const navigation = useNavigation();
 
-    const [photoModalVisible, setPhotoModalVisible] = useState(false);
-    const [codeModalVisible, setCodeModalVisible] = useState(false);
-    const [changeModalVisible, setChangeModalVisible] = useState(false);
+  const [name, setName] = useState("Kemilli Nicole");
 
-    const [verificationCode, setVerificationCode] = useState("");
-    const [newValue, setNewValue] = useState("");
-    const [securityAction, setSecurityAction] = useState(null);
+  const [profileImage, setProfileImage] = useState<ImageSourcePropType>(
+    require("@/assets/default_profile.jpg")
+  );
 
-    const [isLoading, setIsLoading] = useState(false);
-    const [resendTimer, setResendTimer] = useState(30);
-    const [canResend, setCanResend] = useState(false);
+  const [photoModalVisible, setPhotoModalVisible] = useState(false);
 
-    const [profileImage, setProfileImage] = useState(require("@/assets/profile.jpg"));
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
 
-    const cancelCodeModal = () => {
-      setCodeModalVisible(false);
-      setVerificationCode("");
-      setIsLoading(false);
-      setSecurityAction(null);
-    };
-  
-    const cancelChangeModal = () => {
-      setChangeModalVisible(false);
-      setNewValue("");
-      setVerificationCode("");
-      setIsLoading(false);
-      setSecurityAction(null);
-    };
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
-    const handleSave = () => {
-        Alert.alert("Sucesso", "Perfil atualizado com sucesso!");
-    };
+  // ✅ força rerender do <Image /> quando a foto mudar (ajuda com cache interno do RN)
+  const [photoVersion, setPhotoVersion] = useState(0);
 
-    const handleChangePhoto = () => {
-        setPhotoModalVisible(true);
-    };
+  // carrega/recarrega a foto sempre que a tela abrir/voltar
+  useFocusEffect(
+    useCallback(() => {
+      let alive = true;
 
-    const requestVerificationCode = (type) => {
-      setSecurityAction(type);
-      setCodeModalVisible(true);
-      setResendTimer(30);
-      setCanResend(false);
-  
-    const interval = setInterval(() => {
-        setResendTimer(prev => {
-            if (prev <= 1) {
-                clearInterval(interval);
-                setCanResend(true);
-                return 0;
-            }
-            return prev - 1;
-        });
-    }, 1000);
-    };  
+      (async () => {
+        try {
+          const user = auth.currentUser;
+          if (!user?.uid) return;
 
-    const validateVerificationCode = () => {
-      if (verificationCode.length !== 6) return;
-  
-      setIsLoading(true);
-  
-      setTimeout(() => {
-          setIsLoading(false);
-  
-          if (verificationCode === "123456") {
-              setCodeModalVisible(false);
-              setChangeModalVisible(true);
+          const source = await fetchProfilePhoto(user.uid);
+
+          if (!alive) return;
+
+          if (typeof (source as any)?.uri === "string") {
+            const u = (source as any).uri;
+            setProfileImage({ uri: withCacheBuster(u) });
           } else {
-              Alert.alert("Código inválido");
+            setProfileImage(source);
           }
-      }, 800);
-    };
 
-    const confirmSecurityChange = () => {
-      if (!newValue.trim()) return;
-  
-      setIsLoading(true);
-  
-      setTimeout(() => {
-          if (securityAction === "email") {
-              setEmail(newValue);
-          }
-  
-          setIsLoading(false);
-          setChangeModalVisible(false);
-          setVerificationCode("");
-          setNewValue("");
-      }, 800);
-    };
+          setPhotoVersion((v) => v + 1);
+        } catch (e) {
+          console.warn("Erro ao buscar foto do perfil:", e);
+        }
+      })();
 
-    return (
-        <View style={styles.container}>
-            <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-                {/* HEADER */}
-                <View style={styles.header}>
-                    <TouchableOpacity style={styles.backButton}>
-                        <Ionicons name="arrow-back" size={24} color={colors.azul[300]} />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Configurações</Text>
-                    <View style={styles.backButton} />
-                </View>
+      return () => {
+        alive = false;
+      };
+    }, [])
+  );
 
-                {/* FOTO */}
-                <View style={styles.photoSection}>
-                    <View style={styles.avatarContainer}>
-                    <Image 
-                      source={profileImage}
-                      style={styles.avatar}
-                      />
+  const handleSave = async () => {
+    const tryingToChangePassword =
+      currentPassword.trim() || newPassword.trim() || confirmNewPassword.trim();
 
-                        <TouchableOpacity 
-                            style={styles.editPhotoButton}
-                            onPress={handleChangePhoto}
-                        >
-                            <Ionicons name="camera" size={20} color="#FFF" />
-                        </TouchableOpacity>
-                    </View>
-                    <Text style={styles.photoLabel}>Toque no ícone para alterar sua foto de perfil</Text>
-                </View>
+    if (tryingToChangePassword) {
+      if (!currentPassword.trim() || !newPassword.trim() || !confirmNewPassword.trim()) {
+        Alert.alert("Atenção", "Preencha todos os campos de senha para alterar.");
+        return;
+      }
+      if (newPassword.length < 6) {
+        Alert.alert("Atenção", "A nova senha deve ter pelo menos 6 caracteres.");
+        return;
+      }
+      if (newPassword !== confirmNewPassword) {
+        Alert.alert("Atenção", "A confirmação da senha não confere.");
+        return;
+      }
+    }
 
-                {/* FORMULÁRIO (INTEIRO PRESERVADO) */}
-                <View style={styles.form}>
-                    
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Nome</Text>
-                        <View style={styles.inputContainer}>
-                            <Ionicons name="person-outline" size={20} color={colors.azul[300]} style={styles.inputIcon} />
-                            <TextInput
-                                value={name}
-                                onChangeText={setName}
-                                style={styles.input}
-                                placeholder="Digite seu nome"
-                                placeholderTextColor={colors.cinza[500]}
-                            />
-                        </View>
-                    </View>
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        Alert.alert("Sessão expirada", "Faça login novamente.");
+        return;
+      }
 
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Universidade</Text>
-                        <View style={styles.inputContainer}>
-                            <Ionicons name="school-outline" size={20} color={colors.azul[300]} style={styles.inputIcon} />
-                            <TextInput
-                                value={university}
-                                onChangeText={setUniversity}
-                                style={styles.input}
-                                placeholder="Digite sua universidade"
-                                placeholderTextColor={colors.cinza[500]}
-                            />
-                        </View>
-                    </View>
+      if (tryingToChangePassword) {
+        await changePassword(currentPassword, newPassword);
+      }
 
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Sobre mim</Text>
-                        <View style={[styles.inputContainer, styles.textAreaContainer]}>
-                            <Ionicons name="document-text-outline" size={20} color={colors.azul[300]} style={[styles.inputIcon, styles.textAreaIcon]} />
-                            <TextInput
-                                value={bio}
-                                onChangeText={setBio}
-                                style={[styles.input, styles.textArea]}
-                                placeholder="Conte um pouco sobre você"
-                                placeholderTextColor={colors.cinza[500]}
-                                multiline
-                                numberOfLines={4}
-                                textAlignVertical="top"
-                            />
-                        </View>
-                    </View>
+      Alert.alert("Sucesso", "Perfil atualizado com sucesso!");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+    } catch (e: any) {
+      const code = e?.code as string | undefined;
 
-                </View>
+      if (e?.message === "USUARIO_NAO_LOGADO") {
+        Alert.alert("Sessão expirada", "Faça login novamente.");
+        return;
+      }
 
-                {/* SEÇÃO DE SEGURANÇA */}
-                <View style={styles.securitySection}>
-                    <Text style={styles.sectionTitle}>Segurança</Text>
-                    
-                    {/* Alterar senha */}
-                    <TouchableOpacity 
-                        style={styles.securityButton}
-                        onPress={() => requestVerificationCode("password")}
-                    >
-                        <View style={styles.securityButtonLeft}>
-                            <Ionicons name="lock-closed-outline" size={22} color={colors.azul[300]} />
-                            <Text style={styles.securityButtonText}>Alterar senha</Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={20} color={colors.cinza[500]} />
-                    </TouchableOpacity>
+      if (e?.message === "PROVEDOR_SEM_SENHA") {
+        Alert.alert(
+          "Atenção",
+          "Sua conta não usa senha (provavelmente Google/Apple). Para criar senha, você precisa vincular um provedor de email/senha."
+        );
+        return;
+      }
 
-                    {/* Alterar e-mail */}
-                    <TouchableOpacity 
-                        style={styles.securityButton}
-                        onPress={() => requestVerificationCode("email")}
-                    >
-                        <View style={styles.securityButtonLeft}>
-                            <Ionicons name="mail-outline" size={22} color={colors.azul[300]} />
-                            <Text style={styles.securityButtonText}>Alterar e-mail</Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={20} color={colors.cinza[500]} />
-                    </TouchableOpacity>
+      if (code === "auth/wrong-password") {
+        Alert.alert("Atenção", "Senha atual incorreta.");
+        return;
+      }
 
-                </View>
+      if (code === "auth/weak-password") {
+        Alert.alert("Atenção", "A nova senha é fraca. Use pelo menos 6 caracteres.");
+        return;
+      }
 
+      if (code === "auth/too-many-requests") {
+        Alert.alert("Atenção", "Muitas tentativas. Tente novamente mais tarde.");
+        return;
+      }
 
-                {/* BOTÕES */}
-                <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-                    <Text style={styles.saveButtonText}>SALVAR ALTERAÇÕES</Text>
-                </TouchableOpacity>
+      if (code === "auth/requires-recent-login") {
+        Alert.alert("Atenção", "Por segurança, faça login novamente e tente de novo.");
+        return;
+      }
 
-                <TouchableOpacity style={styles.cancelButton}>
-                    <Text style={styles.cancelButtonText}>Cancelar</Text>
-                </TouchableOpacity>
+      Alert.alert("Erro", e?.message ?? "Não foi possível alterar a senha.");
+    }
+  };
 
-            </ScrollView>
+  const handleChangePhoto = () => setPhotoModalVisible(true);
 
-            {/* ================= MODAL CÓDIGO ================= */}
-            <Modal visible={codeModalVisible} transparent animationType="fade">
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalBox}>
-                        <Text style={styles.stepText}>Etapa 1 de 2</Text>
-                        <Text style={styles.modalTitle}>Verificação de segurança</Text>
+  async function pickAndUploadPhoto() {
+    try {
+      setIsUploadingPhoto(true);
 
-                        <Text style={styles.modalSubtitle}>
-                            Enviamos um código para:
-                        </Text>
-                        <Text style={styles.maskedEmail}>
-                            {email.replace(/(.{2}).+(@.+)/, "$1****$2")}
-                        </Text>
+      const user = auth.currentUser;
+      if (!user?.uid) {
+        Alert.alert("Sessão expirada", "Faça login novamente para enviar sua foto.");
+        return;
+      }
 
-                        <TextInput
-                            value={verificationCode}
-                            onChangeText={setVerificationCode}
-                            keyboardType="numeric"
-                            maxLength={6}
-                            style={styles.codeInput}
-                        />
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (perm.status !== "granted") {
+        Alert.alert("Permissão necessária", "Permita acesso à galeria para escolher uma foto.");
+        return;
+      }
 
-                        <TouchableOpacity
-                            style={[
-                                styles.modalButton,
-                                verificationCode.length !== 6 && { opacity: 0.5 }
-                            ]}
-                            disabled={verificationCode.length !== 6 || isLoading}
-                            onPress={validateVerificationCode}
-                        >
-                            <Text style={styles.modalButtonText}>
-                                {isLoading ? "Verificando..." : "Confirmar Código"}
-                            </Text>
-                        </TouchableOpacity>
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
 
-                        {/* BOTÃO CANCELAR */}
-                        <TouchableOpacity
-                            style={styles.modalCancelButton}
-                            onPress={cancelCodeModal}
-                        >
-                            <Text style={styles.modalCancelText}>Cancelar</Text>
-                        </TouchableOpacity>
+      if (result.canceled) return;
 
-                    </View>
-                </View>
-            </Modal>
+      const picked = result.assets[0];
 
-            {/* ================= MODAL ALTERAÇÃO ================= */}
-            <Modal visible={changeModalVisible} transparent animationType="fade">
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalBox}>
-                        <Text style={styles.stepText}>Etapa 2 de 2</Text>
+      // ✅ Preview imediato (local)
+      setProfileImage({ uri: picked.uri });
+      setPhotoVersion((v) => v + 1);
 
-                        <Text style={styles.modalTitle}>
-                            {securityAction === "password"
-                                ? "Defina sua nova senha"
-                                : "Defina seu novo e-mail"}
-                        </Text>
+      // Envia para o backend
+      await uploadProfilePhoto(picked.uri);
 
-                        <TextInput
-                            value={newValue}
-                            onChangeText={setNewValue}
-                            secureTextEntry={securityAction === "password"}
-                            autoCapitalize="none"
-                            style={styles.modalInput}
-                        />
+      setPhotoModalVisible(false);
 
-                        <TouchableOpacity
-                            style={[
-                                styles.modalButton,
-                                !newValue.trim() && { opacity: 0.5 }
-                            ]}
-                            disabled={!newValue.trim() || isLoading}
-                            onPress={confirmSecurityChange}
-                        >
-                            <Text style={styles.modalButtonText}>
-                                {isLoading ? "Salvando..." : "Salvar"}
-                            </Text>
-                        </TouchableOpacity>
+      // ✅ Recarrega do backend (fetchProfilePhoto deve evitar cache do GET do lado dele)
+      const source = await fetchProfilePhoto(user.uid);
+      console.log("[EditProfile] photo source:", source);
 
-                        {/* BOTÃO CANCELAR */}
-                        <TouchableOpacity
-                            style={styles.modalCancelButton}
-                            onPress={cancelChangeModal}
-                        >
-                            <Text style={styles.modalCancelText}>Cancelar</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
+      if (typeof (source as any)?.uri === "string") {
+        setProfileImage({ uri: withCacheBuster((source as any).uri) });
+      } else {
+        setProfileImage(source);
+      }
 
-            {/* ================= MODAL UPLOAD FOTO ================= */}
-            <Modal visible={photoModalVisible} transparent animationType="fade">
-                <View style={styles.uploadOverlay}>
-                    <View style={styles.uploadContainer}>
-                        <Text style={styles.uploadTitle}>Selecione uma imagem</Text>
+      setPhotoVersion((v) => v + 1);
 
-                        <TouchableOpacity
-                            style={styles.uploadBox}
-                            onPress={async () => {
+      Alert.alert("Sucesso", "Foto atualizada!");
+    } catch (e: any) {
+      console.warn("Erro upload foto:", e);
 
-                                // ===============================
-                                // 🔗 INTEGRAÇÃO IMAGE PICKER
-                                // import * as ImagePicker from 'expo-image-picker';
-                                //
-                                // const result = await ImagePicker.launchImageLibraryAsync({
-                                //   mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                                //   allowsEditing: true,
-                                //   aspect: [1,1],
-                                //   quality: 0.8,
-                                // });
-                                //
-                                // if (!result.canceled) {
-                                //   setProfileImage({ uri: result.assets[0].uri });
-                                // }
-                                // ===============================
+      if (e?.message === "USUARIO_NAO_LOGADO") {
+        Alert.alert("Sessão expirada", "Faça login novamente.");
+        return;
+      }
 
-                                Alert.alert("Integração necessária", "Implementar ImagePicker aqui.");
-                            }}
-                        >
-                            <Ionicons name="image-outline" size={40} color="#AAA" />
-                            <Text style={styles.uploadText}>Enviar imagem</Text>
-                        </TouchableOpacity>
+      Alert.alert("Erro", e?.message ?? "Falha ao enviar foto.");
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  }
 
-                        <TouchableOpacity
-                            style={styles.uploadCancel}
-                            onPress={() => setPhotoModalVisible(false)}
-                        >
-                            <Text style={styles.uploadCancelText}>Cancelar</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
+  return (
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* HEADER */}
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={24} color={colors.azul[300]} />
+          </TouchableOpacity>
+
+          <Text style={styles.headerTitle}>Editar perfil</Text>
+
+          <View style={styles.backButton} />
         </View>
-    )
+
+        {/* FOTO */}
+        <View style={styles.photoSection}>
+          <View style={styles.avatarContainer}>
+            {/* ✅ key força rerender quando a foto muda */}
+            <Image key={photoVersion} source={profileImage} style={styles.avatar} />
+
+            <TouchableOpacity style={styles.editPhotoButton} onPress={handleChangePhoto}>
+              <Ionicons name="camera" size={20} color="#FFF" />
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.photoLabel}>Toque no ícone para alterar sua foto de perfil</Text>
+        </View>
+
+        {/* FORM */}
+        <View style={styles.form}>
+          {/* Nome */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Nome</Text>
+            <View style={styles.inputContainer}>
+              <Ionicons
+                name="person-outline"
+                size={20}
+                color={colors.azul?.[300] ?? "#0EA5E9"}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                value={name}
+                onChangeText={setName}
+                style={styles.input}
+                placeholder="Digite seu nome"
+                placeholderTextColor={colors.cinza?.[500] ?? "#64748B"}
+              />
+            </View>
+          </View>
+
+          {/* Senha */}
+          <Text style={styles.sectionTitle}>Senha</Text>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Senha atual</Text>
+            <View style={styles.inputContainer}>
+              <Ionicons
+                name="lock-closed-outline"
+                size={20}
+                color={colors.azul?.[300] ?? "#0EA5E9"}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                value={currentPassword}
+                onChangeText={setCurrentPassword}
+                style={styles.input}
+                placeholder="Digite sua senha atual"
+                placeholderTextColor={colors.cinza?.[500] ?? "#64748B"}
+                secureTextEntry
+                autoCapitalize="none"
+              />
+            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Nova senha</Text>
+            <View style={styles.inputContainer}>
+              <Ionicons
+                name="key-outline"
+                size={20}
+                color={colors.azul?.[300] ?? "#0EA5E9"}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                value={newPassword}
+                onChangeText={setNewPassword}
+                style={styles.input}
+                placeholder="Digite sua nova senha"
+                placeholderTextColor={colors.cinza?.[500] ?? "#64748B"}
+                secureTextEntry
+                autoCapitalize="none"
+              />
+            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Confirmar nova senha</Text>
+            <View style={styles.inputContainer}>
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={20}
+                color={colors.azul?.[300] ?? "#0EA5E9"}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                value={confirmNewPassword}
+                onChangeText={setConfirmNewPassword}
+                style={styles.input}
+                placeholder="Confirme sua nova senha"
+                placeholderTextColor={colors.cinza?.[500] ?? "#64748B"}
+                secureTextEntry
+                autoCapitalize="none"
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* BOTÃO SALVAR */}
+        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+          <Text style={styles.saveButtonText}>SALVAR ALTERAÇÕES</Text>
+        </TouchableOpacity>
+      </ScrollView>
+
+      {/* MODAL UPLOAD FOTO */}
+      <Modal visible={photoModalVisible} transparent animationType="fade">
+        <View style={styles.uploadOverlay}>
+          <View style={styles.uploadContainer}>
+            <Text style={styles.uploadTitle}>Selecione uma imagem</Text>
+
+            <TouchableOpacity
+              style={styles.uploadBox}
+              onPress={pickAndUploadPhoto}
+              disabled={isUploadingPhoto}
+            >
+              <Ionicons name="image-outline" size={40} color="#AAA" />
+              <Text style={styles.uploadText}>
+                {isUploadingPhoto ? "Enviando..." : "Enviar imagem"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.uploadCancel}
+              onPress={() => setPhotoModalVisible(false)}
+            >
+              <Text style={styles.uploadCancelText}>Fechar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-  containerRoot: {
+  container: {
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
-
-  contentWrap: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-  },
-
-  screen: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
+  content: {
     paddingHorizontal: 16,
     paddingTop: 16,
+    paddingBottom: 24,
   },
 
-  // Header do perfil
-  profileTop: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 20,
     paddingVertical: 10,
-  },  
-
-  profileLeft: {
-    flexDirection: "row",
+    marginBottom: 12,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
     alignItems: "center",
-    gap: 12,
+    justifyContent: "center",
   },
-
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#EAF9FF",
-  },  
-
-  profileInfo: {
-    gap: 4,
-  },
-
-  profileName: {
-    fontSize: 22,
-    fontWeight: "900",
-    color: "#01415B",
-  },  
-
-  statsRow: {
-    flexDirection: "row",
-    gap: 16,
-  },
-
-  stat: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    gap: 6,
-  },
-
-  statNumber: {
+  headerTitle: {
     fontSize: 18,
     fontWeight: "900",
     color: "#01415B",
-  },  
+  },
 
-  statLabel: {
-    fontSize: 13,
-    color: "#01415B",
-    opacity: 0.7,
-  },  
-
-  // Botões de ação
-  actionsRow: {
-    flexDirection: "row",
+  photoSection: {
     alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
+    marginBottom: 18,
+    gap: 10,
   },
-
-  actionButton: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#01415B",
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
+  avatarContainer: {
+    position: "relative",
   },
-
-  actionButtonText: {
-    color: "#01415B",
-    fontWeight: "800",
-    fontSize: 12,
-  },
-
-  iconButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#01415B",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-  },
-
-  // Tabs do perfil
-  perfilTabsRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 10,
-    alignItems: "center",
-  },
-
-  perfilTab: {
-    paddingVertical: 8,
-  },
-
-  perfilTabText: {
-    color: "#01415B",
-    fontWeight: "800",
-    fontSize: 13,
-    opacity: 0.6,
-  },
-
-  perfilTabTextActive: {
-    opacity: 1,
-    textDecorationLine: "underline",
-  },
-
-  // Grid desafios
-  gridContent: {
-    paddingBottom: 16,
-  },
-
-  gridRow: {
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-
-  cardItem: {
-    width: "48%",
-    borderRadius: 12,
-    overflow: "hidden",
+  avatar: {
+    width: 92,
+    height: 92,
+    borderRadius: 46,
     backgroundColor: "#EAF9FF",
   },
-
-  cardImageWrap: {
-    height: 120,
-    backgroundColor: "#EAF9FF",
-  },
-
-  cardLogoFallback: {
-    flex: 1,
+  editPhotoButton: {
+    position: "absolute",
+    right: -2,
+    bottom: -2,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: "#01415B",
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+  },
+  photoLabel: {
+    color: "#01415B",
+    opacity: 0.75,
+    fontSize: 12,
+    textAlign: "center",
   },
 
-  fallbackLogo: {
-    width: 72,
-    height: 72,
-    resizeMode: "contain",
-    opacity: 0.95,
+  form: {
+    gap: 12,
   },
-
-  cardFooter: {
-    padding: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
+  inputGroup: {
+    gap: 6,
   },
-
-  cardTitle: {
-    flex: 1,
+  label: {
     color: "#01415B",
     fontWeight: "800",
-    fontSize: 12,
   },
-
-  // Conquistas
-  conquistasWrap: {
-    paddingTop: 8,
-    gap: 10,
-  },
-
-  conquistaItem: {
+  inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
     backgroundColor: "#EAF9FF",
     borderRadius: 10,
-    padding: 12,
+    borderWidth: 1,
+    borderColor: "#01415B",
+    paddingHorizontal: 12,
+    height: 48,
   },
-
-  conquistaText: {
+  inputIcon: {
+    marginRight: 10,
+  },
+  input: {
+    flex: 1,
     color: "#01415B",
     fontWeight: "700",
   },
 
-  // Modal edição
-  modalOverlay: {
+  sectionTitle: {
+    marginTop: 6,
+    fontSize: 16,
+    fontWeight: "900",
+    color: "#01415B",
+  },
+
+  saveButton: {
+    marginTop: 18,
+    backgroundColor: "#01415B",
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  saveButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "900",
+  },
+
+  uploadOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.35)",
     justifyContent: "center",
     paddingHorizontal: 18,
   },
-
-  modalBox: {
+  uploadContainer: {
     backgroundColor: "#FFFFFF",
     borderRadius: 14,
     padding: 16,
+    gap: 12,
   },
-
-  modalTitle: {
+  uploadTitle: {
     fontSize: 16,
     fontWeight: "900",
     color: "#01415B",
-    marginBottom: 12,
   },
-
-  modalLabel: {
-    color: "#01415B",
-    fontWeight: "700",
-    marginBottom: 6,
-  },
-
-  modalInput: {
-    backgroundColor: "#EAF9FF",
-    borderRadius: 10,
-    padding: 12,
-    color: "#01415B",
+  uploadBox: {
     borderWidth: 1,
-    borderColor: "#01415B",
-  },
-
-  errorMsg: {
-    marginTop: 10,
-    color: "#C62828",
-    fontWeight: "700",
-  },
-
-  modalActions: {
-    flexDirection: "row",
-    gap: 10,
-    marginTop: 14,
-  },
-
-  modalBtnSecondary: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#01415B",
-    alignItems: "center",
-  },
-
-  modalBtnSecondaryText: {
-    color: "#01415B",
-    fontWeight: "900",
-    fontSize: 12,
-  },
-
-  modalBtnPrimary: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: "#01415B",
-    alignItems: "center",
-  },
-
-  modalBtnPrimaryText: {
-    color: "#FFFFFF",
-    fontWeight: "900",
-    fontSize: 12,
-  },
-
-  // Bottom nav
-  bottomNav: {
-    height: 64,
-    backgroundColor: "#01415B",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-around",
-    paddingBottom: 6,
-    paddingTop: 6,
-  },
-
-  navItem: {
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 2,
-  },
-
-  navText: {
-    color: "#FFFFFF",
-    fontSize: 11,
-    opacity: 0.8,
-    fontWeight: "700",
-  },
-
-  navTextActive: {
-    opacity: 1,
-    textDecorationLine: "underline",
-  },
-
-  // Destaque visual durante edição
-  profileTopEditing: {
-    backgroundColor: "#EAF9FF",
-    borderRadius: 14,
-    paddingHorizontal: 12,
-  },
-
-  profileNameEditing: {
-    textDecorationLine: "underline",
-  },
-
-  avatarWrap: {
-    position: "relative",
-  },
-
-  editBadge: {
-    position: "absolute",
-    right: -6,
-    bottom: -6,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#01415B",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  // Preview do perfil dentro do modal
-  editPreview: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: "#EAF9FF",
+    borderColor: "#D1D5DB",
     borderRadius: 12,
-    padding: 12,
-    marginBottom: 14,
-  },
-
-  editPreviewAvatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: "#FFFFFF",
-  },
-
-  editPreviewName: {
-    color: "#01415B",
-    fontWeight: "900",
-    fontSize: 14,
-  },
-
-  // Botões de escolha no modal (foto/nome)
-  choiceButton: {
-    flexDirection: "row",
+    paddingVertical: 18,
     alignItems: "center",
-    gap: 10,
-    borderWidth: 1,
-    borderColor: "#01415B",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    marginTop: 10,
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: "#F8FAFC",
   },
-
-  choiceButtonText: {
+  uploadText: {
+    color: "#01415B",
+    fontWeight: "800",
+  },
+  uploadCancel: {
+    alignItems: "center",
+    paddingVertical: 10,
+  },
+  uploadCancelText: {
     color: "#01415B",
     fontWeight: "900",
-    fontSize: 12,
   },
-
-  photoHint: {
-    marginTop: 10,
-    color: "#01415B",
-    opacity: 0.7,
-    fontSize: 12,
-  },
-
-}   );
+});

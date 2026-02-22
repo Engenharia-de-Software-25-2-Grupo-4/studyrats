@@ -8,6 +8,7 @@ type StackParams = {
   Disciplinas: undefined;
   StudyGroupScreen: undefined;
   Feed: undefined;
+  EditAcc: undefined;
   CriarGrupo: undefined; 
   GrupoCriado: { desafio: any }; // colocar tipo dps
   CriarSessao: undefined;

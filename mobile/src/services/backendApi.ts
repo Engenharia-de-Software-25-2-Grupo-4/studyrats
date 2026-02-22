@@ -34,10 +34,40 @@ export async function authFetch(path: string, options: RequestInit = {}) {
 
   const url = `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 
-  const headers = new Headers(options.headers); 
-  headers.set("Authorization", `Bearer ${token}`);
+  const isFormData =
+    typeof FormData !== "undefined" && options.body instanceof FormData;
 
-  return fetch(url, { ...options, headers });
+  // ✅ normaliza headers em objeto simples
+  const base: Record<string, string> = {};
+
+  // pega headers existentes
+  const inputHeaders = options.headers ?? {};
+  const h = new Headers(inputHeaders as any);
+  h.forEach((v, k) => (base[k] = v));
+
+  // injeta auth
+  base["authorization"] = `Bearer ${token}`;
+
+  // ✅ se não for FormData, garantimos content-type (principalmente em GET)
+  if (!isFormData) {
+    // força uma escolha válida (pra não ficar null)
+    base["content-type"] = base["content-type"] || "application/octet-stream";
+    // também garante accept
+    base["accept"] = base["accept"] || "*/*";
+  } else {
+    // multipart: não setar content-type
+    delete base["content-type"];
+  }
+
+  console.log("[authFetch] URL:", url);
+  console.log("[authFetch] method:", options.method ?? "GET");
+  console.log("[authFetch] isFormData:", isFormData);
+  console.log("[authFetch] final headers:", base);
+
+  return fetch(url, {
+    ...options,
+    headers: base,
+  });
 }
 
 export async function getEstudanteByFirebaseUid(firebaseUid: string) {

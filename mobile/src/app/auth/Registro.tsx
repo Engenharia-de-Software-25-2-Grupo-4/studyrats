@@ -12,7 +12,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useRef, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 
-import { firebaseSignUp, firebaseDeleteAccount } from "../../services/firebaseAuth";
+import { registerWithEmail } from "@/services/auth";
+import { auth } from "@/firebaseConfig";
+
 import { createEstudante } from "../../services/backendApi";
 import { saveSession } from "../../services/authStorage";
 
@@ -21,13 +23,15 @@ import type { StackParams } from "@/utils/routesStack";
 
 type Props = StackScreenProps<StackParams, "Registro">;
 
-function mapFirebaseError(msg: string) {
-  if (msg.includes("EMAIL_EXISTS")) return "Esse email já está cadastrado.";
-  if (msg.includes("WEAK_PASSWORD")) return "Senha fraca (mín. 6 caracteres).";
-  if (msg.includes("INVALID_EMAIL")) return "Email inválido.";
-  if (msg.includes("INVALID_LOGIN_CREDENTIALS")) return "Email ou senha inválidos.";
-  return msg;
+function mapFirebaseError(e: any) {
+  const code = String(e?.code ?? "");
+
+  if (code === "auth/email-already-in-use") return "Esse email já está cadastrado.";
+  if (code === "auth/weak-password") return "Senha fraca (mín. 6 caracteres).";
+  if (code === "auth/invalid-email") return "Email inválido.";
+  return e?.message ?? "Erro inesperado";
 }
+
 
 export default function Registro({ navigation }: any) {
   const [nome, setNome] = useState("");
@@ -85,25 +89,24 @@ export default function Registro({ navigation }: any) {
     setLoading(true);
 
     try {
-      const auth = await firebaseSignUp(emailNorm, senha);
-      const expiresAt = Date.now() + Number(auth.expiresIn) * 1000;
+      const user = await registerWithEmail(emailNorm, senha);
 
-      try {
-        await createEstudante({ nome, email: auth.email }, auth.idToken);
+      // token do Firebase SDK (sempre válido e renovável)
+      const idToken = await user.getIdToken(true);
 
-        await saveSession({
-          idToken: auth.idToken,
-          refreshToken: auth.refreshToken,
-          expiresAt,
-          localId: auth.localId,
-          email: auth.email,
-        });
+      await createEstudante({ nome, email: user.email! }, idToken);
 
-        setSucesso("Cadastro realizado com sucesso!");
-      } catch (err) {
-        await firebaseDeleteAccount(auth.idToken).catch(() => {});
-        throw err;
-      }
+      // (OPCIONAL) manter cache no SecureStore, se você quiser.
+      // Mas não use isso como “fonte da sessão”.
+      await saveSession({
+        idToken,
+        refreshToken: "", // não precisa mais
+        expiresAt: Date.now() + 55 * 60 * 1000, // opcional
+        localId: user.uid,
+        email: user.email!,
+      });
+
+      setSucesso("Cadastro realizado com sucesso!");
     } catch (e: any) {
       setErro(mapFirebaseError(String(e?.message ?? "Erro inesperado")));
     } finally {

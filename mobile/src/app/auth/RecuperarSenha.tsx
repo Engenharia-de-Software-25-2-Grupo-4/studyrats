@@ -10,7 +10,6 @@ import {
   } from "react-native";
   import { SafeAreaView } from "react-native-safe-area-context";
   import { useEffect, useRef, useState } from "react";
-  import { firebaseSendPasswordResetEmail } from "../../services/firebaseAuth";
   
   import type { StackScreenProps } from "@react-navigation/stack";
   import type { StackParams } from "@/utils/routesStack";
