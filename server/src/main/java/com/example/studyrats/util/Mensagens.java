@@ -25,6 +25,8 @@ public class Mensagens {
 
     // Mensagens de exceções de Sessão de estudo
     public static final String ESTUDANTE_NAO_FAZ_PARTE_DO_GRUPO = "O estudante não faz parte o grupo de estudo informado";
+    public static final String USUARIO_NAO_TEM_PERMISSAO_PARA_DELETAR_SESSAO = "O usuário não é o criador da sessão de estudo.";
+    public static final String USUARIO_NAO_EH_CRIADOR_DA_SESSAO = "O usuário não é o criador da sessão de estudo.";
 
     // Mensagens de exceções de convite
     public static final String CONVITE_NAO_ENCONTRADO = "O convite solicitado não foi encontrado.";

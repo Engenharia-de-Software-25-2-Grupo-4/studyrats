@@ -29,7 +29,10 @@ import java.util.List;
 import java.util.UUID;
 
 import com.example.studyrats.exceptions.SessaoDeEstudoNaoEncontrado;
+import com.example.studyrats.exceptions.UsuarioNaoAdmin;
+import com.example.studyrats.exceptions.UsuarioNaoEhCriadorDaSessao;
 import com.example.studyrats.exceptions.UsuarioNaoFazParteDoGrupoException;
+import com.example.studyrats.exceptions.UsuarioNaoTemPermissaoParaDeletarSessao;
 
 import org.modelmapper.ModelMapper;
 
@@ -92,15 +95,19 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
     @Override
     public void removerSessaoDeEstudosPorId(UUID idSessao, String idUsuario) {
         SessaoDeEstudo sessaoDeEstudo = sessaoDeEstudoRepository.findById(idSessao).orElseThrow(SessaoDeEstudoNaoEncontrado::new);
-        validarCriador(sessaoDeEstudo, idUsuario);
+        
+        validaMembro(sessaoDeEstudo.getGrupoDeEstudo().getId(), idUsuario);
+        validarCriadorOuAdmin(sessaoDeEstudo, idUsuario);
 
-        MembroGrupo membro = membroGrupoRepository.findByGrupo_IdAndEstudante_FirebaseUid(
-                        sessaoDeEstudo.getGrupoDeEstudo().getId(), idUsuario)
+        String idCriador = sessaoDeEstudo.getCriador().getFirebaseUid();
+
+        MembroGrupo membroCriadorDaSessao = membroGrupoRepository.findByGrupo_IdAndEstudante_FirebaseUid(
+                        sessaoDeEstudo.getGrupoDeEstudo().getId(), idCriador)
                 .orElseThrow(UsuarioNaoFazParteDoGrupoException::new);
 
-        if (membro.getQuantidadeCheckins() > 0) {
-            membro.setQuantidadeCheckins(membro.getQuantidadeCheckins() - 1);
-            membroGrupoRepository.save(membro);
+        if (membroCriadorDaSessao.getQuantidadeCheckins() > 0) {
+            membroCriadorDaSessao.setQuantidadeCheckins(membroCriadorDaSessao.getQuantidadeCheckins() - 1);
+            membroGrupoRepository.save(membroCriadorDaSessao);
         }
         reacaoSessaoRepository.deleteBySessaoDeEstudoIdSessao(idSessao);
         comentarioSessaoRepository.deleteBySessaoDeEstudoIdSessao(idSessao);
@@ -219,14 +226,26 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
 
     private void validarCriador(SessaoDeEstudo sessaoDeEstudo, String idUsuario) {
         if (sessaoDeEstudo.getCriador() == null || !sessaoDeEstudo.getCriador().getFirebaseUid().equals(idUsuario)) {
-            throw new SessaoDeEstudoNaoEncontrado();
+            throw new UsuarioNaoEhCriadorDaSessao();
         }
     }
-
+    
     private void validaMembro(UUID idGrupo, String idUsuario){
         if (!membroGrupoRepository.existsByGrupo_IdAndEstudante_FirebaseUid(idGrupo, idUsuario)) {
             throw new UsuarioNaoFazParteDoGrupoException(); 
         }
-        return;
     }
+
+    private void validarCriadorOuAdmin(SessaoDeEstudo sessaoDeEstudo, String idUsuario) {
+    boolean ehCriador = sessaoDeEstudo.getCriador() != null
+            && sessaoDeEstudo.getCriador().getFirebaseUid().equals(idUsuario);
+
+    boolean ehAdmin = sessaoDeEstudo.getGrupoDeEstudo() != null
+            && sessaoDeEstudo.getGrupoDeEstudo().getAdmin() != null
+            && sessaoDeEstudo.getGrupoDeEstudo().getAdmin().getFirebaseUid().equals(idUsuario);
+
+    if (!ehCriador && !ehAdmin) {
+        throw new UsuarioNaoTemPermissaoParaDeletarSessao();
+    }
+}
 }

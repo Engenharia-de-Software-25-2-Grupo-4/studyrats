@@ -81,7 +81,9 @@ public class ManipuladorGlobalDeExcecoes {
     }
 
     @ExceptionHandler({
-            UsuarioNaoTemPermissaoParaDeletarComentarioSessaoException.class
+            UsuarioNaoTemPermissaoParaDeletarComentarioSessaoException.class,
+            UsuarioNaoEhCriadorDaSessao.class,
+            UsuarioNaoTemPermissaoParaDeletarSessao.class
     })
     public ResponseEntity<?> manipularUsuarioNaoFazParteDoGrupo(RuntimeException ex) {
         HttpStatus httpStatus = HttpStatus.FORBIDDEN;
