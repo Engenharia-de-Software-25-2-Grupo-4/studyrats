@@ -81,7 +81,6 @@ Após rodar esse comando, será exibido um **QR Code** no terminal ou no navegad
 
 ## ✅ Observações Importantes
 
-- O backend precisa estar rodando.
 - O IP configurado deve ser o IP correto da sua máquina.
 - O celular e o computador devem estar na **mesma rede Wi-Fi**.
 - Caso o QR Code não funcione, tente reiniciar com:
