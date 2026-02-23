@@ -1,5 +1,5 @@
 import { authFetch } from "./backendApi";
-import * as FileSystem from "expo-file-system/legacy";
+import { getValidIdToken } from "./getValidIdToken";
 
 export type CreateSessaoBody = {
   titulo: string;
@@ -59,20 +59,32 @@ export type Upload = {
 }
 
 export async function createSessao(body: CreateSessaoBody, idGrupo: string): Promise<SessaoDetails> {
+  console.log("CREATE SESSAO grupoId:", idGrupo);
+  console.log("CREATE SESSAO payload:", body);
+
   const res = await authFetch(`/sessaoDeEstudo/${idGrupo}`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  console.log("status:", res.status);
+
+  console.log("CREATE SESSAO status:", res.status);
+
+  const text = await res.text().catch(() => "");
+  console.log("CREATE SESSAO body:", text);
+
   if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data?.message ?? "Erro desconhecido");
+    // seu backend provavelmente usa "mensagem"
+    try {
+      const data = JSON.parse(text);
+      throw new Error(data?.mensagem ?? data?.message ?? "Erro ao criar sessão");
+    } catch {
+      throw new Error(text || "Erro ao criar sessão");
+    }
   }
 
-  return res.json() as Promise<SessaoDetails>;
+  // como já consumimos o body com text(), converte aqui
+  return JSON.parse(text) as SessaoDetails;
 }
 
 export async function updateSessao(idSessao: string, body: UpdateSessaoBody): Promise<SessaoDetails> {
@@ -149,18 +161,21 @@ export async function comentarSessao(idSessao: string, body: CreateComentario): 
   return res.json() as Promise<ComentarioDetails>;
 }
 
-export async function uploadImagem(idSessao: string, uri: string): Promise<void> {
-  const base64 = await FileSystem.readAsStringAsync(uri, {
-    encoding: "base64",
+export async function uploadImagem(idSessaoDeEstudo: string, uri: string): Promise<void> {
+
+  const formData = new FormData();
+  formData.append("imagem", {
+    uri,
+    type: "image/jpeg",
+    name: "foto.jpg",
+  } as any);
+
+  const res = await authFetch(`/imagens/upload/sessaoDeEstudo/${idSessaoDeEstudo}`, {
+    method: "POST",
+    body: formData,
   });
 
-  const res = await authFetch(`/imagens/upload/sessaoDeEstudo/${idSessao}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ imagem: base64 }),
-  });
+  console.log("status upload:", res.status);
 
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));

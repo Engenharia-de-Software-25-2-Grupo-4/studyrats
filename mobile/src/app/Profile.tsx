@@ -1,35 +1,133 @@
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image } from "react-native"
-import { useEffect, useState } from "react"
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  Alert,
+  ActivityIndicator,
+} from "react-native"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Feather, Ionicons } from "@expo/vector-icons"
-import { useNavigation } from "@react-navigation/native"
+import { useFocusEffect, useNavigation } from "@react-navigation/native"
 import { StackNavigationProp } from "@react-navigation/stack"
 import { colors } from "@/styles/colors"
 import { Menu } from "@/components/Menu"
 import { StackParams } from "@/utils/routesStack"
 import { categories } from "@/utils/categories"
+import { GrupoDetails, listGrupos } from "@/services/grupo"
 import { getEstudanteAtual, Estudante } from "@/services/estudante"
+
+
+import { authFetch } from "@/services/backendApi" 
 
 type HomeNavProp = StackNavigationProp<StackParams, "Profile">
 
 export default function Profile() {
   const navigation = useNavigation<HomeNavProp>()
+
   const [estudante, setEstudante] = useState<Estudante | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [grupos, setGrupos] = useState<GrupoDetails[]>([])
+  const [loadingEstudante, setLoadingEstudante] = useState(true)
+  const [loadingGrupos, setLoadingGrupos] = useState(true)
+
+
+  const [imagensGrupos, setImagensGrupos] = useState<Record<string, string>>({})
+  const imagensGruposRef = useRef<Record<string, string>>({})
+  const pendentesRef = useRef<Set<string>>(new Set())
+
+  useEffect(() => {
+    imagensGruposRef.current = imagensGrupos
+  }, [imagensGrupos])
 
   useEffect(() => {
     async function fetchEstudante() {
       try {
+        setLoadingEstudante(true)
         const data = await getEstudanteAtual()
         setEstudante(data)
       } catch (error) {
         console.log("Erro ao buscar estudante:", error)
       } finally {
-        setLoading(false)
+        setLoadingEstudante(false)
       }
     }
 
     fetchEstudante()
   }, [])
+
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = reject
+      reader.readAsDataURL(blob)
+    })
+  }
+
+  const buscarImagemDoGrupo = useCallback(async (grupoId: string) => {
+    if (imagensGruposRef.current[grupoId]) return
+    if (pendentesRef.current.has(grupoId)) return
+
+    pendentesRef.current.add(grupoId)
+
+    try {
+      const res = await authFetch(`/imagens/grupo/${grupoId}`, { method: "GET" })
+      if (!res.ok) {
+        console.log("Falha ao buscar imagem do grupo:", grupoId, res.status)
+        return
+      }
+
+      const blob = await res.blob()
+      const base64 = await blobToBase64(blob)
+
+      setImagensGrupos((prev) => ({ ...prev, [grupoId]: base64 }))
+    } catch (error) {
+      console.log("Erro ao buscar imagem do grupo:", grupoId, error)
+    } finally {
+      pendentesRef.current.delete(grupoId)
+    }
+  }, [])
+
+  const loadGroups = useCallback(async () => {
+    try {
+      setLoadingGrupos(true)
+      const data = await listGrupos()
+      setGrupos(data)
+
+      data.forEach((g) => {
+        buscarImagemDoGrupo(g.id_grupo)
+      })
+    } catch (error) {
+      Alert.alert("Erro", "Não foi possível carregar os grupos")
+      console.error(error)
+    } finally {
+      setLoadingGrupos(false)
+    }
+  }, [buscarImagemDoGrupo])
+
+  useFocusEffect(
+    useCallback(() => {
+      loadGroups()
+    }, [loadGroups])
+  )
+
+  const handleNavigateToGroup = (grupoId: string) => {
+    console.log("Abrir grupo:", grupoId)
+    navigation.navigate("StudyGroupScreen", { grupoId: grupoId })
+  }
+
+  const resolveGroupImageSource = (grupo: GrupoDetails) => {
+    const base64 = imagensGrupos[grupo.id_grupo]
+    if (base64) return { uri: base64 }
+
+    if (grupo.foto_perfil && grupo.foto_perfil.startsWith("http")) {
+      return { uri: grupo.foto_perfil }
+    }
+
+    return require("@/assets/image.png")
+  }
 
   return (
     <View style={styles.container}>
@@ -43,18 +141,13 @@ export default function Profile() {
 
             <View style={styles.profileInfo}>
               <Text style={styles.name}>
-                {loading ? "Carregando..." : estudante?.nome || "Usuário"}
+                {loadingEstudante ? "Carregando..." : estudante?.nome || "Usuário"}
               </Text>
 
               <View style={styles.stats}>
                 <View style={styles.statItem}>
-                  <Text style={styles.statNumber}>5</Text>
-                  <Text style={styles.statLabel}>Desafios</Text>
-                </View>
-
-                <View style={styles.statItem}>
-                  <Text style={styles.statNumber}>2</Text>
-                  <Text style={styles.statLabel}>Vitórias</Text>
+                  <Text style={styles.statNumber}>{grupos.length}</Text>
+                  <Text style={styles.statLabel}>Grupos</Text>
                 </View>
               </View>
             </View>
@@ -80,35 +173,29 @@ export default function Profile() {
         </View>
 
         {/* CARDS GRID */}
-        <View style={styles.cardsGrid}>
-          <GroupCard
-            title="Grupo de Estudos"
-            participants={8}
-            color={colors.azul[200]}
-            badge="time"
-            imageSource={require("@/assets/fazer-check-in.png")}
-            onPress={() => navigation.navigate("StudyGroupScreen")}
-          />
+        {loadingGrupos ? (
+          <ActivityIndicator size="large" color={colors.azul[300]} style={{ marginTop: 40 }} />
+        ) : (
+          <View style={styles.cardsGrid}>
+            {grupos.map((grupo) => {
+              const isFinished = new Date(grupo.data_fim) < new Date()
 
-          <GroupCard
-            title="Desafio 1"
-            participants={10}
-            color={colors.azul[200]}
-            badge="trophy"
-            imageSource={require("@/assets/image.png")}
-          />
+              return (
+                <GroupCard
+                  key={grupo.id_grupo}
+                  title={grupo.nome}
+                  participants={0} // ajustar quando a API retornar membros
+                  color={colors.azul[200]}
+                  badge={isFinished ? "check" : "time"}
+                  imageSource={resolveGroupImageSource(grupo)}
+                  onPress={() => handleNavigateToGroup(grupo.id_grupo)}
+                />
+              )
+            })}
 
-          <GroupCard
-            title="Desafio 2"
-            participants={8}
-            color={colors.azul[200]}
-            badge="check"
-            imageSource={require("@/assets/image.png")}
-          />
-
-          {/* AQUI: NOVO GRUPO NAVEGA PARA criar_grupo.tsx (rota: "CriarGrupo") */}
-          <NewGroupCard onPress={() => navigation.navigate("CriarGrupo")} />
-        </View>
+            <NewGroupCard onPress={() => navigation.navigate("CriarGrupo")} />
+          </View>
+        )}
       </ScrollView>
 
       {/* MENU FIXO */}
@@ -168,11 +255,7 @@ function GroupCard({ title, participants, color, badge, imageSource, onPress }: 
 
 function NewGroupCard({ onPress }: { onPress: () => void }) {
   return (
-    <TouchableOpacity
-      style={[styles.groupCard, styles.newGroupCard]}
-      onPress={onPress}
-      activeOpacity={0.85}
-    >
+    <TouchableOpacity style={[styles.groupCard, styles.newGroupCard]} onPress={onPress} activeOpacity={0.85}>
       <View style={styles.newGroupIcon}>
         <Feather name="plus" size={30} color={colors.azul[300]} />
       </View>
@@ -302,6 +385,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 12,
+    justifyContent: "center",
   },
 
   groupCard: {
@@ -375,6 +459,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 12,
+    alignSelf: "center",
   },
 
   newGroupIcon: {
@@ -391,5 +476,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     color: "#FFF",
+    textAlign: "center",
   },
 })

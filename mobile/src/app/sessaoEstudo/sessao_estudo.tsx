@@ -12,14 +12,18 @@ import { StackParams } from "@/utils/routesStack";
 import { createSessao, updateSessao } from "@/services/sessao";
 import { uploadImagem } from "@/services/sessao";
 import { getAuthenticatedUid } from "@/services/authStorage";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { listarDisciplinasDoGrupo, DisciplinaDTO } from "@/services/disciplinas";
 
+type CriarSessaoRouteProp = RouteProp<StackParams, "CriarSessao">;
+type CriarSessaoNavProp = NativeStackNavigationProp<StackParams, "CriarSessao">;
 
 export default function CriarSessao() {
+    const navigation = useNavigation<CriarSessaoNavProp>();
+    const route = useRoute<CriarSessaoRouteProp>();
 
-    const navigation = useNavigation<NavigationProp<StackParams>>();
-    const route = useRoute();
+    const { grupoId, sessao } = route.params;
 
-    const sessao = (route.params as any)?.sessao;
 
     const [image, setImage] = useState("");
     const [titulo, setTitulo] = useState("");
@@ -32,18 +36,40 @@ export default function CriarSessao() {
     const [duracao, setDuracao] = useState<string>("");
     const [topico, setTopico] = useState<string>("");
     const [mostrarPicker, setMostrarPicker] = useState(false)
+    const [disciplinas, setDisciplinas] = useState<DisciplinaDTO[]>([]);
+    const [carregandoDisciplinas, setCarregandoDisciplinas] = useState(false);
 
     useEffect(() => {
-        if (sessao) {
-            setTitulo(sessao.titulo);
-            setDescricao(sessao.descricao);
-            setDisciplina(sessao.disciplina);
-            setDataHora(new Date(sessao.horario_inicio));
-            setImage(sessao.url_foto);
-            setDuracao(sessao.duracao_minutos);
-            setTopico(sessao.topico);
-        }
+        if (!sessao) return;
+        setTitulo(sessao.titulo);
+        setDescricao(sessao.descricao);
+        setDisciplina(sessao.disciplina);
+        setDataHora(new Date(sessao.horario_inicio));
+        setImage(sessao.url_foto);
+        setDuracao(String(sessao.duracao_minutos));
+        setTopico(sessao.topico);
     }, [sessao]);
+
+    useEffect(() => {
+        if (!grupoId) return;
+        async function buscarDisciplinas() {
+            try {
+                setCarregandoDisciplinas(true);
+                const lista = await listarDisciplinasDoGrupo(grupoId);
+                console.log("disciplinas retornadas:", lista);
+                const semDuplicatas = (lista ?? []).filter(
+                    (d, index, self) => index === self.findIndex((x) => x.id_disciplina === d.id_disciplina)
+                );
+                setDisciplinas(semDuplicatas);
+            } catch (e) {
+                console.log("Erro ao buscar disciplinas:", e);
+                setDisciplinas([]);
+            } finally {
+                setCarregandoDisciplinas(false);
+            }
+        }
+        buscarDisciplinas();
+    }, [grupoId]);
 
     const pickImage = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
@@ -56,11 +82,7 @@ export default function CriarSessao() {
             setImage(result.assets[0].uri);
         }
     };
-    const disciplinas = [
-        { id: "1", nome: "Matemática" },
-        { id: "2", nome: "Programação" },
-        { id: "3", nome: "Banco de Dados" },
-    ];
+
     const handleGoBack = () => {
         navigation.goBack();
     };
@@ -96,27 +118,29 @@ export default function CriarSessao() {
                     url_foto: "",
                     disciplina,
                     topico
-                }, );
-                if (image) await uploadImagem(sessao.id_sessao, image); 
+                },);
+                if (image) await uploadImagem(sessao.id_sessao, image);
 
                 Alert.alert("Sucesso", "Check-in atualizado!", [
                     { text: "OK", onPress: () => navigation.goBack() }
                 ]);
             } else {
                 console.log("3. criando sessao");
-                const novaSessao = await createSessao({
-                    titulo,
-                    descricao,
-                    horario_inicio: dataHora.toISOString(),
-                    duracao_minutos,
-                    url_foto: "",
-                    disciplina,
-                    topico
-
-                }, sessao.id_grupo);
-                console.log("retorno createSessao:", novaSessao); 
+                const novaSessao = await createSessao(
+                    {
+                        titulo,
+                        descricao,
+                        horario_inicio: dataHora.toISOString(),
+                        duracao_minutos,
+                        url_foto: "",
+                        disciplina,
+                        topico,
+                    },
+                    grupoId
+                );
+                console.log("retorno createSessao:", novaSessao);
                 if (image) await uploadImagem(novaSessao.id_sessao, image);
-                navigation.navigate("Publicacao", { sessao: novaSessao })
+                navigation.navigate("Publicacao", { sessao: novaSessao, grupoId })
             }
 
         } catch (error: any) {
@@ -193,80 +217,146 @@ export default function CriarSessao() {
                         </Text>
                     </TouchableOpacity>
 
-                    <Modal
-                        visible={mostrarDisciplinas}
-                        transparent
-                        animationType="fade"
-                    >
+                    <Modal visible={mostrarDisciplinas} transparent animationType="fade">
                         <View style={styles.modalOverlay}>
-
+                            {/* clique fora fecha */}
                             <TouchableOpacity
                                 style={StyleSheet.absoluteFill}
                                 onPress={() => {
                                     setMostrarDisciplinas(false);
                                     setCriandoNova(false);
+                                    setNovaDisciplina("");
                                 }}
                             />
 
                             <View style={styles.modalBox}>
-                                <ScrollView>
+                                <ScrollView keyboardShouldPersistTaps="handled">
+                                    <Text style={styles.modalTitle}>Selecione uma disciplina</Text>
 
-                                    {/* Lista do banco */}
-                                    {disciplinas.map((d) => (
-                                        <TouchableOpacity
-                                            key={d.id}
-                                            style={styles.option}
-                                            onPress={() => {
-                                                setDisciplina(d.nome);
-                                                setMostrarDisciplinas(false);
-                                                setCriandoNova(false);
-                                            }}
-                                        >
-                                            <Text style={styles.optionText}>{d.nome}</Text>
-                                        </TouchableOpacity>
-                                    ))}
+                                    {/* loading */}
+                                    {carregandoDisciplinas && (
+                                        <Text style={styles.modalHint}>Carregando disciplinas...</Text>
+                                    )}
 
-                                    {/* Botão criar nova */}
+                                    {/* vazio */}
+                                    {!carregandoDisciplinas && disciplinas.length === 0 && (
+                                        <Text style={styles.modalHint}>
+                                            Nenhuma disciplina cadastrada ainda.
+                                        </Text>
+                                    )}
+
+                                    {/* lista do backend */}
+                                    {!carregandoDisciplinas &&
+                                        disciplinas.map((d) => (
+                                            <TouchableOpacity
+                                                key={d.nome}
+                                                style={styles.option}
+                                                onPress={() => {
+                                                    setDisciplina(d.nome);
+                                                    setMostrarDisciplinas(false);
+                                                    setCriandoNova(false);
+                                                    setNovaDisciplina("");
+                                                }}
+                                            >
+                                                <Text style={styles.optionText}>{d.nome}</Text>
+                                            </TouchableOpacity>
+                                        ))}
+
+                                    {/* botão criar nova */}
                                     <TouchableOpacity
                                         style={styles.option}
-                                        onPress={() => setCriandoNova(true)}
+                                        onPress={() => setCriandoNova((prev) => !prev)}
                                     >
                                         <Text style={[styles.optionText, { color: "#1E6F7C" }]}>
                                             + Nova disciplina
                                         </Text>
                                     </TouchableOpacity>
 
-                                    {/* Campo para nova disciplina */}
+                                    {/* criar nova */}
                                     {criandoNova && (
-                                        <>
+                                        <View style={{ marginTop: 8 }}>
                                             <TextInput
                                                 placeholder="Digite o nome"
+                                                placeholderTextColor="#2b2c2c"
                                                 style={styles.input}
                                                 value={novaDisciplina}
                                                 onChangeText={setNovaDisciplina}
-                                            />
+                                                autoFocus
+                                                returnKeyType="done"
+                                                onSubmitEditing={() => {
+                                                    const nome = novaDisciplina.trim();
+                                                    if (!nome) return;
 
-                                            <TouchableOpacity
-                                                style={styles.option}
-                                                onPress={() => {
-                                                    if (!novaDisciplina.trim()) return;
+                                                    // seleciona
+                                                    setDisciplina(nome);
 
-                                                    setDisciplina(novaDisciplina);
+                                                    // adiciona na lista local (UX) se não existir
+                                                    setDisciplinas((prev) => {
+                                                        const jaExiste = prev.some(
+                                                            (x) => x.nome.trim().toLowerCase() === nome.toLowerCase()
+                                                        );
+                                                        if (jaExiste) return prev;
+
+                                                        return [
+                                                            { id_disciplina: `temp-${Date.now()}`, nome },
+                                                            ...prev,
+                                                        ];
+                                                    });
+
+                                                    // fecha e limpa
                                                     setNovaDisciplina("");
                                                     setCriandoNova(false);
                                                     setMostrarDisciplinas(false);
                                                 }}
-                                            >
-                                                <Text style={[styles.optionText, { color: "green" }]}>
-                                                    Salvar disciplina
-                                                </Text>
-                                            </TouchableOpacity>
-                                        </>
-                                    )}
+                                            />
 
+                                            <View style={{ flexDirection: "row", gap: 10 }}>
+                                                <TouchableOpacity
+                                                    style={[styles.option, { flex: 1 }]}
+                                                    onPress={() => {
+                                                        const nome = novaDisciplina.trim();
+                                                        if (!nome) return;
+
+                                                        setDisciplina(nome);
+
+                                                        setDisciplinas((prev) => {
+                                                            const jaExiste = prev.some(
+                                                                (x) => x.nome.trim().toLowerCase() === nome.toLowerCase()
+                                                            );
+                                                            if (jaExiste) return prev;
+
+                                                            return [
+                                                                { id_disciplina: `temp-${Date.now()}`, nome },
+                                                                ...prev,
+                                                            ];
+                                                        });
+
+                                                        setNovaDisciplina("");
+                                                        setCriandoNova(false);
+                                                        setMostrarDisciplinas(false);
+                                                    }}
+                                                >
+                                                    <Text style={[styles.optionText, { color: "green" }]}>
+                                                        Salvar disciplina
+                                                    </Text>
+                                                </TouchableOpacity>
+
+                                                <TouchableOpacity
+                                                    style={[styles.option, { flex: 1 }]}
+                                                    onPress={() => {
+                                                        setCriandoNova(false);
+                                                        setNovaDisciplina("");
+                                                    }}
+                                                >
+                                                    <Text style={[styles.optionText, { color: "#999" }]}>
+                                                        Cancelar
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
+                                    )}
                                 </ScrollView>
                             </View>
-
                         </View>
                     </Modal>
 
@@ -318,10 +408,7 @@ export default function CriarSessao() {
 
                 </ScrollView>
             </KeyboardAvoidingView>
-            <Menu
-                tabs={categories}
-                activeTabId="2" // "2" = Desafios
-            />
+            
         </View>
     );
 }
@@ -415,6 +502,16 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: "rgba(0,0,0,0.3)",
         justifyContent: "center",
+    },
+    modalTitle: {
+        fontSize: 16,
+        fontWeight: "700",
+        color: "#01415B",
+        marginBottom: 8,
+    },
+    modalHint: {
+        paddingVertical: 8,
+        color: "#2b2c2c",
     },
 
 });

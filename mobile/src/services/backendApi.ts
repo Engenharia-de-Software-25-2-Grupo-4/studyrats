@@ -30,15 +30,30 @@ export async function createEstudante(body: CreateEstudanteBody, idToken: string
 
 export async function authFetch(path: string, options: RequestInit = {}) {
   const token = await getValidIdToken();
- 
-  if (!token) throw new Error("USUARIO_NAO_LOGADO");
 
   const url = `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 
-  const headers = new Headers(options.headers); 
+  console.log("AUTHFETCH:", options.method ?? "GET", url);
+  console.log("AUTHFETCH token exists?", !!token, token ? token.slice(0, 16) : null);
+
+  if (!token) throw new Error("USUARIO_NAO_LOGADO");
+
+  const headers = new Headers(options.headers);
   headers.set("Authorization", `Bearer ${token}`);
 
-  return fetch(url, { ...options, headers });
+  console.log("AUTHFETCH Authorization header set");
+
+  const res = await fetch(url, { ...options, headers });
+
+  // log só se for erro (pra não poluir)
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    console.log("AUTHFETCH ERROR status:", res.status, "body:", text);
+    // re-cria response? não precisa, só pra debug
+    // mas cuidado: você consumiu o body aqui. então só faça isso enquanto estiver debugando.
+  }
+
+  return res;
 }
 
 export async function getEstudanteByFirebaseUid(firebaseUid: string) {

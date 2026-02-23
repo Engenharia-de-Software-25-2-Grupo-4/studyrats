@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Image } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Image, Share} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute, NavigationProp } from '@react-navigation/native';
 import { StackParams } from '@/utils/routesStack';
@@ -9,6 +9,10 @@ import { deleteGrupo } from "@/services/grupo";
 import { getAuthenticatedUid } from "@/services/authStorage";
 import { useState, useEffect } from "react";
 import { authFetch } from "@/services/backendApi";
+import { gerarLinkConvite } from "@/services/grupo";
+import * as Linking from "expo-linking";
+import { entrarNoGrupo } from "@/services/grupo";
+import Constants from "expo-constants";
 
 export default function GrupoCriado() {
   const navigation = useNavigation<NavigationProp<StackParams>>();
@@ -17,9 +21,11 @@ export default function GrupoCriado() {
   const dados = (route.params as any)?.desafio;
   const [isAdmin, setIsAdmin] = useState(false);
   const [imagemGrupo, setImagemGrupo] = useState<string | null>(null);
+  const [linkConvite, setLinkConvite] = useState<string | null>(null)
 
 
   useEffect(() => {
+
     async function verificarAdmin() {
       const uid = await getAuthenticatedUid();
       setIsAdmin(dados.admin?.firebaseUid === uid);
@@ -43,8 +49,25 @@ export default function GrupoCriado() {
       }
     }
 
+    async function buscarLinkConvite() {
+      try {
+        const token = await gerarLinkConvite(dados.id_grupo);
+        const isExpoGo = Constants.appOwnership === "expo";
+
+        const url = isExpoGo
+          ? Linking.createURL(`convites/${token}`) // ex: exp://.../--/convites/abc
+          : `studyrats://convites/${token}`;
+
+        setLinkConvite(url);
+      } catch (error) {
+        console.log("erro convite:", error);
+      }
+    }
+
     verificarAdmin();
     buscarImagem();
+    buscarLinkConvite();
+
   }, []);
   //const isAdmin = true // mock temporário
 
@@ -53,11 +76,11 @@ export default function GrupoCriado() {
   };
 
   const handleEditar = () => {
-    navigation.navigate('CriarGrupo', { 
-        grupo: {
-            ...dados,
-            foto_perfil: imagemGrupo  
-        }
+    navigation.navigate('CriarGrupo', {
+      grupo: {
+        ...dados,
+        foto_perfil: imagemGrupo
+      }
     } as any);
   };
 
@@ -76,7 +99,7 @@ export default function GrupoCriado() {
           onPress: async () => {
             try {
               await deleteGrupo(dados.id_grupo)
-              navigation.goBack(); 
+              navigation.goBack();
             } catch (error: any) {
               Alert.alert("Erro", error.message);
             }
@@ -144,6 +167,18 @@ export default function GrupoCriado() {
 
           <Text style={styles.section}>Regras</Text>
           <Text style={styles.texto}>{dados.regras}</Text>
+
+          <View style={styles.divider} />
+
+          {linkConvite && (
+            <View style={styles.card}>
+              <Text style={styles.section}>Link de convite</Text>
+              <Text selectable style={styles.texto}>{linkConvite}</Text>
+              <TouchableOpacity onPress={() => Share.share({ message: linkConvite! })}>
+                <Text style={styles.editButton}>Compartilhar</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
         </View>
 

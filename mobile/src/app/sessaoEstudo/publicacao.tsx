@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Image, Alert } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Image, Alert, ImageSourcePropType } from "react-native";
 import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
 import { StackParams } from '@/utils/routesStack';
 import { Menu } from "@/components/Menu";
@@ -11,122 +11,184 @@ import { reactSessao } from "@/services/sessao";
 import { comentarSessao } from "@/services/sessao";
 import { getAuthenticatedUid } from "@/services/authStorage";
 import { authFetch } from "@/services/backendApi";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { getGrupoById } from "@/services/grupo";
+import { categories } from "@/utils/categories";
+import { getEstudanteByFirebaseUid } from "@/services/backendApi";
+import { fetchProfilePhoto } from "@/server/estudanteInfo/fetchProfilePhoto";
 
+type PublicacaoNavProp = NativeStackNavigationProp<StackParams, "Publicacao">;
+type PublicacaoRouteProp = RouteProp<StackParams, "Publicacao">;
+
+type UsuarioUI = {
+  id: string;
+  nome: string;
+  foto: ImageSourcePropType | null;
+  email?: string;
+};
+
+type Comentario = {
+  firebaseUid_autor: string;
+  nome_autor: string;
+  texto: string;
+};
 
 export default function Publicacao() {
-  const navigation = useNavigation<NavigationProp<StackParams>>();
-  const route = useRoute();
-  const dados = (route.params as any)?.sessao;
+  const navigation = useNavigation<PublicacaoNavProp>();
+  const route = useRoute<PublicacaoRouteProp>();
+
+  const { grupoId, sessao } = route.params as any; // mantém seu formato
+
   const [isCriador, setIsCriador] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [imagemSessao, setImagemSessao] = useState<string | null>(null);
-  
-    useEffect(() => {
-        async function verificarCriador() {
-            const uid = await getAuthenticatedUid();
-            setIsCriador(dados.id_criador === uid);
-        }
-        
-            async function buscarImagem() {
-              try {
-                const res = await authFetch(`/imagens/grupo/${dados.id_grupo}`, {
-                  method: "GET",
-                });
-                const blob = await res.blob();
-                const reader = new FileReader();
-                reader.onload = () => {
-                  const base64 = reader.result as string;
-                  console.log("imagem base64:", base64.substring(0, 50));
-                  setImagemSessao(base64); 
-                };
-                reader.readAsDataURL(blob);
-              } catch (error) {
-                console.log("erro imagem:", error);
-              }
-            }
-        
-            verificarCriador();
-            buscarImagem();
-          }, []);
 
-  type Usuario = {
-    id: string;
-    nome: string;
-    foto: string | null;
-  };
-
-  type Comentario = {
-    firebaseUid_autor: string
-    nome_autor: string;
-    texto: string;
-  };
+  const [autor, setAutor] = useState<UsuarioUI | null>(null);
+  const [autorLoading, setAutorLoading] = useState(false);
 
   const [comentarios, setComentarios] = useState<Comentario[]>([]);
   const [comentario, setComentario] = useState("");
   const [curtido, setCurtido] = useState(false);
-  const [curtidas, setCurtidas] = useState(dados.curtidas || 0);
+  const [curtidas, setCurtidas] = useState(sessao?.curtidas || 0);
 
-  const usuarioLogado: Usuario = {
-    id: "1",
-    nome: "Gabriella Letícia",
-    foto: null
-  };
+  const podeExcluir = isCriador || isAdmin;
 
-  const [publicacao, setPublicacao] = useState({
-    ...dados,
-    usuario: usuarioLogado // mock 
-  });
+  // ✅ carrega autor real (criador)
+  useEffect(() => {
+    async function carregarAutor() {
+      if (!sessao?.id_criador) return;
 
-  const handleVoltar = () => {
-    navigation.goBack();
-  };
+      try {
+        setAutorLoading(true);
+
+        const estudante = await getEstudanteByFirebaseUid(sessao.id_criador);
+
+        let fotoSource: ImageSourcePropType | null = null;
+        try {
+          const fotoSource = await fetchProfilePhoto(sessao.id_criador);
+        } catch (e) {
+          console.log("Sem foto do autor ou erro ao buscar:", e);
+        }
+
+        setAutor({
+          id: estudante.firebaseUid,
+          nome: estudante.nome,
+          email: estudante.email,
+          foto: fotoSource ?? null,
+        });
+      } catch (e) {
+        console.log("Erro ao carregar autor:", e);
+
+        setAutor({
+          id: sessao.id_criador,
+          nome: sessao.nome_criador ?? "Usuário",
+          foto: null,
+        });
+      } finally {
+        setAutorLoading(false);
+      }
+    }
+
+    carregarAutor();
+  }, [sessao?.id_criador]);
+
+  // ✅ permissões + imagem da sessão
+  useEffect(() => {
+    async function verificarPermissoes() {
+      const uid = await getAuthenticatedUid();
+
+      setIsCriador(!!uid && sessao?.id_criador === uid);
+
+      if (!uid || !grupoId) {
+        setIsAdmin(false);
+        return;
+      }
+
+      try {
+        const grupo = await getGrupoById(grupoId);
+        setIsAdmin(grupo?.admin?.firebaseUid === uid);
+      } catch (e) {
+        console.log("Erro ao buscar grupo (admin):", e);
+        setIsAdmin(false);
+      }
+    }
+
+    async function buscarImagemSessao() {
+      if (!sessao?.id_sessao) return;
+
+      try {
+        const url = `/imagens/sessaoDeEstudo/${sessao.id_sessao}`;
+        const res = await authFetch(url, { method: "GET" });
+
+        if (res.status === 404 || res.status === 204) {
+          setImagemSessao(null);
+          return;
+        }
+
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(text || `Erro ao buscar imagem (${res.status})`);
+        }
+
+        const blob = await res.blob();
+        const reader = new FileReader();
+        reader.onload = () => setImagemSessao(reader.result as string);
+        reader.readAsDataURL(blob);
+      } catch (e) {
+        console.log("erro imagem:", e);
+        setImagemSessao(null);
+      }
+    }
+
+    verificarPermissoes();
+    buscarImagemSessao();
+  }, [sessao?.id_criador, sessao?.id_sessao, grupoId]);
+
+  const handleVoltar = () => navigation.goBack();
 
   const handleEditar = () => {
-    navigation.navigate('CriarSessao', { 
-        grupo: {
-            ...dados,
-            foto_perfil: imagemSessao
-        }
-    } as any);
+    navigation.navigate(
+      "CriarSessao",
+      {
+        sessao,
+        grupoId,
+      } as any
+    );
   };
 
-  const handleExcluir = async () => {
-    Alert.alert(
-      "Excluir desafio",
-      "Tem certeza que deseja excluir esta publicação?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Excluir",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteSessao(dados.id_sessao);
-              navigation.goBack();
-            } catch (error: any) {
-              Alert.alert("Erro", error.message);
-            }
+  const handleExcluir = () => {
+    Alert.alert("Excluir publicação", "Tem certeza que deseja excluir esta publicação?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Excluir",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteSessao(sessao.id_sessao);
+            navigation.goBack();
+          } catch (error: any) {
+            Alert.alert("Erro", error.message);
           }
-        }
-      ]
-    );
+        },
+      },
+    ]);
   };
 
   async function handleAdicionarComentario() {
     if (!comentario.trim()) return;
 
     try {
-        const novoComentario = await comentarSessao(dados.id_sessao, { texto: comentario });
-
-        setComentarios([...comentarios, novoComentario]);
-        setComentario("");
+      const novoComentario = await comentarSessao(sessao.id_sessao, { texto: comentario });
+      setComentarios((prev) => [...prev, novoComentario]);
+      setComentario("");
     } catch (error: any) {
-        Alert.alert("Erro", error.message);
+      Alert.alert("Erro", error.message);
     }
-}
+  }
+
   async function toggleLike() {
     try {
-      const resultado = await reactSessao(dados.id_sessao);
-
+      const resultado = await reactSessao(sessao.id_sessao);
       setCurtido(resultado.reagiu);
       setCurtidas(resultado.total_reacoes);
     } catch (error: any) {
@@ -136,7 +198,6 @@ export default function Publicacao() {
 
   return (
     <View style={styles.container}>
-
       {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleVoltar}>
@@ -144,37 +205,34 @@ export default function Publicacao() {
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>Publicação</Text>
+
         <TouchableOpacity onPress={handleEditar}>
           <Text style={styles.editButton}>Editar</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-
         {/* TÍTULO */}
-        <Text style={styles.titulo}>
-          {dados.titulo}
-        </Text>
+        <Text style={styles.titulo}>{sessao.titulo}</Text>
 
         {/* IMAGEM */}
-        <Image
-          source={{ uri: dados.url_foto }}
-          style={styles.image}
-        />
+        {imagemSessao ? (
+          <Image source={{ uri: imagemSessao }} style={styles.image} />
+        ) : (
+          <View style={styles.image} />
+        )}
+
+        {/* AUTOR + LIKE */}
         <View style={styles.userRow}>
           <View style={styles.userInfo}>
             <Image
-              source={
-                publicacao.usuario.foto
-                  ? { uri: publicacao.usuario.foto }
-                  : require("@/assets/image-4.png")
-              }
+              source={autor?.foto ?? require("@/assets/default_profile.jpg")}
               style={styles.avatar}
             />
 
             <View>
               <Text style={styles.userName}>
-                {publicacao.usuario.nome}
+                {autorLoading ? "Carregando..." : autor?.nome ?? sessao.nome_criador ?? "Usuário"}
               </Text>
             </View>
           </View>
@@ -194,58 +252,52 @@ export default function Publicacao() {
             <Text style={styles.count}>{curtidas}</Text>
           </View>
         </View>
+
         <View style={styles.card}>
           <Text style={styles.section}>Descrição</Text>
-          <Text style={styles.texto}>{dados.descricao}</Text>
+          <Text style={styles.texto}>{sessao.descricao}</Text>
 
           <View style={styles.divider} />
 
           <Text style={styles.section}>Informações</Text>
+
           <View style={styles.infoRow}>
             <Text style={styles.label}>Disciplina</Text>
-            <Text style={styles.value}>{dados.disciplina}</Text>
+            <Text style={styles.value}>{sessao.disciplina}</Text>
           </View>
 
           <View style={styles.infoRow}>
             <Text style={styles.label}>Tópico</Text>
-            <Text style={styles.value}>{dados.horario_inicio}</Text>
+            <Text style={styles.value}>{sessao.topico}</Text>
           </View>
 
           <View style={styles.infoRow}>
             <Text style={styles.label}>Data</Text>
             <Text style={styles.value}>
-              {new Date(dados.horario_inicio).toLocaleDateString()}{" "}
-              {new Date(dados.horario_inicio).toLocaleTimeString([], {
+              {new Date(sessao.horario_inicio).toLocaleDateString()}{" "}
+              {new Date(sessao.horario_inicio).toLocaleTimeString([], {
                 hour: "2-digit",
-                minute: "2-digit"
+                minute: "2-digit",
               })}
             </Text>
           </View>
 
           <View style={styles.infoRow}>
             <Text style={styles.label}>Duração</Text>
-            <Text style={styles.value}>{dados.duracao_minutos}</Text>
+            <Text style={styles.value}>{sessao.duracao_minutos}</Text>
           </View>
 
           <View style={styles.divider} />
 
           <Text style={styles.section}>Comentários</Text>
 
-          {/* Lista só aparece se tiver comentários */}
-          {comentarios.map((item) => (
-            <View key={item.firebaseUid_autor} style={styles.commentBox}>
-
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text style={styles.commentAuthor}>
-                  {item.nome_autor}
-                </Text>
-              </View>
-
+          {comentarios.map((item, index) => (
+            <View key={index} style={styles.commentBox}>
+              <Text style={styles.commentAuthor}>{item.nome_autor}</Text>
               <Text style={styles.commentText}>{item.texto}</Text>
             </View>
           ))}
 
-          {/* Input sempre aparece */}
           <View style={styles.commentInputContainer}>
             <TextInput
               placeholder="Adicione um comentário..."
@@ -253,23 +305,24 @@ export default function Publicacao() {
               onChangeText={setComentario}
               style={styles.commentInput}
             />
-
             <TouchableOpacity onPress={handleAdicionarComentario}>
               <Text style={styles.commentButton}>Enviar</Text>
             </TouchableOpacity>
           </View>
-
         </View>
-        {isCriador && (
-          <TouchableOpacity onPress={handleExcluir}>
+
+        {/* EXCLUIR */}
+        {podeExcluir && (
+          <TouchableOpacity style={styles.deleteButton} onPress={handleExcluir}>
             <Text style={styles.deleteButtonText}>Excluir</Text>
           </TouchableOpacity>
         )}
       </ScrollView>
+
+      <Menu tabs={categories} activeTabId="2" />
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -440,6 +493,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginHorizontal: 4,
   },
+  deleteButton: {
+    backgroundColor: colors.azul[300],
+    padding: 15,
+    marginHorizontal: 20,
+    borderRadius: 12,
+    alignItems: "center",
+    marginBottom: 10,
+    marginTop: 15
+  },
+
   deleteButtonText: {
     color: "#FFF",
     fontSize: 16,

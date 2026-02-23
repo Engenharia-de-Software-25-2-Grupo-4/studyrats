@@ -1,87 +1,93 @@
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { colors } from "@/styles/colors"
+import { StackParams } from "@/utils/routesStack"
+import { NavigationProp, useNavigation } from "@react-navigation/native"
+import type { GrupoDetails } from "@/services/grupo"
 
-import { colors } from "@/styles/colors";
-import { StackParams } from "@/utils/routesStack";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { NavigationProp, useNavigation } from "@react-navigation/native";
+type Props = {
+  grupo: GrupoDetails | null
+  grupoImagemBase64?: string | null
+  onCheckIn?: () => void
+}
 
-export function GroupOverviewCard() {
-    const navigation = useNavigation<NavigationProp<StackParams>>();
+function formatDatePtBR(iso?: string) {
+  if (!iso) return "-"
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso 
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long" })
+}
 
+export function GroupOverviewCard({ grupo, grupoImagemBase64, onCheckIn }: Props) {
+  const navigation = useNavigation<NavigationProp<StackParams>>()
 
-    const clearOnboarding = async () => {
-        try {
-            await AsyncStorage.removeItem("@viewedOnboarding");
-            navigation.navigate("Index");
-        } catch (error) {
-            console.log("Error @clearOnboarding: ", error);
-        }
-    };
-    const handleNavigateToCheckIn = () =>{
-        navigation.navigate("CriarSessao")
-    }
-    return (
-        <View style={styles.container}>
-            <View style={styles.contentLeft}>
-                <Text style={styles.title}>
-                    Faça seu check-in diário e garanta o 1º lugar
-                </Text>
+  const inicio = formatDatePtBR(grupo?.data_inicio)
+  const fim = formatDatePtBR(grupo?.data_fim)
 
-                <View>
-                    <Text style={styles.description}>Início: 02 de dezembro</Text>
-                    <Text style={styles.description}>Fim: 26 de janeiro</Text>
-                </View>
+  return (
+    <View style={styles.container}>
+      <View style={styles.contentLeft}>
+        <Text style={styles.title}>
+          {grupo?.nome ? `Faça seu check-in diário no grupo ${grupo.nome}` : "Faça seu check-in diário e garanta o 1º lugar"}
+        </Text>
 
-                <TouchableOpacity style={styles.buttonStyle} onPress={handleNavigateToCheckIn}>
-                    <Text style={styles.buttonText}>FAZER CHECK-IN</Text>
-                </TouchableOpacity>
-            </View>
-
-            <Image source={require("@/assets/fazer-check-in.png")} style={styles.image}/> 
+        <View>
+          <Text style={styles.description}>Início: {inicio}</Text>
+          <Text style={styles.description}>Fim: {fim}</Text>
         </View>
-    )
+
+        <TouchableOpacity style={styles.buttonStyle} onPress={onCheckIn} disabled={!grupo}>
+          <Text style={styles.buttonText}>FAZER CHECK-IN</Text>
+        </TouchableOpacity>
+      </View>
+
+      {grupoImagemBase64 ? (
+        <Image source={{ uri: grupoImagemBase64 }} style={styles.image} />
+      ) : (
+        <Image source={require("@/assets/fazer-check-in.png")} style={styles.image} />
+      )}
+    </View>
+  )
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flexDirection: "row",
-        borderRadius: 16,
-        width: '100%',
-        columnGap: 5
-    },
-    contentLeft: {
-        flex: 1,
-        justifyContent: "space-between",
-        paddingVertical: 4,
-    },
-    title: {
-        fontWeight: '600',
-        fontSize: 14,
-        color: colors.azul[400],
-        marginBottom: 20
-    },
-    description: {
-        fontWeight: '300',
-        color: colors.azul[400],
-        fontSize: 12,
-    },
-    image: {
-        width: 150,
-        height: 150,
-        borderRadius: 12,
-        
-    },
-    buttonStyle: {
-        backgroundColor: "#01415B",
-        paddingVertical: 10,
-        paddingHorizontal: 14,
-        borderRadius: 8,
-        alignSelf: 'flex-start',
-        marginTop: 20
-    },
-    buttonText: {
-        color: '#FFF',
-        fontSize: 12,
-        fontWeight: 'bold', 
-    }
+  container: {
+    flexDirection: "row",
+    borderRadius: 16,
+    width: "100%",
+    columnGap: 5,
+  },
+  contentLeft: {
+    flex: 1,
+    justifyContent: "space-between",
+    paddingVertical: 4,
+  },
+  title: {
+    fontWeight: "600",
+    fontSize: 14,
+    color: colors.azul[400],
+    marginBottom: 20,
+  },
+  description: {
+    fontWeight: "300",
+    color: colors.azul[400],
+    fontSize: 12,
+  },
+  image: {
+    width: 150,
+    height: 150,
+    borderRadius: 12,
+  },
+  buttonStyle: {
+    backgroundColor: "#01415B",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    alignSelf: "flex-start",
+    marginTop: 20,
+  },
+  buttonText: {
+    color: "#FFF",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
 })
