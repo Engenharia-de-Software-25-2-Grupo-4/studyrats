@@ -34,12 +34,11 @@ export function UserItem({ user, showMedal, medal, mode = "stats" }: Props) {
 
         <View style={styles.info}>
           <Text style={styles.name}>{user?.name || "Usuário"}</Text>
-          <Text style={styles.subtitle}>
-            {mode === "stats" 
-              ? `${user?.daysActive || 0} ${user?.daysActive === 1 ? 'check-in' : 'check-ins'}`
-              : `${user?.groups || 0} ${user?.groups === 1 ? 'grupo' : 'grupos'}`
-            }
-          </Text>
+          {mode === "stats" && ( 
+            <Text style={styles.subtitle}>
+              {user?.daysActive || 0} {user?.daysActive === 1 ? 'check-in' : 'check-ins'}
+            </Text>
+          )}
         </View>
 
         {showMedal && medal && (

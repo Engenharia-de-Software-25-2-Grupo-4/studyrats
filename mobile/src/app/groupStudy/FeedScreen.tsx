@@ -87,13 +87,6 @@ export default function FeedScreen() {
                         color={colors.cinza[100]}
                         size={23} />
                 </TouchableOpacity> 
-
-                <TouchableOpacity style={styles.headerIcon}>
-                    <MaterialIcons
-                        name="notifications-none"
-                        color={colors.azul[300]}
-                        size={23} />
-                </TouchableOpacity>   
             </View>
 
             <View style={styles.headerSecondaryTitle}>

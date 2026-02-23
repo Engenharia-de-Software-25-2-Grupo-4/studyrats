@@ -61,7 +61,7 @@ export default function StudyGroupScreen() {
 
   async function loadAvatar(firebaseUid: string) {
     if (!firebaseUid) return
-    if (avatars[firebaseUid]) return // já carregado
+    if (avatars[firebaseUid]) return
 
     try {
       const img = await fetchProfilePhoto(firebaseUid)
@@ -258,10 +258,7 @@ export default function StudyGroupScreen() {
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>{grupo?.nome ?? "Grupo de Estudos"}</Text>
-
-        <TouchableOpacity style={styles.headerIcon}>
-          <MaterialIcons name="notifications-none" color={colors.azul[300]} size={23} />
-        </TouchableOpacity>
+        <View/>
       </View>
 
       <View style={styles.checkinCard}>
@@ -396,10 +393,7 @@ const styles = StyleSheet.create({
     textAlign: "left",
   },
   headerIcon: {
-    borderColor: colors.cinza[600],
-    borderRadius: 22,
     padding: 5,
-    borderWidth: 0.5,
   },
   checkinCard: {
     paddingHorizontal: 16,
