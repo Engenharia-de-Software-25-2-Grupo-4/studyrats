@@ -10,9 +10,10 @@ type StackParams = {
   Feed: { grupoId: string };
   EditAcc: undefined;
   CriarGrupo: undefined; 
-  GrupoCriado: { desafio: any }; // colocar tipo dps
-  CriarSessao: { grupoId: string };
-  Publicacao: { sessao: any };
+  GrupoCriado: { desafio: any }; 
+  CriarSessao: { grupoId: string; sessao?: any };
+  Publicacao: { grupoId: string; sessao: any };
+  EntrarNoGrupo: { token: string }
   GroupHome: undefined
 };
 

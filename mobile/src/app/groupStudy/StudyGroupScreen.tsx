@@ -6,7 +6,6 @@ import { colors } from "@/styles/colors"
 import { categories } from "@/utils/categories"
 import { posts } from "@/utils/posts"
 import { StackParams } from "@/utils/routesStack"
-// import { users } from "@/utils/users"
 import { Ionicons, MaterialIcons } from "@expo/vector-icons"
 import { RouteProp, useNavigation, useRoute } from "@react-navigation/native"
 import type { NavigationProp } from "@react-navigation/native"
@@ -235,7 +234,7 @@ export default function StudyGroupScreen() {
   }
 
   const handleNavigateToPublicacao = (sessao: SessaoDetails) => {
-    navigation.navigate("Publicacao", { sessao })
+    navigation.navigate("Publicacao", { sessao, grupoId })
   }
 
     useEffect(() => {

@@ -27,6 +27,7 @@ type HomeNavProp = StackNavigationProp<StackParams, "Profile">
 
 type GrupoComQtd = GrupoDetails & { quantidadeMembros: number }
 
+
 export default function Profile() {
   const navigation = useNavigation<HomeNavProp>()
 
@@ -124,7 +125,7 @@ export default function Profile() {
         data,
         async (g) => {
           try {
-            const qtd = await getQuantidadeMembrosCached(g.id_grupo)
+            const qtd = await getQuantidadeMembrosCached(g.id_grupo, true)
             return { ...g, quantidadeMembros: qtd }
           } catch {
             return { ...g, quantidadeMembros: 0 }

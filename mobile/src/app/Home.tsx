@@ -10,7 +10,7 @@ import {
 } from "react-native"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { colors } from "@/styles/colors"
-import { useNavigation } from "@react-navigation/native"
+import { useNavigation, useFocusEffect } from "@react-navigation/native"
 import { StackNavigationProp } from "@react-navigation/stack"
 import { Menu } from "@/components/Menu"
 import { StackParams } from "@/utils/routesStack"
@@ -25,7 +25,6 @@ import { ImageSourcePropType } from "react-native"
 import { fetchProfilePhoto } from "../server/estudanteInfo/fetchProfilePhoto"
 
 type HomeNavProp = StackNavigationProp<StackParams, "Home">
-
 
 type GrupoComQtd = GrupoDetails & { quantidadeMembros: number }
 
@@ -162,6 +161,7 @@ export default function Home() {
       setLoadingDisciplinas(false)
     }
   }, [])
+
   const loadGroups = useCallback(async () => {
     try {
       setLoadingGrupos(true)
@@ -173,7 +173,9 @@ export default function Home() {
         data,
         async (g) => {
           try {
-            const qtd = await getQuantidadeMembrosCached(g.id_grupo)
+            // Se ainda ficar desatualizado, o problema é cache.
+            // Aí você pode trocar por uma função "sem cache" ou adicionar "force refresh" no service.
+            const qtd = await getQuantidadeMembrosCached(g.id_grupo, true)
             return { ...g, quantidadeMembros: qtd }
           } catch {
             return { ...g, quantidadeMembros: 0 }
@@ -236,11 +238,14 @@ export default function Home() {
     return () => clearInterval(interval)
   }, [])
 
-  useEffect(() => {
-    loadUserName()
-    loadGroups()
-    loadDisciplinas()
-  }, [loadGroups, loadDisciplinas])
+  // ✅ MODIFICAÇÃO: recarrega quando a tela volta a ficar em foco
+  useFocusEffect(
+    useCallback(() => {
+      loadUserName()
+      loadGroups()
+      loadDisciplinas()
+    }, [loadGroups, loadDisciplinas])
+  )
 
   useEffect(() => {
     let alive = true
@@ -265,10 +270,7 @@ export default function Home() {
     }
   }, [estudante])
 
-
   const formatParticipantes = (qtd: number) => `${qtd} ${qtd === 1 ? "participante" : "participantes"}`
-
-
 
   return (
     <View style={styles.container}>
@@ -321,7 +323,6 @@ export default function Home() {
               <Text style={styles.groupSub}>
                 {formatPeriodo(grupoDestaque.data_inicio, grupoDestaque.data_fim) || "Período não informado"}
                 {"\n"}
-                {}
                 {formatParticipantes(grupoDestaque.quantidadeMembros ?? 0)}
               </Text>
 
@@ -351,7 +352,7 @@ export default function Home() {
         {loadingGrupos ? (
           <ActivityIndicator size="small" color={colors.azul[300]} style={{ marginBottom: 16 }} />
         ) : grupos.length === 0 ? (
-          <Text style={{ color: colors.cinza[600], marginBottom: 16 }}>
+          <Text style={{ color: colors.preto, marginBottom: 16 }}>
             Você ainda não participa de nenhum grupo.
           </Text>
         ) : (
@@ -379,6 +380,7 @@ export default function Home() {
             <Text style={styles.link}>Ver mais</Text>
           </TouchableOpacity>
         </View>
+
         {loadingDisciplinas ? (
           <ActivityIndicator size="small" color={colors.azul[300]} style={{ marginBottom: 16 }} />
         ) : disciplinas.length === 0 ? (

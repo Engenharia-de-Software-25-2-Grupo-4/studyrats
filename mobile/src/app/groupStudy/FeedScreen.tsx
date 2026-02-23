@@ -60,19 +60,19 @@ export default function FeedScreen() {
     }
 
     const handleNavigateToPublicacao = (sessao: SessaoDetails) => {
-        navigation.navigate("Publicacao", { sessao });
+        navigation.navigate("Publicacao", { sessao, grupoId });
     };
 
     // Filtra as sessões reais
-    const filteredSessoes = useMemo(() => {
-        return sessoes.filter(sessao => {
-            const matchesSubject = !selectedSubject || sessao.disciplina === selectedSubject;
-            const matchesUser = !selectedUser || sessao.nome_criador === selectedUser;
-            return matchesSubject && matchesUser;
-        });
-    }, [sessoes, selectedSubject, selectedUser]);
+    // const filteredSessoes = useMemo(() => {
+    //     return sessoes.filter(sessao => {
+    //         const matchesSubject = !selectedSubject || sessao.disciplina === selectedSubject;
+    //         const matchesUser = !selectedUser || sessao.nome_criador === selectedUser;
+    //         return matchesSubject && matchesUser;
+    //     });
+    // }, [sessoes, selectedSubject, selectedUser]);
 
-    const hasActiveFilters = selectedSubject || selectedUser
+    // const hasActiveFilters = selectedSubject || selectedUser
     
     return (
         <View style={styles.container}>
@@ -94,17 +94,17 @@ export default function FeedScreen() {
                     Publicações
                 </Text>
 
-                <TouchableOpacity onPress={() => setFilterVisible(true)}>
+                {/* <TouchableOpacity onPress={() => setFilterVisible(true)}>
                     <View style={styles.filterButton}>
                         <Text style={styles.headerSecondarySubitle}>
                             Filtrar
                         </Text>
                         {hasActiveFilters && <View style={styles.filterBadge} />}
                     </View>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
             </View>
 
-            {loading ? (
+            {/* {loading ? (
                 <ActivityIndicator size="large" color={colors.azul[300]} style={{ marginTop: 40 }} />
             ) : (
                 <FlatList
@@ -131,7 +131,7 @@ export default function FeedScreen() {
                         </Text>
                     }
                 />
-            )}
+            )} */}
 
             <FilterModal
                 visible={filterVisible}

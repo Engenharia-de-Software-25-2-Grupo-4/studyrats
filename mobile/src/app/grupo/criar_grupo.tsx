@@ -6,8 +6,6 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NavigationProp } from '@react-navigation/native';
 import { StackParams } from '@/utils/routesStack';
-import { Menu } from "@/components/Menu";
-import { categories } from "@/utils/categories";
 import { colors } from "@/styles/colors";
 import { createGrupo } from "@/services/grupo";
 import { updateGrupo } from "@/services/grupo";
