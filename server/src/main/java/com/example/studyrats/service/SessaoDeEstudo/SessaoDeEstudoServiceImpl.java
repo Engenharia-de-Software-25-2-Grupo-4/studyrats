@@ -98,17 +98,7 @@ public class SessaoDeEstudoServiceImpl implements SessaoDeEstudoService {
         
         validaMembro(sessaoDeEstudo.getGrupoDeEstudo().getId(), idUsuario);
         validarCriadorOuAdmin(sessaoDeEstudo, idUsuario);
-
-        String idCriador = sessaoDeEstudo.getCriador().getFirebaseUid();
-
-        MembroGrupo membroCriadorDaSessao = membroGrupoRepository.findByGrupo_IdAndEstudante_FirebaseUid(
-                        sessaoDeEstudo.getGrupoDeEstudo().getId(), idCriador)
-                .orElseThrow(UsuarioNaoFazParteDoGrupoException::new);
-
-        if (membroCriadorDaSessao.getQuantidadeCheckins() > 0) {
-            membroCriadorDaSessao.setQuantidadeCheckins(membroCriadorDaSessao.getQuantidadeCheckins() - 1);
-            membroGrupoRepository.save(membroCriadorDaSessao);
-        }
+        
         reacaoSessaoRepository.deleteBySessaoDeEstudoIdSessao(idSessao);
         comentarioSessaoRepository.deleteBySessaoDeEstudoIdSessao(idSessao);
         sessaoDeEstudoRepository.delete(sessaoDeEstudo); 
