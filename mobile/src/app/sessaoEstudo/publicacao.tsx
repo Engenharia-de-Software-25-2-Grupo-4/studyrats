@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Image, Alert, ImageSourcePropType } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Image, Alert, ImageSourcePropType, KeyboardAvoidingView, Platform } from "react-native";
 import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
 import { StackParams } from '@/utils/routesStack';
 import { Menu } from "@/components/Menu";
@@ -16,16 +16,12 @@ import { getGrupoById } from "@/services/grupo";
 import { categories } from "@/utils/categories";
 import { getEstudanteByFirebaseUid } from "@/services/backendApi";
 import { fetchProfilePhoto } from "@/server/estudanteInfo/fetchProfilePhoto";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
+
 
 type PublicacaoNavProp = NativeStackNavigationProp<StackParams, "Publicacao">;
 type PublicacaoRouteProp = RouteProp<StackParams, "Publicacao">;
-
-type UsuarioUI = {
-  id: string;
-  nome: string;
-  foto: ImageSourcePropType | null;
-  email?: string;
-};
 
 type Comentario = {
   firebaseUid_autor: string;
@@ -37,7 +33,10 @@ export default function Publicacao() {
   const navigation = useNavigation<PublicacaoNavProp>();
   const route = useRoute<PublicacaoRouteProp>();
 
-  const { grupoId, sessao } = route.params as any; // mantém seu formato
+  const { grupoId, sessao } = route.params as any;
+  const [sessaoDetalhada, setSessaoDetalhada] = useState(sessao);
+  const sessaoId = sessaoDetalhada?.id_sessao ?? sessao?.id_sessao;
+  const criadorId = sessaoDetalhada?.id_criador ?? sessao?.id_criador;
 
   const [isCriador, setIsCriador] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -60,29 +59,55 @@ export default function Publicacao() {
 
   const podeExcluir = isCriador || isAdmin;
 
+  useFocusEffect(
+    useCallback(() => {
+      if (!sessaoId) return;
+
+      console.log("Publicacao focou -> sessaoId:", sessaoId, "criadorId:", criadorId);
+
+      carregarComentarios();
+      carregarReacoes(); 
+    }, [sessaoId, criadorId])
+  );
+  useEffect(() => {
+    async function carregarSessaoCompleta() {
+      if (!sessao?.id_sessao) return;
+
+      try {
+        const res = await authFetch(`/sessaoDeEstudo/${sessao.id_sessao}`, { method: "GET" });
+
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          console.log("Erro ao buscar sessão completa:", res.status, text);
+          return;
+        }
+
+        const data = await res.json();
+        setSessaoDetalhada(data);
+      } catch (e) {
+        console.log("Erro ao buscar sessão completa:", e);
+      }
+    }
+
+    carregarSessaoCompleta();
+  }, [sessao?.id_sessao]);
+
   useEffect(() => {
     async function carregarAutor() {
-      if (!sessao?.id_criador) return;
+      if (!criadorId) return;
 
       try {
         setAutorLoading(true);
 
-        const estudante = await getEstudanteByFirebaseUid(
-          sessao.id_criador
-        );
-
+        const estudante = await getEstudanteByFirebaseUid(criadorId);
         setAutorNome(estudante.nome);
 
         try {
-          const fotoSource = await fetchProfilePhoto(
-            sessao.id_criador
-          );
-
+          const fotoSource = await fetchProfilePhoto(criadorId);
           setFotoAutor(fotoSource);
         } catch (e) {
           console.log("Sem foto do autor ou erro ao buscar:", e);
         }
-
       } catch (e) {
         console.log("Erro ao carregar autor:", e);
       } finally {
@@ -91,13 +116,13 @@ export default function Publicacao() {
     }
 
     carregarAutor();
-  }, [sessao?.id_criador]);
+  }, [criadorId]);
 
   useEffect(() => {
     async function verificarPermissoes() {
       const uid = await getAuthenticatedUid();
 
-      setIsCriador(!!uid && sessao?.id_criador === uid);
+      setIsCriador(!!uid && criadorId === uid);
 
       if (!uid || !grupoId) {
         setIsAdmin(false);
@@ -114,10 +139,10 @@ export default function Publicacao() {
     }
 
     async function buscarImagemSessao() {
-      if (!sessao?.id_sessao) return;
+      if (!sessaoId) return;
 
       try {
-        const url = `/imagens/sessaoDeEstudo/${sessao.id_sessao}`;
+        const url = `/imagens/sessaoDeEstudo/${sessaoId}`;
         const res = await authFetch(url, { method: "GET" });
 
         if (res.status === 404 || res.status === 204) {
@@ -142,7 +167,11 @@ export default function Publicacao() {
 
     verificarPermissoes();
     buscarImagemSessao();
-  }, [sessao?.id_criador, sessao?.id_sessao, grupoId]);
+  }, [criadorId, sessaoId, grupoId]);
+
+  useEffect(() => {
+    carregarComentarios();
+  }, [sessaoId]);
 
   const handleVoltar = () => navigation.goBack();
 
@@ -155,7 +184,28 @@ export default function Publicacao() {
       } as any
     );
   };
+  async function carregarReacoes() {
+    if (!sessaoId) return;
 
+    try {
+      const res = await authFetch(
+        `/sessaoDeEstudo/${sessaoId}/reacoes`,
+        { method: "GET" }
+      );
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        console.log("Erro ao buscar reações:", res.status, text);
+        return;
+      }
+
+      const data = await res.json();
+      setCurtido(data.reagiu);
+      setCurtidas(data.total_reacoes);
+    } catch (e) {
+      console.log("Erro ao buscar reações:", e);
+    }
+  }
   const handleExcluir = () => {
     Alert.alert("Excluir publicação", "Tem certeza que deseja excluir esta publicação?", [
       { text: "Cancelar", style: "cancel" },
@@ -164,7 +214,8 @@ export default function Publicacao() {
         style: "destructive",
         onPress: async () => {
           try {
-            await deleteSessao(sessao.id_sessao);
+            if (!sessaoId) return;
+            await deleteSessao(sessaoId);
             navigation.goBack();
           } catch (error: any) {
             Alert.alert("Erro", error.message);
@@ -173,12 +224,13 @@ export default function Publicacao() {
       },
     ]);
   };
-
   async function handleAdicionarComentario() {
     if (!comentario.trim()) return;
 
     try {
-      const novoComentario = await comentarSessao(sessao.id_sessao, { texto: comentario });
+      if (!sessaoId) return;
+
+      const novoComentario = await comentarSessao(sessaoId, { texto: comentario });
       setComentarios((prev) => [...prev, novoComentario]);
       setComentario("");
     } catch (error: any) {
@@ -188,11 +240,36 @@ export default function Publicacao() {
 
   async function toggleLike() {
     try {
-      const resultado = await reactSessao(sessao.id_sessao);
+      if (!sessaoId) return;
+
+      const resultado = await reactSessao(sessaoId);
       setCurtido(resultado.reagiu);
       setCurtidas(resultado.total_reacoes);
     } catch (error: any) {
       Alert.alert("Erro", error.message);
+    }
+  }
+  async function carregarComentarios() {
+    if (!sessaoId) return;
+
+    try {
+      const res = await authFetch(
+        `/sessaoDeEstudo/${sessaoId}/comentarios`,
+        { method: "GET" }
+      );
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        console.log("Erro ao buscar comentários:", res.status, text);
+        setComentarios([]);
+        return;
+      }
+
+      const data = await res.json();
+      setComentarios(data);
+    } catch (e) {
+      console.log("Erro ao buscar comentários:", e);
+      setComentarios([]);
     }
   }
 
@@ -211,115 +288,123 @@ export default function Publicacao() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        {/* TÍTULO */}
-        <Text style={styles.titulo}>{sessao.titulo}</Text>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+      >
+        <ScrollView contentContainerStyle={styles.content}>
+          {/* TÍTULO */}
+          <Text style={styles.titulo}>{sessao.titulo}</Text>
 
-        {/* IMAGEM */}
-        {imagemSessao ? (
-          <Image source={{ uri: imagemSessao }} style={styles.image} />
-        ) : (
-          <View style={styles.image} />
-        )}
+          {/* IMAGEM */}
+          {imagemSessao ? (
+            <Image source={{ uri: imagemSessao }} style={styles.image} />
+          ) : (
+            <View style={styles.image} />
+          )}
 
-        {/* AUTOR + LIKE */}
-        <View style={styles.userRow}>
-          <View style={styles.userInfo}>
-            <Image
-              source={fotoAutor}
-              style={styles.avatar}
-            />
+          {/* AUTOR + LIKE */}
+          <View style={styles.userRow}>
+            <View style={styles.userInfo}>
+              <Image
+                source={fotoAutor}
+                style={styles.avatar}
+              />
 
-            <View>
-              <Text style={styles.userName}>
-                {autorLoading ? "Carregando..." : autorNome}
+              <View>
+                <Text style={styles.userName}>
+                  {autorLoading ? "Carregando..." : autorNome}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.likeContainer}>
+              <Ionicons name="chatbubble-outline" size={20} color="#01415B" />
+              <Text style={styles.count}>{comentarios.length}</Text>
+
+              <TouchableOpacity onPress={toggleLike}>
+                <Ionicons
+                  name={curtido ? "heart" : "heart-outline"}
+                  size={22}
+                  color={curtido ? "red" : "#01415B"}
+                />
+              </TouchableOpacity>
+
+              <Text style={styles.count}>{curtidas}</Text>
+            </View>
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.section}>Descrição</Text>
+            <Text style={styles.texto}>{sessao.descricao}</Text>
+
+            <View style={styles.divider} />
+
+            <Text style={styles.section}>Informações</Text>
+
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Disciplina</Text>
+              <Text style={styles.value}>{sessao.disciplina}</Text>
+            </View>
+
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Tópico</Text>
+              <Text style={styles.value}>{sessao.topico}</Text>
+            </View>
+
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Data</Text>
+              <Text style={styles.value}>
+                {new Date(sessao.horario_inicio).toLocaleDateString()}{" "}
+                {new Date(sessao.horario_inicio).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </Text>
             </View>
-          </View>
 
-          <View style={styles.likeContainer}>
-            <Ionicons name="chatbubble-outline" size={20} color="#01415B" />
-            <Text style={styles.count}>{comentarios.length}</Text>
-
-            <TouchableOpacity onPress={toggleLike}>
-              <Ionicons
-                name={curtido ? "heart" : "heart-outline"}
-                size={22}
-                color={curtido ? "red" : "#01415B"}
-              />
-            </TouchableOpacity>
-
-            <Text style={styles.count}>{curtidas}</Text>
-          </View>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.section}>Descrição</Text>
-          <Text style={styles.texto}>{sessao.descricao}</Text>
-
-          <View style={styles.divider} />
-
-          <Text style={styles.section}>Informações</Text>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Disciplina</Text>
-            <Text style={styles.value}>{sessao.disciplina}</Text>
-          </View>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Tópico</Text>
-            <Text style={styles.value}>{sessao.topico}</Text>
-          </View>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Data</Text>
-            <Text style={styles.value}>
-              {new Date(sessao.horario_inicio).toLocaleDateString()}{" "}
-              {new Date(sessao.horario_inicio).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </Text>
-          </View>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.label}>Duração</Text>
-            <Text style={styles.value}>{sessao.duracao_minutos}</Text>
-          </View>
-
-          <View style={styles.divider} />
-
-          <Text style={styles.section}>Comentários</Text>
-
-          {comentarios.map((item, index) => (
-            <View key={index} style={styles.commentBox}>
-              <Text style={styles.commentAuthor}>{item.nome_autor}</Text>
-              <Text style={styles.commentText}>{item.texto}</Text>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Duração</Text>
+              <Text style={styles.value}>{sessao.duracao_minutos}</Text>
             </View>
-          ))}
 
-          <View style={styles.commentInputContainer}>
-            <TextInput
-              placeholder="Adicione um comentário..."
-              value={comentario}
-              onChangeText={setComentario}
-              style={styles.commentInput}
-            />
-            <TouchableOpacity onPress={handleAdicionarComentario}>
-              <Text style={styles.commentButton}>Enviar</Text>
-            </TouchableOpacity>
+            <View style={styles.divider} />
+
+            <Text style={styles.section}>Comentários</Text>
+
+            {comentarios.map((item, index) => (
+              <View key={index} style={styles.commentBox}>
+                <Text style={styles.commentAuthor}>{item.nome_autor}</Text>
+                <Text style={styles.commentText}>{item.texto}</Text>
+              </View>
+            ))}
+
+            <View style={styles.commentInputContainer}>
+              <TextInput
+                placeholder="Adicione um comentário..."
+                value={comentario}
+                onChangeText={setComentario}
+                style={styles.commentInput}
+              />
+              <TouchableOpacity onPress={handleAdicionarComentario}>
+                <Text style={styles.commentButton}>Enviar</Text>
+              </TouchableOpacity>
+            </View>
+
           </View>
-        </View>
 
-        {/* EXCLUIR */}
-        {podeExcluir && (
-          <TouchableOpacity style={styles.deleteButton} onPress={handleExcluir}>
-            <Text style={styles.deleteButtonText}>Excluir</Text>
-          </TouchableOpacity>
-        )}
-      </ScrollView>
+          {/* EXCLUIR */}
+          {podeExcluir && (
+            <TouchableOpacity style={styles.deleteButton} onPress={handleExcluir}>
+              <Text style={styles.deleteButtonText}>Excluir</Text>
+            </TouchableOpacity>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       <Menu tabs={categories} activeTabId="2" />
+
     </View>
   );
 }
