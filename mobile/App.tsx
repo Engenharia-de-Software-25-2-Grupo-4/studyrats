@@ -1,38 +1,38 @@
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import {
   NavigationContainer,
   createNavigationContainerRef,
 } from "@react-navigation/native";
-import { useEffect } from "react";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import * as Linking from "expo-linking";
+import { useEffect } from "react";
 
-import Index from "@/app/index";
 import Login from "@/app/auth/Login";
-import Registro from "@/app/auth/Registro";
 import RecuperarSenha from "@/app/auth/RecuperarSenha";
+import Registro from "@/app/auth/Registro";
+import Index from "@/app/index";
 
 import Home from "@/app/Home";
 import Profile from "@/app/Profile";
 import Disciplinas from "@/app/disciplinas";
 
-import StudyGroupScreen from "@/app/groupStudy/StudyGroupScreen";
 import FeedScreen from "@/app/groupStudy/FeedScreen";
 import GroupHome from "@/app/groupStudy/GroupHome";
+import StudyGroupScreen from "@/app/groupStudy/StudyGroupScreen";
 
+import EntrarNoGrupo from "@/app/grupo/EntrarGrupo";
 import CriarGrupo from "@/app/grupo/criar_grupo";
 import GrupoCriado from "@/app/grupo/grupo_criado";
-import EntrarNoGrupo from "@/app/grupo/EntrarGrupo";
 
-import CriarSessao from "@/app/sessaoEstudo/sessao_estudo";
 import Publicacao from "@/app/sessaoEstudo/publicacao";
+import CriarSessao from "@/app/sessaoEstudo/sessao_estudo";
 
 import EditAcc from "@/app/auth/EditAcc";
 
+import Onboarding from "@/components/Onboarding";
 import { StackParams } from "@/utils/routesStack";
 
 const Stack = createNativeStackNavigator<StackParams>();
 
-// ✅ ref global pra navegar de fora das telas (deep link)
 const navigationRef = createNavigationContainerRef<StackParams>();
 
 function extractToken(url: string): string | null {
@@ -81,7 +81,7 @@ export default function App() {
       <DeepLinkHandler />
 
       <Stack.Navigator
-        initialRouteName="Login"
+        initialRouteName="Index"
         screenOptions={{
           headerShown: false,
           animation: "slide_from_right",
@@ -98,6 +98,7 @@ export default function App() {
         <Stack.Screen name="EditAcc" component={EditAcc} />
 
         {/* App */}
+        <Stack.Screen name="Onboarding" component={Onboarding} />
         <Stack.Screen name="Home" component={Home} />
         <Stack.Screen name="Profile" component={Profile} />
         <Stack.Screen name="Disciplinas" component={Disciplinas} />

@@ -20,7 +20,7 @@ export function NextButton({ scrollTo, isLastPage }: NextButtonProps) {
         scrollTo();
         if (isLastPage) {
             isLastPage = false;
-            navigation.replace("StudyGroupScreen");
+            navigation.navigate("Index");
         }     
     }
 
