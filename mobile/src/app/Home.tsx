@@ -391,7 +391,7 @@ export default function Home() {
           <View style={styles.chipsRow}>
             {disciplinas.map((d, index) => (
               <Chip
-                key={d.id_disciplina}
+                key={d.nome}
                 label={d.nome}
                 color={disciplinaColors[index % disciplinaColors.length]}
               />

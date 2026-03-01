@@ -103,6 +103,10 @@ export default function CriarSessao() {
             Alert.alert("Erro", "A disciplina é obrigatória.");
             return;
         }
+        if (!topico) {
+            Alert.alert("Erro", "O tópico é obrigatório.");
+            return;
+        }
         try {
             console.log("1. iniciando submit");
             console.log("2. sessao:", sessao);
