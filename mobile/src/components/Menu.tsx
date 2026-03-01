@@ -5,6 +5,7 @@ import type { NavigationProp } from "@react-navigation/native";
 import { useNavigation } from "@react-navigation/native";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { clearSession } from "../services/authStorage";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type TabItem = {
   id: string;
@@ -21,6 +22,16 @@ type Props = {
 export function Menu({ tabs, activeTabId }: Props) {
   const navigation = useNavigation<NavigationProp<StackParams>>();
 
+  // Função para limpar o onboarding
+  const clearOnboarding = async () => {
+    try {
+      console.log("Rever onboarding");
+      await AsyncStorage.removeItem('@viewedOnboarding');
+    } catch (error) {
+      console.log('Error @clearOnboarding: ', error);
+    }
+  };
+
   const handleLogout = () => {
     Alert.alert("Sair", "Deseja realmente sair?", [
       { text: "Cancelar", style: "cancel" },
@@ -29,10 +40,15 @@ export function Menu({ tabs, activeTabId }: Props) {
         style: "destructive",
         onPress: async () => {
           try {
-            await clearSession(); 
+            // await clearSession();
+            // await clearOnboarding();
+            await Promise.all([
+              clearSession(),
+              clearOnboarding()
+            ]);
             navigation.reset({
               index: 0,
-              routes: [{ name: "Login" }], 
+              routes: [{ name: "Index" }], 
             });
           } catch (e) {
             Alert.alert("Erro", "Não foi possível sair. Tente novamente.");

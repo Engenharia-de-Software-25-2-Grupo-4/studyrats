@@ -1,55 +1,61 @@
-import Onboarding from "@/components/Onboarding";
+import { auth } from "@/firebaseConfig";
+import type { StackParams } from "@/utils/routesStack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, useWindowDimensions, View } from "react-native";
-import FeedScreen from "./groupStudy/FeedScreen";
-import StudyGroupScreen from "./groupStudy/StudyGroupScreen";
-import CriarGrupo from "./grupo/criar_grupo";
-import GrupoCriado from "./grupo/grupo_criado";
+import type { NavigationProp } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
+import { useEffect } from "react";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 
-const Loading = () => {
-    return (
-        <View>
-            <ActivityIndicator size="large"/>
-        </View>
-    )
-}
-
-import { useFocusEffect } from "@react-navigation/native";
-import { useCallback } from "react";
+import { colors } from "@/styles/colors";
+import { StackActions } from "@react-navigation/native";
 
 export default function Index() {
-    const { width } = useWindowDimensions();
-    const [loading, setLoading] = useState(true);
-    const [viewedOnboarding, setViewedOnboarding] = useState(false);
+    const navigation = useNavigation<NavigationProp<StackParams>>();
 
-    const checkOnboarding = async () => {
+    useEffect(() => {
+        checkInitialRoute();
+    }, []);
 
+    const checkInitialRoute = async () => {
         try {
-            const value = await AsyncStorage.getItem("@viewedOnboarding");
-            setViewedOnboarding(value !== null);
+            const viewedOnboarding = await AsyncStorage.getItem("@viewedOnboarding");
+            
+            if (!viewedOnboarding) {
+                navigation.dispatch(
+                    StackActions.replace("Onboarding")
+                )
+                return;
+            }
+
+            const user = auth.currentUser;
+            if (user) {
+                navigation.dispatch(
+                    StackActions.replace("Home")
+                );
+            } else {
+                navigation.dispatch(
+                    StackActions.replace("Login")
+                );
+            }
         } catch (error) {
-            console.log("Error @checkOnboarding: ", error);
-        } finally {
-            setLoading(false);
+            console.log("Error @checkInitialRoute: ", error);
+            navigation.dispatch(
+                StackActions.replace("Login")
+            );
         }
-    }
-
-    useFocusEffect(
-        useCallback(() => {
-        checkOnboarding();
-        }, [])
-    )
-
+    };
     return (
-        <View style={[styles.container, { width }]}>
-        {loading ? <Loading /> : viewedOnboarding ? <StudyGroupScreen /> : <Onboarding />}
+        <View style={styles.container}>
+            <ActivityIndicator size="large" color={colors.azul[300]} />
         </View>
-    )
+    );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-    }
-})
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: colors.cinza[400],
+    },
+});
